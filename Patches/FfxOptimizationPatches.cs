@@ -44,7 +44,7 @@ namespace Iridium.Patches
         /// <summary>
         /// 检查装饰物是否需要更新
         /// </summary>
-        private static bool ShouldUpdate(scrDecoration dec)
+        internal static bool ShouldUpdate(scrDecoration dec)
         {
             if (dec == null || !dec.GetVisible()) return false;
 
@@ -67,43 +67,6 @@ namespace Iridium.Patches
             }
 
             return false; // 静止装饰物，不需要更新
-        }
-
-        /// <summary>
-        /// 优化 scrDecorationManager.LateUpdate - 只更新需要更新的装饰物
-        /// 原始代码每帧更新所有可见装饰物，即使它们是静止的
-        /// </summary>
-        [HarmonyPatch(typeof(scrDecorationManager), "LateUpdate")]
-        public static class OptimizeDecorationManagerLateUpdate
-        {
-            static bool Prefix(scrDecorationManager __instance)
-            {
-                if (!Main.Settings.optimizer.enableOptimizer || !Main.Settings.optimizer.optimizeFfxDecorations)
-                    return true;
-
-                try
-                {
-                    // 遍历所有装饰物，只更新需要更新的
-                    var allDecorations = __instance.allDecorations;
-                    int count = allDecorations.Count;
-
-                    for (int i = 0; i < count; i++)
-                    {
-                        scrDecoration dec = allDecorations[i];
-                        if (ShouldUpdate(dec))
-                        {
-                            dec.UpdatePosition();
-                        }
-                    }
-
-                    return false; // 跳过原始方法
-                }
-                catch (Exception ex)
-                {
-                    Main.Logger?.Error($"[FfxOptimization] Error in OptimizeDecorationManagerLateUpdate: {ex}");
-                    return true; // 出错时回退到原始方法
-                }
-            }
         }
     }
 }

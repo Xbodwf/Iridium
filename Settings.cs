@@ -23,6 +23,7 @@ namespace Iridium
         public CompatibilitySettings compatibility = new();
         public HitSoundSettings hitSound = new();
         public JudgeTextSettings judgeText = new();
+        public PatchModeSettings patchMode = new();
 
         private string? _defaultLobbyMusicPathCache;
         private string? _fastLobbyMusicPathCache;
@@ -140,7 +141,8 @@ namespace Iridium
                 "🎨 " + Localization.Get("UISettings"),
                 "🎵 " + Localization.Get("LevelSelectSettings"),
                 "🔧 " + Localization.Get("CompatibilitySettings"),
-                "⚙️ " + Localization.Get("HitSoundSettings")
+                "⚙️ " + Localization.Get("HitSoundSettings"),
+                "🧩 Patch System"
             ];
 
             for (int i = 0; i < tabNames.Length; i++)
@@ -208,6 +210,9 @@ namespace Iridium
                 case 4:
                     UILayout.DrawContentHeader(Localization.Get("HitSoundSettings"), Localization.Get("OtherOptionsDescription"));
                     break;
+                case 5:
+                    UILayout.DrawContentHeader("Patch System", "Runtime IL mode switching for hot-path patches");
+                    break;
             }
 
             // Content Scroll Area
@@ -230,6 +235,9 @@ namespace Iridium
                     break;
                 case 4:
                     DrawHitSoundAndJudgeTextTab();
+                    break;
+                case 5:
+                    DrawPatchSystemTab();
                     break;
             }
 
@@ -519,14 +527,14 @@ namespace Iridium
             if (newHideBeta != ui.hideBetaWatermark)
             {
                 ui.hideBetaWatermark = newHideBeta;
-                Iridium.Patches.AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Iridium.Patches.MiscPatches.HideBetaWatermarkPatch));
+                Iridium.Patches.AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Iridium.Patches.StdHideBetaWatermarkPatch));
                 Iridium.Patches.MiscPatches.RefreshBetaWatermark();
             }
             bool newForceDifficulty = UIUtils.M3Switch(ui.forceDifficultyUI, Localization.Get("ForceDifficultyUI"));
             if (newForceDifficulty != ui.forceDifficultyUI)
             {
                 ui.forceDifficultyUI = newForceDifficulty;
-                Iridium.Patches.AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Iridium.Patches.MiscPatches.ForceDifficultyUIPatch));
+                Iridium.Patches.AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Iridium.Patches.StdForceDifficultyUIPatch));
             }
             ui.alwaysCountdown = UIUtils.M3Switch(ui.alwaysCountdown, Localization.Get("AlwaysCountdown"));
 
@@ -534,7 +542,7 @@ namespace Iridium
             if (newMoveAutoplay != ui.moveAutoplayText)
             {
                 ui.moveAutoplayText = newMoveAutoplay;
-                Iridium.Patches.AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Iridium.Patches.MiscPatches.AutoplayTextPositionPatch));
+                Iridium.Patches.AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Iridium.Patches.StdAutoplayTextPositionPatch));
                 Iridium.Patches.MiscPatches.RefreshAutoplayTextPosition();
             }
 
@@ -706,7 +714,7 @@ namespace Iridium
             if (newEnableHitSound != hitSound.enableHitSoundPitch)
             {
                 hitSound.enableHitSoundPitch = newEnableHitSound;
-                Iridium.Patches.AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Iridium.Patches.HitSoundPatch));
+                Iridium.Patches.AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Iridium.Patches.StdHitSoundPatch));
             }
             GUILayout.EndHorizontal();
 
@@ -719,8 +727,8 @@ namespace Iridium
             if (newEnableJudgeText != judgeText.enableJudgeTextCustomization)
             {
                 judgeText.enableJudgeTextCustomization = newEnableJudgeText;
-                Iridium.Patches.AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Iridium.Patches.JudgeTextPatches.HitTextMeshInitPatch));
-                Iridium.Patches.AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Iridium.Patches.JudgeTextPatches.HitTextMeshShowPatch));
+                Iridium.Patches.AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Iridium.Patches.StdHitTextMeshInitPatch));
+                Iridium.Patches.AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Iridium.Patches.StdHitTextMeshShowPatch));
                 Iridium.Patches.AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Iridium.Patches.JudgeTextPatches.ResetTimingOnRewindPatch));
             }
             GUILayout.EndHorizontal();
@@ -733,7 +741,7 @@ namespace Iridium
                 if (newShowAsOffset != judgeText.showAsOffset)
                 {
                     judgeText.showAsOffset = newShowAsOffset;
-                    Iridium.Patches.AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Iridium.Patches.JudgeTextPatches.HitTextMeshShowPatch));
+                    Iridium.Patches.AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Iridium.Patches.StdHitTextMeshShowPatch));
                 }
 
                 GUILayout.Space(8);
@@ -767,6 +775,37 @@ namespace Iridium
         public override void Save(UnityModManager.ModEntry modEntry)
         {
             Save(this, modEntry);
+        }
+
+        private void DrawPatchSystemTab()
+        {
+            UILayout.DrawSettingGroupTitle(Localization.Get("PatchModeSettings"));
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(Localization.Get("UseILPatch"), UIUtils.LabelStyle);
+            GUILayout.FlexibleSpace();
+            bool newUseIL = UIUtils.M3Switch(patchMode.useILPatch, "");
+            if (newUseIL != patchMode.useILPatch)
+            {
+                patchMode.useILPatch = newUseIL;
+                Iridium.Core.BasePatchMethod.SyncILModeFromSettings();
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(4);
+            GUILayout.Label(
+                patchMode.useILPatch
+                    ? Localization.Get("TranspilerModeDescription")
+                    : Localization.Get("PrefixPostfixModeDescription"),
+                UIUtils.LabelSecondaryStyle);
+
+            GUILayout.Space(16);
+            UILayout.DrawSettingGroupTitle("Info");
+            GUILayout.Label(
+                "Patches using StdPatchMethod: HitSound, AutoplayText, BPM, " +
+                "PendingTweens, Filters, JudgeText, MoveFloor, RecolorFloor, " +
+                "DecoManager, HideWatermark, ForceDifficultyUI",
+                UIUtils.LabelSecondaryStyle);
         }
 
         private void DrawJudgeTextInput(string key, ref string value)

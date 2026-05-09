@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using Iridium.Config;
+using Iridium.Core;
 
 namespace Iridium.Patches
 {
@@ -23,6 +24,7 @@ namespace Iridium.Patches
             public Func<bool> Condition;
             public Type? Parent;
             public string Name;
+            public BasePatchMethod? MethodInstance;
 
             public PatchDef(Type type, Func<bool> condition, Type? parent = null)
             {
@@ -30,6 +32,16 @@ namespace Iridium.Patches
                 Condition = condition;
                 Parent = parent;
                 Name = type.Name;
+            }
+
+            /// <summary>为基于 BasePatchMethod 的 patch 创建定义</summary>
+            public PatchDef(BasePatchMethod method, Func<bool> condition, Type? parent = null)
+            {
+                MethodInstance = method;
+                Condition = condition;
+                Parent = parent;
+                Name = method.GetType().Name;
+                Type = method.GetType();
             }
         }
 
@@ -57,6 +69,16 @@ namespace Iridium.Patches
             }
             _definitions.Add(new PatchDef(typeof(TrackOptimizationPatches), optCond));
 
+            // --- Track optimization StdPatchMethods (replacing attribute-based) ---
+            var trackOptCond = () => Main.Settings.optimizer.optimizeMoveTrack;
+            _definitions.Add(new PatchDef(new StdMoveFloorPatch(), trackOptCond));
+            _definitions.Add(new PatchDef(new StdRecolorFloorPatch(), () => Main.Settings.optimizer.optimizeRecolorTrack));
+
+            // --- Filter optimization StdPatchMethods ---
+            var filterOptCond = () => Main.Settings.optimizer.optimizeFilters;
+            _definitions.Add(new PatchDef(new StdFilterPlusPatch(), filterOptCond));
+            _definitions.Add(new PatchDef(new StdFilterAdvancedPlusPatch(), filterOptCond));
+
             // --- Ffx Optimization Patches ---
             foreach (var type in typeof(FfxOptimizationPatches).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
             {
@@ -65,6 +87,8 @@ namespace Iridium.Patches
                     _definitions.Add(new PatchDef(type, optCond));
                 }
             }
+            // DecorationManager LateUpdate optimization (converted to StdPatchMethod)
+            _definitions.Add(new PatchDef(new StdDecorationManagerLateUpdatePatch(), optCond));
 
             // --- Scene Optimization Patches ---
             foreach (var type in typeof(SceneOptimizationPatches).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
@@ -96,6 +120,8 @@ namespace Iridium.Patches
                     _definitions.Add(new PatchDef(type, () => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.enableExtremeOptimization));
                 }
             }
+            // ProcessPendingTweens converted to StdPatchMethod
+            _definitions.Add(new PatchDef(new StdProcessPendingTweensPatch(), () => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.enableExtremeOptimization));
 
             // --- Tween Safety Patches ---
             // 解决 DOTween.defaultRecyclable=true 时，ADOFAI 中 Tween 引用过期导致的动画异常
@@ -110,14 +136,15 @@ namespace Iridium.Patches
 
             // --- UI / Misc ---
             _definitions.Add(new PatchDef(typeof(MiscPatches.RemoveNewsPatch), () => Main.Settings.ui.removeNews));
-            _definitions.Add(new PatchDef(typeof(MiscPatches.HideBetaWatermarkPatch), () => Main.Settings.ui.hideBetaWatermark));
-            _definitions.Add(new PatchDef(typeof(MiscPatches.ForceDifficultyUIPatch), () => Main.Settings.ui.forceDifficultyUI));
+            _definitions.Add(new PatchDef(new StdHideBetaWatermarkPatch(), () => Main.Settings.ui.hideBetaWatermark));
+            _definitions.Add(new PatchDef(new StdForceDifficultyUIPatch(), () => Main.Settings.ui.forceDifficultyUI));
             _definitions.Add(new PatchDef(typeof(MiscPatches.CircleArcPatch), () => Main.Settings.ui.enableCircleArc));
-            _definitions.Add(new PatchDef(typeof(MiscPatches.AutoplayTextPositionPatch), () => Main.Settings.ui.moveAutoplayText));
+            _definitions.Add(new PatchDef(new StdAutoplayTextPositionPatch(), () => Main.Settings.ui.moveAutoplayText));
             _definitions.Add(new PatchDef(typeof(MiscPatches.AlwaysCountdownPatch), () => Main.Settings.ui.alwaysCountdown));
 
             // Lobby music
             _definitions.Add(new PatchDef(typeof(MiscPatches.LobbyMusicPatch), () => Main.Settings.lobbyMusic.enableLobbyMusicPatch));
+            _definitions.Add(new PatchDef(new StdCustomBpmPatch(), () => Main.Settings.lobbyMusic.enableCustomBpm));
 
             // Memory
             var memCond = () => Main.Settings.memory.enableMemoryOptimization;
@@ -133,15 +160,15 @@ namespace Iridium.Patches
                 Main.Settings.compatibility.legacyFlashMode != LegacyBehaviorMode.Default ||
                 Main.Settings.compatibility.legacyCamRelativeToMode != LegacyBehaviorMode.Default));
 
-            // Hit Sound
-            _definitions.Add(new PatchDef(typeof(HitSoundPatch), () => Main.Settings.hitSound.enableHitSoundPitch));
+            // Hit Sound (converted to StdPatchMethod)
+            _definitions.Add(new PatchDef(new StdHitSoundPatch(), () => Main.Settings.hitSound.enableHitSoundPitch));
 
             // Judge Text
-            // InitPatch: Handles custom text mode
-            _definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextMeshInitPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization));
-            // ShowPatch: Handles offset mode
-            _definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextMeshShowPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization && Main.Settings.judgeText.showAsOffset));
-            // Rewind: Reset
+            // InitPatch: Handles custom text mode (converted to StdPatchMethod)
+            _definitions.Add(new PatchDef(new StdHitTextMeshInitPatch(), () => Main.Settings.judgeText.enableJudgeTextCustomization));
+            // ShowPatch: Handles offset mode (converted to StdPatchMethod)
+            _definitions.Add(new PatchDef(new StdHitTextMeshShowPatch(), () => Main.Settings.judgeText.enableJudgeTextCustomization && Main.Settings.judgeText.showAsOffset));
+            // Rewind: Reset (attribute-based, kept)
             _definitions.Add(new PatchDef(typeof(JudgeTextPatches.ResetTimingOnRewindPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization));
         }
 
@@ -223,6 +250,13 @@ namespace Iridium.Patches
         /// </summary>
         private static void UpdateSinglePatch(PatchDef def)
         {
+            // 基于 BasePatchMethod 的 patch（使用 DynamicMethod，不走 Harmony ClassProcessor）
+            if (def.MethodInstance != null)
+            {
+                UpdateSingleMethodPatch(def);
+                return;
+            }
+
             bool shouldBeActive = CalculateEffectiveStatus(def);
             bool trackedActive = _activePatches.TryGetValue(def.Type, out bool currentActive) && currentActive;
 
@@ -231,6 +265,24 @@ namespace Iridium.Patches
                 Main.Logger?.Log(Localization.Get("PatchManagerStatusChanged", def.Name, trackedActive.ToString(), shouldBeActive.ToString()));
                 if (shouldBeActive) ApplyPatch(def.Type);
                 else RemovePatch(def.Type);
+
+                _activePatches[def.Type] = shouldBeActive;
+            }
+        }
+
+        /// <summary>
+        /// 更新基于 BasePatchMethod 的单个 patch
+        /// </summary>
+        private static void UpdateSingleMethodPatch(PatchDef def)
+        {
+            bool shouldBeActive = CalculateEffectiveStatus(def);
+            bool trackedActive = _activePatches.TryGetValue(def.Type, out bool currentActive) && currentActive;
+
+            if (trackedActive != shouldBeActive)
+            {
+                Main.Logger?.Log(Localization.Get("PatchManagerStatusChanged", def.Name, trackedActive.ToString(), shouldBeActive.ToString()));
+                if (shouldBeActive) def.MethodInstance!.StartPatch();
+                else def.MethodInstance!.StopPatch();
 
                 _activePatches[def.Type] = shouldBeActive;
             }
@@ -374,6 +426,16 @@ namespace Iridium.Patches
             _harmony?.UnpatchAll(_harmony.Id);
             _activePatches.Clear();
             _patchedBindings.Clear();
+
+            // 重置所有 BasePatchMethod 的内部状态（patch 已被 UnpatchAll 移除）
+            foreach (var def in _definitions)
+            {
+                if (def.MethodInstance != null && def.MethodInstance.IsPatched)
+                {
+                    def.MethodInstance.ForceReset();
+                }
+            }
+
             Main.Logger?.Log(Localization.Get("PatchManagerUnpatchedAll"));
         }
     }

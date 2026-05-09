@@ -134,7 +134,7 @@ namespace Iridium.Config
                 _ => ""
             };
         }
-        
+
         public void ResetToDefault()
         {
             tooEarly = "TooEarly";
@@ -148,5 +148,14 @@ namespace Iridium.Config
             failMiss = "FailMiss";
             failOverload = "FailOverload";
         }
+    }
+
+    public class PatchModeSettings
+    {
+        /// <summary>
+        /// false = 使用 Prefix/Postfix (兼容性优先)<br/>
+        /// true = 使用 Transpiler (性能优先)
+        /// </summary>
+        public bool useILPatch = false;
     }
 }

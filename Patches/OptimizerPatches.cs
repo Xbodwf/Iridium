@@ -946,31 +946,6 @@ namespace Iridium.Patches
                 _style.normal.background = _background;
             }
         }
-        [HarmonyPatch(typeof(ffxSetFilterPlus), "StartEffect")]
-        public static class FilterPlusPatch
-        {
-            [HarmonyPrefix]
-            public static void Prefix(ffxSetFilterPlus __instance)
-            {
-                if (!Main.Settings.optimizer.optimizeFilters) return;
-            }
-        }
-
-        [HarmonyPatch(typeof(ffxSetFilterAdvancedPlus), "StartEffect")]
-        public static class FilterAdvancedPlusPatch
-        {
-            [HarmonyPrefix]
-            public static void Prefix(ffxSetFilterAdvancedPlus __instance)
-            {
-                if (!Main.Settings.optimizer.optimizeFilters) return;
-
-                // 优化：直接让原始方法继续执行，但提前做必要检查
-                __instance.AdjustDurationForHardbake();
-                if (ffxSetFilterAdvancedPlus.blacklistedFilterKeywords.Any(k => __instance.filterName.Contains(k)))
-                {
-                    // 通过返回 true 让原始方法处理，但已经跳过了黑名单检查
-                }
-            }
-        }
+        // NOTE: FilterPlus and FilterAdvancedPlus patches moved to StdPatchMethod in MethodPatches.cs
     }
 }

@@ -26,7 +26,7 @@ namespace Iridium.Patches
 		/// <summary>
 		/// Tween批处理队列 - 用于延迟创建Tween
 		/// </summary>
-		private static class TweenBatchQueue
+		internal static class TweenBatchQueue
 		{
 			private static readonly Queue<TweenRequest> _pendingTweens = new Queue<TweenRequest>();
 			private static int _tweensCreatedThisFrame = 0;
@@ -83,7 +83,7 @@ namespace Iridium.Patches
 		/// <summary>
 		/// Tween请求 - 封装Tween创建逻辑
 		/// </summary>
-		private abstract class TweenRequest
+		internal abstract class TweenRequest
 		{
 			public abstract void Execute();
 		}
@@ -401,29 +401,6 @@ namespace Iridium.Patches
 				catch (Exception e)
 				{
 					Main.Logger?.Error($"[ExtremeOpt] MoveDecorRequest failed: {e}");
-				}
-			}
-		}
-
-		#endregion
-
-		#region Update Hook - 持续处理待处理的Tween
-
-		/// <summary>
-		/// 每帧处理待处理的Tween
-		/// </summary>
-		[HarmonyPatch(typeof(scnGame), "Update")]
-		public static class ProcessPendingTweensPatch
-		{
-			[HarmonyPostfix]
-			public static void Postfix()
-			{
-				if (!Main.Settings.optimizer.enableOptimizer) return;
-
-				// 持续处理待处理的Tween
-				if (TweenBatchQueue.PendingCount > 0)
-				{
-					TweenBatchQueue.StartProcessing();
 				}
 			}
 		}

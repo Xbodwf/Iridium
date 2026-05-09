@@ -161,5 +161,9 @@
   "DOTweenOptimizationRestartRequired": "To fully restore after disabling, please restart the game",
   "ExtremeOptimizations": "Extreme Optimizations",
   "EnableExtremeOptimization": "Enable Extreme Optimization (Frame Spreading)",
-  "MaxTweensPerFrame": "Max Tweens Per Frame"
+  "MaxTweensPerFrame": "Max Tweens Per Frame",
+  "PatchModeSettings": "Patch Mode",
+  "UseILPatch": "Use Transpiler (IL)",
+  "TranspilerModeDescription": "Transpiler: Direct IL injection, best performance",
+  "PrefixPostfixModeDescription": "Prefix/Postfix: Harmony-managed, best compatibility"
 }

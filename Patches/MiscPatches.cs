@@ -13,7 +13,7 @@ namespace Iridium.Patches
     public static class MiscPatches
     {
         // 公共场景白名单，用于大厅相关功能
-        private static readonly HashSet<string> LobbyScenes = new()
+        internal static readonly HashSet<string> LobbyScenes = new()
         {
             "scnLevelSelect",
             "scnCLS",
@@ -90,16 +90,6 @@ namespace Iridium.Patches
             }
         }
 
-        [HarmonyPatch(typeof(scrUIController), "Update")]
-        public static class AutoplayTextPositionPatch
-        {
-            [HarmonyPrefix]
-            public static void Prefix()
-            {
-                RefreshAutoplayTextPosition();
-            }
-        }
-
         private static bool _isAutoplayModified = false;
         private static Vector3 _originalAutoplayPos;
 
@@ -117,24 +107,7 @@ namespace Iridium.Patches
             scrUIController.instance.txtDebug.transform.localPosition = new Vector3(Main.Settings.ui.autoplayTextX, Main.Settings.ui.autoplayTextY, 0f);
         }
 
-        [HarmonyPatch(typeof(scrConductor), "Update")]
-        public static class CustomBpmPatch
-        {
-            [HarmonyPrefix]
-            public static void Prefix()
-            {
-                UpdateBpm();
-            }
-
-            public static void UpdateBpm()
-            {
-                if (!Main.Settings.lobbyMusic.enableCustomBpm || scrConductor.instance is null) return;
-                if (!LobbyScenes.Contains(ADOBase.sceneName)) return;
-
-                scrConductor.instance.bpm = Main.Settings.lobbyMusic.customBpm;
-            }
-        }
-
+        // === Lobby Music Patch (attribute-based, kept) ===
         [HarmonyPatch(typeof(scnLevelSelect), "Awake")]
         public static class LobbyMusicPatch
         {

@@ -161,5 +161,9 @@
   "DOTweenOptimizationRestartRequired": "关闭此功能后若想完全恢复，请重启游戏",
   "ExtremeOptimizations": "极端情况优化",
   "EnableExtremeOptimization": "启用极端优化 (分帧处理)",
-  "MaxTweensPerFrame": "每帧最大 Tween 数量"
+  "MaxTweensPerFrame": "每帧最大 Tween 数量",
+  "PatchModeSettings": "补丁模式",
+  "UseILPatch": "使用 Transpiler (IL)",
+  "TranspilerModeDescription": "Transpiler: 直接 IL 注入，性能优先",
+  "PrefixPostfixModeDescription": "Prefix/Postfix: Harmony 管理，兼容优先"
 }
