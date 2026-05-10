@@ -154,19 +154,15 @@ namespace Iridium
         {
             private void OnGUI()
             {
-                UIUtils.InitializeStyles();
-
-                // 先显示首次启动提示
                 if (_showFirstRunTips)
                 {
-                    _windowRect = GUI.Window(998, _windowRect, DrawFirstRunWindow, Localization.Get("FirstRunTitle"), UIUtils.CardStyle);
-                    return; // 等待首次提示关闭后再显示升级提示
+                    _windowRect = GUI.Window(998, _windowRect, DrawFirstRunWindow, Localization.Get("FirstRunTitle"));
+                    return;
                 }
 
-                // 首次提示关闭后，显示升级提示
                 if (_showUpgradeTips)
                 {
-                    _windowRect = GUI.Window(997, _windowRect, DrawUpgradeWindow, Localization.Get("UpgradeTitle"), UIUtils.CardStyle);
+                    _windowRect = GUI.Window(997, _windowRect, DrawUpgradeWindow, Localization.Get("UpgradeTitle"));
                 }
             }
 
@@ -174,16 +170,15 @@ namespace Iridium
             {
                 GUILayout.BeginVertical();
                 GUILayout.Space(10);
-                GUILayout.Label(Localization.Get("FirstRunMessage"), UIUtils.LabelStyle);
+                GUILayout.Label(Localization.Get("FirstRunMessage"));
                 GUILayout.FlexibleSpace();
-                if (GUILayout.Button(Localization.Get("Understand"), UIUtils.ButtonStyle))
+                if (GUILayout.Button(Localization.Get("Understand")))
                 {
                     _showFirstRunTips = false;
                     Main.Settings.firstRun = false;
                     Main.Settings.lastVersion = CurrentVersion;
-                    Main.Settings.lastUpgradeMessageSeen_106_beta5 = "1.0.6_beta5"; // 首次启动也视为看过当前最新的升级提示
+                    Main.Settings.lastUpgradeMessageSeen_106_beta5 = "1.0.6_beta5";
                     if (Mod != null) Main.Settings.Save(Mod);
-                    // 如果没有升级提示，销毁UI对象
                     if (!_showUpgradeTips)
                     {
                         Destroy(gameObject);
@@ -197,9 +192,9 @@ namespace Iridium
             {
                 GUILayout.BeginVertical();
                 GUILayout.Space(10);
-                GUILayout.Label(Localization.Get(_upgradeMessageKey), UIUtils.LabelStyle);
+                GUILayout.Label(Localization.Get(_upgradeMessageKey));
                 GUILayout.FlexibleSpace();
-                if (GUILayout.Button(Localization.Get("Understand"), UIUtils.ButtonStyle))
+                if (GUILayout.Button(Localization.Get("Understand")))
                 {
                     _showUpgradeTips = false;
                     Main.Settings.lastVersion = CurrentVersion;

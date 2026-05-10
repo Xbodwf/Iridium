@@ -149,4 +149,16 @@ namespace Iridium.Config
             failOverload = "FailOverload";
         }
     }
+
+    /// <summary>
+    /// 补丁模式设置 — 控制 Transpiler / PrefixPostfix 切换
+    /// </summary>
+    public class PatchModeSettings
+    {
+        /// <summary>
+        /// true = 使用 Transpiler（IL注入，性能优先）
+        /// false = 使用 Prefix/Postfix（兼容性优先）
+        /// </summary>
+        public bool useILPatch = false;
+    }
 }

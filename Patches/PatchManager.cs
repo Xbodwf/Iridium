@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using Iridium.Config;
+using Iridium.Core;
 
 namespace Iridium.Patches
 {
@@ -15,6 +16,9 @@ namespace Iridium.Patches
         private static readonly Dictionary<Type, bool> _activePatches = new();
         // Optimization: Cache exact patch bindings for each patch class to speed up and isolate unpatching
         private static readonly Dictionary<Type, List<(MethodBase Original, MethodInfo PatchMethod)>> _patchedBindings = new();
+
+        // Instance-based patches (BasePatchMethod subclasses)
+        private static readonly List<BasePatchMethod> _methodPatches = new();
 
         // Patch Declaration
         private class PatchDef
@@ -38,6 +42,29 @@ namespace Iridium.Patches
         static PatchManager()
         {
             RegisterPatches();
+        }
+
+        /// <summary>
+        /// 注册一个实例化补丁（BasePatchMethod 子类）
+        /// </summary>
+        public static void RegisterMethodPatch(BasePatchMethod patch)
+        {
+            lock (_methodPatches)
+            {
+                if (!_methodPatches.Contains(patch))
+                    _methodPatches.Add(patch);
+            }
+        }
+
+        /// <summary>
+        /// 取消注册实例化补丁
+        /// </summary>
+        public static void UnregisterMethodPatch(BasePatchMethod patch)
+        {
+            lock (_methodPatches)
+            {
+                _methodPatches.Remove(patch);
+            }
         }
 
         private static void RegisterPatches()
@@ -156,6 +183,9 @@ namespace Iridium.Patches
             {
                 UpdateSinglePatch(def);
             }
+
+            // 同步实例化补丁的 IL 模式
+            BasePatchMethod.SyncILModeFromSettings();
         }
 
         /// <summary>
@@ -374,6 +404,17 @@ namespace Iridium.Patches
             _harmony?.UnpatchAll(_harmony.Id);
             _activePatches.Clear();
             _patchedBindings.Clear();
+
+            // 停止所有实例化补丁
+            lock (_methodPatches)
+            {
+                foreach (var mp in _methodPatches)
+                {
+                    if (mp.IsPatched)
+                        mp.StopPatch();
+                }
+            }
+
             Main.Logger?.Log(Localization.Get("PatchManagerUnpatchedAll"));
         }
     }

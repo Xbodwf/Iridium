@@ -942,8 +942,18 @@ namespace Iridium.Patches
                     fontStyle = FontStyle.Bold
                 };
                 _style.normal.textColor = Color.white;
-                _background = UIUtils.MakeSolidTex(1, 1, new Color(0.12f, 0.12f, 0.14f, 0.85f));
+                _background = MakeSolidTex(1, 1, new Color(0.12f, 0.12f, 0.14f, 0.85f));
                 _style.normal.background = _background;
+            }
+
+            private static Texture2D MakeSolidTex(int width, int height, Color color)
+            {
+                var tex = new Texture2D(width, height);
+                var pixels = new Color[width * height];
+                for (var i = 0; i < pixels.Length; i++) pixels[i] = color;
+                tex.SetPixels(pixels);
+                tex.Apply();
+                return tex;
             }
         }
         [HarmonyPatch(typeof(ffxSetFilterPlus), "StartEffect")]

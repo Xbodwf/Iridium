@@ -23,6 +23,10 @@
 	</PropertyGroup>
 	
 	<ItemGroup>
+		<Compile Remove=".adofai\**" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Reference Include="0Harmony">
 			<HintPath>lib\ModManager\0Harmony.dll</HintPath>
 		</Reference>
@@ -44,6 +48,7 @@
 		<Reference Include="Newtonsoft.Json">
 			<HintPath>lib\Newtonsoft.Json.dll</HintPath>
 		</Reference>
+		<Reference Include="System.Drawing" />
 		<Reference Include="UnityEngine">
 			<HintPath>lib\UnityEngine.dll</HintPath>
 		</Reference>
