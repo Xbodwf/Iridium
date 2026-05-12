@@ -1,5 +1,6 @@
 > [!IMPORTANT]
-> 若您在使用Iridium NightlyBeta版时出现问题，请及时向维护者报告。
+> 若您在使用Iridium Beta版时出现问题，请及时向维护者报告。
 
-1.实现了更强的DOTween优化
-> 此功能会在开启"优化器"与DoTween优化的"默认可复用"的情况下自动开启，反之自动关闭
+## 重大更新
+1.为了兼容frontline(2.10.0),Iridium从此将在Release中提供适用于不同游戏的Iridium版本。
+如`Iridium_1.2.0_beta5+adofai2.10.0.zip`

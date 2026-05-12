@@ -83,9 +83,12 @@ function getVersionInfo(adofaiVer) {
 if (require.main === module) {
     // Accept adofai version as first CLI arg
     const versionInfo = getVersionInfo(process.argv[2]);
+    // Strip +adofai suffix for release metadata (used in release name/tag)
+    const baseTag = versionInfo.VERSION_TAG.replace(/\+adofai.*$/, '');
     console.log(`VERSION_TAG=${versionInfo.VERSION_TAG}`);
     console.log(`RELEASE_NAME=${versionInfo.RELEASE_NAME}`);
     console.log(`TAG_NAME=${versionInfo.TAG_NAME}`);
+    console.log(`BASE_TAG=${baseTag}`);
 }
 
 module.exports = getVersionInfo;
