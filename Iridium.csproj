@@ -9,282 +9,297 @@
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 		<OutputPath>bin\$(Configuration)\</OutputPath>
 		<AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+		<!-- Game version targeting: v2.10.0 (Unity 6) or v2.9.8 (Unity 2022) -->
+		<!-- Override via: dotnet build -p:GameVersion=v2.9.8 -->
+		<GameVersion Condition="'$(GameVersion)'==''">v2.10.0</GameVersion>
 	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
+	<PropertyGroup Condition="'$(Configuration)'=='Debug' Or '$(Configuration)'=='Debug_v2100' Or '$(Configuration)'=='Debug_v298'">
 		<DebugSymbols>true</DebugSymbols>
 		<DebugType>full</DebugType>
 		<Optimize>false</Optimize>
 		<DefineConstants>DEBUG;TRACE</DefineConstants>
 	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+	<PropertyGroup Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='Release_v2100' Or '$(Configuration)'=='Release_v298'">
 		<DebugType>pdbonly</DebugType>
 		<Optimize>true</Optimize>
 		<DefineConstants>TRACE</DefineConstants>
 	</PropertyGroup>
-	
+	<!-- Derive GameVersion from configuration name suffix (for IDE switching) -->
+	<PropertyGroup Condition="'$(Configuration)'=='Debug_v2100' Or '$(Configuration)'=='Release_v2100'">
+		<GameVersion>v2.10.0</GameVersion>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'=='Debug_v298' Or '$(Configuration)'=='Release_v298'">
+		<GameVersion>v2.9.8</GameVersion>
+	</PropertyGroup>
+	<!-- Add version-specific define -->
+	<PropertyGroup Condition="'$(GameVersion)'=='v2.10.0'">
+		<DefineConstants>$(DefineConstants);ADOFAI_2_10_0</DefineConstants>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<Compile Remove=".adofai\**" />
 	</ItemGroup>
 
+	<!-- Assembly-CSharp is version-specific; Unity engine is fixed to 2.9.8 -->
 	<ItemGroup>
 		<Reference Include="0Harmony">
 			<HintPath>lib\ModManager\0Harmony.dll</HintPath>
 		</Reference>
 		<Reference Include="Assembly-CSharp">
-			<HintPath>lib\Assembly-CSharp.dll</HintPath>
+			<HintPath>lib\$(GameVersion)\Assembly-CSharp.dll</HintPath>
 		</Reference>
 		<Reference Include="Assembly-CSharp-firstpass">
-			<HintPath>lib\Assembly-CSharp-firstpass.dll</HintPath>
+			<HintPath>lib\$(GameVersion)\Assembly-CSharp-firstpass.dll</HintPath>
 		</Reference>
 		<Reference Include="DOTween">
-			<HintPath>lib\DOTween.dll</HintPath>
+			<HintPath>lib\v2.9.8\DOTween.dll</HintPath>
 		</Reference>
 		<Reference Include="DOTweenPro">
-			<HintPath>lib\DOTweenPro.dll</HintPath>
+			<HintPath>lib\v2.9.8\DOTweenPro.dll</HintPath>
 		</Reference>
 		<Reference Include="RDTools">
-			<HintPath>lib\RDTools.dll</HintPath>
+			<HintPath>lib\v2.9.8\RDTools.dll</HintPath>
 		</Reference>
 		<Reference Include="Newtonsoft.Json">
-			<HintPath>lib\Newtonsoft.Json.dll</HintPath>
+			<HintPath>lib\v2.9.8\Newtonsoft.Json.dll</HintPath>
 		</Reference>
 		<Reference Include="System.Drawing" />
 		<Reference Include="UnityEngine">
-			<HintPath>lib\UnityEngine.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.AccessibilityModule">
-			<HintPath>lib\UnityEngine.AccessibilityModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.AccessibilityModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.AIModule">
-			<HintPath>lib\UnityEngine.AIModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.AIModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.AndroidJNIModule">
-			<HintPath>lib\UnityEngine.AndroidJNIModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.AndroidJNIModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.AnimationModule">
-			<HintPath>lib\UnityEngine.AnimationModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.AnimationModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.ARModule">
-			<HintPath>lib\UnityEngine.ARModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.ARModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.AssetBundleModule">
-			<HintPath>lib\UnityEngine.AssetBundleModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.AssetBundleModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.AudioModule">
-			<HintPath>lib\UnityEngine.AudioModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.AudioModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.ClothModule">
-			<HintPath>lib\UnityEngine.ClothModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.ClothModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.ClusterInputModule">
-			<HintPath>lib\UnityEngine.ClusterInputModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.ClusterInputModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.ClusterRendererModule">
-			<HintPath>lib\UnityEngine.ClusterRendererModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.ClusterRendererModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.ContentLoadModule">
-			<HintPath>lib\UnityEngine.ContentLoadModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.ContentLoadModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.CoreModule">
-			<HintPath>lib\UnityEngine.CoreModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.CoreModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.CrashReportingModule">
-			<HintPath>lib\UnityEngine.CrashReportingModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.CrashReportingModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.DirectorModule">
-			<HintPath>lib\UnityEngine.DirectorModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.DirectorModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.DSPGraphModule">
-			<HintPath>lib\UnityEngine.DSPGraphModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.DSPGraphModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.GameCenterModule">
-			<HintPath>lib\UnityEngine.GameCenterModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.GameCenterModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.GIModule">
-			<HintPath>lib\UnityEngine.GIModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.GIModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.GridModule">
-			<HintPath>lib\UnityEngine.GridModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.GridModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.HotReloadModule">
-			<HintPath>lib\UnityEngine.HotReloadModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.HotReloadModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.ImageConversionModule">
-			<HintPath>lib\UnityEngine.ImageConversionModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.ImageConversionModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.IMGUIModule">
-			<HintPath>lib\UnityEngine.IMGUIModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.IMGUIModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.InputLegacyModule">
-			<HintPath>lib\UnityEngine.InputLegacyModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.InputLegacyModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.InputModule">
-			<HintPath>lib\UnityEngine.InputModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.InputModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.JSONSerializeModule">
-			<HintPath>lib\UnityEngine.JSONSerializeModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.JSONSerializeModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.LocalizationModule">
-			<HintPath>lib\UnityEngine.LocalizationModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.LocalizationModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.NVIDIAModule">
-			<HintPath>lib\UnityEngine.NVIDIAModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.NVIDIAModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.ParticleSystemModule">
-			<HintPath>lib\UnityEngine.ParticleSystemModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.ParticleSystemModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.PerformanceReportingModule">
-			<HintPath>lib\UnityEngine.PerformanceReportingModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.PerformanceReportingModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.Physics2DModule">
-			<HintPath>lib\UnityEngine.Physics2DModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.Physics2DModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.PhysicsModule">
-			<HintPath>lib\UnityEngine.PhysicsModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.PhysicsModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.ProfilerModule">
-			<HintPath>lib\UnityEngine.ProfilerModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.ProfilerModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.PropertiesModule">
-			<HintPath>lib\UnityEngine.PropertiesModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.PropertiesModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.Purchasing">
-			<HintPath>lib\UnityEngine.Purchasing.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.Purchasing.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.Purchasing.AppleCore">
-			<HintPath>lib\UnityEngine.Purchasing.AppleCore.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.Purchasing.AppleCore.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.Purchasing.AppleMacosStub">
-			<HintPath>lib\UnityEngine.Purchasing.AppleMacosStub.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.Purchasing.AppleMacosStub.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.Purchasing.AppleStub">
-			<HintPath>lib\UnityEngine.Purchasing.AppleStub.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.Purchasing.AppleStub.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.Purchasing.Codeless">
-			<HintPath>lib\UnityEngine.Purchasing.Codeless.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.Purchasing.Codeless.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.Purchasing.SecurityCore">
-			<HintPath>lib\UnityEngine.Purchasing.SecurityCore.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.Purchasing.SecurityCore.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.Purchasing.SecurityStub">
-			<HintPath>lib\UnityEngine.Purchasing.SecurityStub.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.Purchasing.SecurityStub.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.Purchasing.Stores">
-			<HintPath>lib\UnityEngine.Purchasing.Stores.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.Purchasing.Stores.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.Purchasing.WinRTCore">
-			<HintPath>lib\UnityEngine.Purchasing.WinRTCore.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.Purchasing.WinRTCore.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.Purchasing.WinRTStub">
-			<HintPath>lib\UnityEngine.Purchasing.WinRTStub.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.Purchasing.WinRTStub.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.RuntimeInitializeOnLoadManagerInitializerModule">
-			<HintPath>lib\UnityEngine.RuntimeInitializeOnLoadManagerInitializerModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.RuntimeInitializeOnLoadManagerInitializerModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.ScreenCaptureModule">
-			<HintPath>lib\UnityEngine.ScreenCaptureModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.ScreenCaptureModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.SharedInternalsModule">
-			<HintPath>lib\UnityEngine.SharedInternalsModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.SharedInternalsModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.SpriteMaskModule">
-			<HintPath>lib\UnityEngine.SpriteMaskModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.SpriteMaskModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.SpriteShapeModule">
-			<HintPath>lib\UnityEngine.SpriteShapeModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.SpriteShapeModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.StreamingModule">
-			<HintPath>lib\UnityEngine.StreamingModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.StreamingModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.SubstanceModule">
-			<HintPath>lib\UnityEngine.SubstanceModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.SubstanceModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.SubsystemsModule">
-			<HintPath>lib\UnityEngine.SubsystemsModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.SubsystemsModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.TerrainModule">
-			<HintPath>lib\UnityEngine.TerrainModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.TerrainModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.TerrainPhysicsModule">
-			<HintPath>lib\UnityEngine.TerrainPhysicsModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.TerrainPhysicsModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.TextCoreFontEngineModule">
-			<HintPath>lib\UnityEngine.TextCoreFontEngineModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.TextCoreFontEngineModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.TextCoreTextEngineModule">
-			<HintPath>lib\UnityEngine.TextCoreTextEngineModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.TextCoreTextEngineModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.TextRenderingModule">
-			<HintPath>lib\UnityEngine.TextRenderingModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.TextRenderingModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.TilemapModule">
-			<HintPath>lib\UnityEngine.TilemapModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.TilemapModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.TLSModule">
-			<HintPath>lib\UnityEngine.TLSModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.TLSModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.UI">
-			<HintPath>lib\UnityEngine.UI.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.UI.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.UIElementsModule">
-			<HintPath>lib\UnityEngine.UIElementsModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.UIElementsModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.UIModule">
-			<HintPath>lib\UnityEngine.UIModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.UIModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.UmbraModule">
-			<HintPath>lib\UnityEngine.UmbraModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.UmbraModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.UnityAnalyticsCommonModule">
-			<HintPath>lib\UnityEngine.UnityAnalyticsCommonModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.UnityAnalyticsCommonModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.UnityAnalyticsModule">
-			<HintPath>lib\UnityEngine.UnityAnalyticsModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.UnityAnalyticsModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.UnityConnectModule">
-			<HintPath>lib\UnityEngine.UnityConnectModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.UnityConnectModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.UnityCurlModule">
-			<HintPath>lib\UnityEngine.UnityCurlModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.UnityCurlModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.UnityTestProtocolModule">
-			<HintPath>lib\UnityEngine.UnityTestProtocolModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.UnityTestProtocolModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.UnityWebRequestAssetBundleModule">
-			<HintPath>lib\UnityEngine.UnityWebRequestAssetBundleModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.UnityWebRequestAssetBundleModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.UnityWebRequestAudioModule">
-			<HintPath>lib\UnityEngine.UnityWebRequestAudioModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.UnityWebRequestAudioModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.UnityWebRequestModule">
-			<HintPath>lib\UnityEngine.UnityWebRequestModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.UnityWebRequestModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.UnityWebRequestTextureModule">
-			<HintPath>lib\UnityEngine.UnityWebRequestTextureModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.UnityWebRequestTextureModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.UnityWebRequestWWWModule">
-			<HintPath>lib\UnityEngine.UnityWebRequestWWWModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.UnityWebRequestWWWModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.VehiclesModule">
-			<HintPath>lib\UnityEngine.VehiclesModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.VehiclesModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.VFXModule">
-			<HintPath>lib\UnityEngine.VFXModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.VFXModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.VideoModule">
-			<HintPath>lib\UnityEngine.VideoModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.VideoModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.VirtualTexturingModule">
-			<HintPath>lib\UnityEngine.VirtualTexturingModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.VirtualTexturingModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.VRModule">
-			<HintPath>lib\UnityEngine.VRModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.VRModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.WindModule">
-			<HintPath>lib\UnityEngine.WindModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.WindModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.XRModule">
-			<HintPath>lib\UnityEngine.XRModule.dll</HintPath>
+			<HintPath>lib\v2.9.8\UnityEngine.XRModule.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityModManager">
 			<HintPath>lib\ModManager\UnityModManager.dll</HintPath>
@@ -302,12 +317,15 @@
 		<GameExePath>D:\Program Files (x86)\Steam\steamapps\common\A Dance of Fire and Ice\A Dance of Fire and Ice.exe</GameExePath>
 		<AutoLaunchGame>true</AutoLaunchGame>
 	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU' Or '$(Configuration)|$(Platform)'=='Debug_v2100|AnyCPU' Or '$(Configuration)|$(Platform)'=='Debug_v298|AnyCPU'">
 	  <DebugType>portable</DebugType>
 	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU' Or '$(Configuration)|$(Platform)'=='Release_v2100|AnyCPU' Or '$(Configuration)|$(Platform)'=='Release_v298|AnyCPU'">
 	  <DebugType>portable</DebugType>
 	</PropertyGroup>
+	<Target Name="PrintGameVersion" BeforeTargets="BeforeBuild">
+		<Message Text="=== Building for GameVersion: $(GameVersion) ===" Importance="high" />
+	</Target>
 	<Target Name="CopyToOut" AfterTargets="Build">
 		<PropertyGroup>
 			<OutDir>$(ProjectDir)out\</OutDir>
