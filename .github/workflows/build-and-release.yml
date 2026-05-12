@@ -12,83 +12,82 @@ permissions:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        game-version: [v2.10.0, v2.9.8]
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
-        
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        
-    - name: Build project
-      run: dotnet build --configuration Release
-        
+
+    - name: Build project (${{ matrix.game-version }})
+      run: dotnet build --configuration Release -p:GameVersion=${{ matrix.game-version }}
+
     - name: Get version
       id: get_version
       shell: bash
       run: |
-        output=$(node scripts/get-version.js)
+        output=$(node scripts/get-version.js ${{ matrix.game-version }})
         while IFS= read -r line; do
           if [[ $line =~ ^VERSION_TAG=(.*)$ ]]; then
             version="${BASH_REMATCH[1]}"
             echo "VERSION_TAG=$version" >> $GITHUB_OUTPUT
           fi
         done <<< "$output"
-        
+
     - name: Package artifacts
       shell: bash
       run: |
         version="${{ steps.get_version.outputs.VERSION_TAG }}"
         zipName="Iridium_${version}.zip"
-        
-        if [ ! -d "out" ]; then
-          mkdir -p "out"
-        fi
-        
         cd out
-        if [ -n "$(ls -A .)" ]; then
-          zip -r "../${zipName}" .
-        else
-          zip "../${zipName}" -r .
-        fi
+        zip -r "../${zipName}" .
         cd ..
-        
+
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: iridium-build
+        name: iridium-build-${{ matrix.game-version }}
         path: Iridium_*.zip
         retention-days: 7
-        
+
   release:
     needs: build
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-      
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-      
-    - name: Download build artifacts
+
+    - name: Download all build artifacts
       uses: actions/download-artifact@v4
       with:
-        name: iridium-build
-        
+        pattern: iridium-build-*
+        merge-multiple: true
+
+    - name: List downloaded artifacts
+      shell: bash
+      run: ls -la *.zip
+
     - name: Get version info
       id: version_info
       shell: bash
@@ -101,22 +100,22 @@ jobs:
             echo "$key=$value" >> $GITHUB_OUTPUT
           fi
         done <<< "$output"
-        
+
     - name: Check for existing release
       id: check_release
       uses: actions/github-script@v7
       with:
         script: |
           const releaseName = `${{ steps.version_info.outputs.RELEASE_NAME }}`;
-          
+
           try {
             const releases = await github.rest.repos.listReleases({
               owner: context.repo.owner,
               repo: context.repo.repo
             });
-            
+
             const existingRelease = releases.data.find(r => r.name === releaseName);
-            
+
             if (existingRelease) {
               core.setOutput('release_exists', 'true');
               core.setOutput('existing_release_id', existingRelease.id);
@@ -126,33 +125,32 @@ jobs:
           } catch (error) {
             core.setOutput('release_exists', 'false');
           }
-        
+
     - name: Create or update release
       id: create_release
       uses: actions/github-script@v7
       with:
         script: |
           const { getCommitLog, generateReleaseBody } = require('./scripts/generate-release.js');
-          
+
           const releaseName = `${{ steps.version_info.outputs.RELEASE_NAME }}`;
           const versionTag = `${{ steps.version_info.outputs.VERSION_TAG }}`;
           const tagName = `${{ steps.version_info.outputs.TAG_NAME }}`;
           const releaseExists = `${{ steps.check_release.outputs.release_exists }}` === 'true';
           const existingReleaseId = `${{ steps.check_release.outputs.existing_release_id }}`;
           const shortSha = context.sha.substring(0, 7);
-          
+
           let finalReleaseName = releaseName;
           let finalTagName = tagName;
-          
+
           if (releaseExists) {
             finalReleaseName = `${releaseName} (${shortSha})`;
             finalTagName = `${tagName}_${shortSha}`;
           }
-          
-          // 获取commit日志
+
           const commits = getCommitLog();
           const releaseBody = generateReleaseBody(versionTag, context.sha, commits);
-          
+
           try {
             if (releaseExists) {
               await github.rest.repos.deleteRelease({
@@ -161,7 +159,7 @@ jobs:
                 release_id: parseInt(existingReleaseId)
               });
             }
-            
+
             const release = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -171,44 +169,47 @@ jobs:
               draft: false,
               prerelease: versionTag.includes('beta') || versionTag.includes('prerelease')
             });
-            
+
             core.setOutput('release_id', release.data.id);
             core.setOutput('upload_url', release.data.upload_url);
-            
+
           } catch (error) {
             core.setFailed(`Failed to create release: ${error.message}`);
           }
-        
-    - name: Upload release asset
+
+    - name: Upload release assets (both versions)
       uses: actions/github-script@v7
       env:
         RELEASE_ID: ${{ steps.create_release.outputs.release_id }}
       with:
         script: |
           const fs = require('fs');
+          const path = require('path');
           const releaseId = parseInt(process.env.RELEASE_ID);
-          const files = fs.readdirSync('.');
-          const zipFile = files.find(f => f.startsWith('Iridium_') && f.endsWith('.zip'));
-          
-          if (!zipFile) {
-            core.setFailed('No zip file found to upload');
+
+          const zipFiles = fs.readdirSync('.').filter(f => f.startsWith('Iridium_') && f.endsWith('.zip'));
+
+          if (zipFiles.length === 0) {
+            core.setFailed('No zip files found to upload');
             return;
           }
-          
-          const fileContent = fs.readFileSync(zipFile);
-          
-          try {
-            await github.rest.repos.uploadReleaseAsset({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              release_id: releaseId,
-              name: zipFile,
-              data: fileContent,
-              headers: {
-                'content-type': 'application/zip',
-                'content-length': fileContent.length
-              }
-            });
-          } catch (error) {
-            core.setFailed(`Failed to upload asset: ${error.message}`);
+
+          for (const zipFile of zipFiles) {
+            const fileContent = fs.readFileSync(zipFile);
+            try {
+              await github.rest.repos.uploadReleaseAsset({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: releaseId,
+                name: zipFile,
+                data: fileContent,
+                headers: {
+                  'content-type': 'application/zip',
+                  'content-length': fileContent.length
+                }
+              });
+              console.log(`Uploaded: ${zipFile}`);
+            } catch (error) {
+              core.setFailed(`Failed to upload ${zipFile}: ${error.message}`);
+            }
           }

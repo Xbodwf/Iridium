@@ -7,23 +7,23 @@ function getVersionInfo() {
         const infoPath = path.join(__dirname, '..', 'Info.json');
         const infoContent = fs.readFileSync(infoPath, 'utf8');
         const info = JSON.parse(infoContent);
-        
+
         const baseVersion = info.Version || '1.0.0';
         const displayName = info.DisplayName || 'Iridium';
-        
+
         const vmPath = path.join(__dirname, '..', 'VersionManager.cs');
         const vmContent = fs.readFileSync(vmPath, 'utf8');
-        
+
         const typeMatch = vmContent.match(/public\s+static\s+VersionType\s+Type\s*=>\s*VersionType\.(\w+)\s*;/);
         const minorMatch = vmContent.match(/public\s+const\s+int\s+MinorVersion\s*=\s*(\d+)\s*;/);
-        
+
         const vtype = typeMatch ? typeMatch[1].toLowerCase() : 'release';
         const minor = minorMatch ? minorMatch[1] : '0';
-        
+
         let versionTag;
         let releaseName;
         let tagName;
-        
+
         if (vtype === 'release') {
             versionTag = baseVersion;
             releaseName = `${displayName} ${baseVersion}`;
@@ -33,13 +33,13 @@ function getVersionInfo() {
             releaseName = `${displayName} ${baseVersion} ${vtype}${minor}`;
             tagName = `v${baseVersion}-${vtype}${minor}`;
         }
-        
+
         return {
             VERSION_TAG: versionTag,
             RELEASE_NAME: releaseName,
             TAG_NAME: tagName
         };
-        
+
     } catch (error) {
         console.error('Error reading version info:', error.message);
         return {

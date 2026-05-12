@@ -24,10 +24,14 @@ minor_match = re.search(r'public\s+const\s+int\s+MinorVersion\s*=\s*(\d+)\s*;', 
 vtype = type_match.group(1).lower() if type_match else 'release'
 minor = minor_match.group(1) if minor_match else '0'
 
+bi = (root / 'BuildInfo.cs').read_text(encoding='utf-8')
+adofai_match = re.search(r'AdofaiVersion\s*=\s*"([^"]+)"', bi)
+adofai_ver = adofai_match.group(1) if adofai_match else 'unknown'
+
 if vtype == 'release':
-    print(base_version)
+    print(f"{base_version}+adofai{adofai_ver}")
 else:
-    print(f"{base_version}_{vtype}{minor}")
+    print(f"{base_version}_{vtype}{minor}+adofai{adofai_ver}")
 PY
 )"
 
