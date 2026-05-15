@@ -2,16 +2,22 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-function getVersionInfo() {
+/**
+ * @param {string} [projectDir] - Project directory relative to repo root, e.g. "main" or "frontline".
+ *                                 If omitted, defaults to "main".
+ */
+function getVersionInfo(projectDir) {
     try {
-        const infoPath = path.join(__dirname, '..', 'Info.json');
+        projectDir = projectDir || 'main';
+
+        const infoPath = path.join(__dirname, '..', projectDir, 'Info.json');
         const infoContent = fs.readFileSync(infoPath, 'utf8');
         const info = JSON.parse(infoContent);
 
         const baseVersion = info.Version || '1.0.0';
         const displayName = info.DisplayName || 'Iridium';
 
-        const vmPath = path.join(__dirname, '..', 'VersionManager.cs');
+        const vmPath = path.join(__dirname, '..', projectDir, 'VersionManager.cs');
         const vmContent = fs.readFileSync(vmPath, 'utf8');
 
         const typeMatch = vmContent.match(/public\s+static\s+VersionType\s+Type\s*=>\s*VersionType\.(\w+)\s*;/);
@@ -55,7 +61,6 @@ function getVersionInfo() {
  */
 function getLastReleaseTag() {
     try {
-        // 获取所有 tag，按版本排序
         const tags = execSync('git tag --sort=-version:refname', { encoding: 'utf8' }).trim();
         if (!tags) return null;
         
@@ -75,10 +80,8 @@ function getCommitLogSinceLastRelease() {
         let logCommand;
         
         if (lastTag) {
-            // 获取从上一个 tag 到 HEAD 的所有 commit
             logCommand = `git log ${lastTag}..HEAD --oneline`;
         } else {
-            // 如果没有上一个 tag，获取所有 commit
             logCommand = 'git log --oneline';
         }
         
@@ -130,7 +133,6 @@ function getChangelog() {
         }
         
         const content = fs.readFileSync(changelogPath, 'utf8');
-        // 移除注释行
         const lines = content.split('\n');
         const cleanedLines = lines.filter(line => !line.trim().startsWith('<!--') && !line.trim().startsWith('-->'));
         const cleanedContent = cleanedLines.join('\n').trim();
@@ -169,13 +171,9 @@ function hasChangelogChanged() {
     const current = getChangelog();
     const backup = getChangelogBackup();
     
-    // 如果没有 CHANGELOG，认为没有变化
     if (!current) return false;
-    
-    // 如果没有 backup，认为有变化
     if (!backup) return true;
     
-    // 比较内容（忽略空白差异）
     return current.trim() !== backup.trim();
 }
 
@@ -189,7 +187,6 @@ function generateReleaseBody(versionTag, commitSha, options = {}) {
     let changelogSection = '';
     let commitSection = '';
     
-    // 检查并添加 CHANGELOG
     if (includeChangelog && hasChangelogChanged()) {
         const changelog = getChangelog();
         if (changelog) {
@@ -201,70 +198,39 @@ ${changelog}
         }
     }
     
-    // 添加 commit 历史
     if (includeCommits) {
         const commits = getCommitLogSinceLastRelease();
-        if (commits && commits.length > 0) {
-            const commitList = commits.map(c => `- \`${c.hash}\` ${c.message}`).join('\n');
-            const lastTag = getLastReleaseTag();
-            const commitRange = lastTag ? `(${lastTag}...HEAD)` : '(all commits)';
-            
-            commitSection = `#### 提交历史 / Commits ${commitRange}
+        if (commits.length > 0) {
+            commitSection = `#### 提交记录 / Commits
 
-${commitList}`;
+| Hash | Message |
+|------|---------|
+${commits.map(c => `| \`${c.hash}\` | ${c.message} |`).join('\n')}
+
+---`;
         }
     }
     
-    const body = `## Iridium Mod Release
+    const body = `## ${versionTag}
+
+**构建日期 / Build Date**: ${buildDate}
+**提交 / Commit**: \`${commitSha}\`
 
 ${changelogSection}
-
-### 中文版本说明
-
-**版本:** ${versionTag}
-**提交:** ${commitSha}
-**构建日期:** ${buildDate}
-
 ${commitSection}
-
-#### 安装方法
-
-### English Release Notes
-
-**Version:** ${versionTag}
-**Commit:** ${commitSha}
-**Build Date:** ${buildDate}
-
-${commitSection}
-
-#### Installation
-
-1. Download the attached zip file
-2. Extract to your A Dance of Fire and Ice Mods folder
-3. Launch the game and enjoy!
-
----
-
-This release was automatically built by GitHub Actions.
-此版本由 GitHub Actions 自动构建。`;
+> 💡 包含两个版本：\`Iridium_*+adofai2.9.8.zip\` (v2.9.8) 和 \`Iridium_*+adofai2.10.0.zip\` (v2.10.0)
+`.trim();
     
     return body;
 }
 
-// 如果是直接执行，输出版本信息
-if (require.main === module) {
-    const versionInfo = getVersionInfo();
-    console.log(`VERSION_TAG=${versionInfo.VERSION_TAG}`);
-    console.log(`RELEASE_NAME=${versionInfo.RELEASE_NAME}`);
-    console.log(`TAG_NAME=${versionInfo.TAG_NAME}`);
-}
-
-module.exports = { 
-    getVersionInfo, 
-    getCommitLog, 
+module.exports = {
+    getVersionInfo,
+    getLastReleaseTag,
     getCommitLogSinceLastRelease,
+    getCommitLog,
     getChangelog,
     getChangelogBackup,
     hasChangelogChanged,
-    generateReleaseBody 
+    generateReleaseBody
 };

@@ -14,7 +14,11 @@ jobs:
   build:
     strategy:
       matrix:
-        game-version: [v2.10.0, v2.9.8]
+        include:
+          - game-version: v2.9.8
+            project-dir: main
+          - game-version: v2.10.0
+            project-dir: frontline
     runs-on: ubuntu-latest
 
     steps:
@@ -34,13 +38,13 @@ jobs:
         node-version: '18'
 
     - name: Build project (${{ matrix.game-version }})
-      run: dotnet build --configuration Release -p:GameVersion=${{ matrix.game-version }}
+      run: dotnet build ${{ matrix.project-dir }}/Iridium.csproj --configuration Release
 
     - name: Get version
       id: get_version
       shell: bash
       run: |
-        output=$(node scripts/get-version.js ${{ matrix.game-version }})
+        output=$(node scripts/get-version.js ${{ matrix.project-dir }} ${{ matrix.game-version }})
         while IFS= read -r line; do
           if [[ $line =~ ^VERSION_TAG=(.*)$ ]]; then
             version="${BASH_REMATCH[1]}"
@@ -53,9 +57,9 @@ jobs:
       run: |
         version="${{ steps.get_version.outputs.VERSION_TAG }}"
         zipName="Iridium_${version}.zip"
-        cd out
-        zip -r "../${zipName}" .
-        cd ..
+        cd out/${{ matrix.project-dir }}
+        zip -r "../../${zipName}" .
+        cd ../..
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
@@ -92,7 +96,7 @@ jobs:
       id: version_info
       shell: bash
       run: |
-        output=$(node scripts/get-version.js)
+        output=$(node scripts/get-version.js main)
         while IFS= read -r line; do
           if [[ $line =~ ^(VERSION_TAG|RELEASE_NAME|TAG_NAME|BASE_TAG)=(.*)$ ]]; then
             key="${BASH_REMATCH[1]}"
