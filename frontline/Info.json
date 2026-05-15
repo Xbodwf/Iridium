@@ -4,6 +4,7 @@
   "Author": "Xbodwf",
   "Version": "1.2.0",
   "Requirements": [],
+  "ManagerVersion": "0.32.5.0",
   "AssemblyName": "Iridium.dll",
   "EntryMethod": "Iridium.Main.Load",
   "HomePage": "https://github.com/adofaiex",
