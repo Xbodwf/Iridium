@@ -4,7 +4,6 @@ using UnityEngine;
 using Iridium.UI;
 using Iridium.Config;
 using Iridium.Patches;
-using System.IO;
 using System.Linq;
 using static Iridium.UI.IridiumLayout;
 
@@ -45,9 +44,17 @@ namespace Iridium
         private int _compatFlashMode = -1;
         private int _compatCamRelMode = -1;
 
+        private string[] _cachedTabDisplayNames = System.Array.Empty<string>();
+        private string _cachedLanguage = "";
+
         private string[] GetTabDisplayNames()
         {
-            return TabNames.Select(n => Localization.Get(n)).ToArray();
+            if (_cachedLanguage != language || _cachedTabDisplayNames.Length == 0)
+            {
+                _cachedTabDisplayNames = TabNames.Select(n => Localization.Get(n)).ToArray();
+                _cachedLanguage = language;
+            }
+            return _cachedTabDisplayNames;
         }
 
         public void OnGUI(UnityModManager.ModEntry modEntry)

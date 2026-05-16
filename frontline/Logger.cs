@@ -82,6 +82,7 @@ namespace Iridium
         private static readonly ConcurrentQueue<string> _writeBack = new();
         public static void TaskRun()
         {
+            if (_writeQueue.IsEmpty) return;
             if (_task != null && !_task.Wait(1000))
                 throw new Exception("thread can't stop");
             _task = Task.Run(ThreadTask);
@@ -442,10 +443,17 @@ namespace Iridium
             return $"{COLOR_TYPE_NAME}{typeName}{COLOR_RESET} {COLOR_BRACKET}{{{COLOR_RESET}\n{nextIndent}{string.Join($",\n{nextIndent}", propStrings)}\n{indent}{COLOR_BRACKET}}}{COLOR_RESET}";
         }
 
+        private static readonly string[] _indentCache = new string[MAX_DEPTH + 2];
+
         private static string GetIndent(int depth)
         {
-            // GC: 我草你妈
-            // Array Temp: 孩子们我失业了
+            if (depth < _indentCache.Length)
+            {
+                ref string cached = ref _indentCache[depth];
+                if (cached == null)
+                    cached = new string(' ', depth * 4);
+                return cached;
+            }
             return new string(' ', depth * 4);
         }
 

@@ -1,0 +1,85 @@
+name: Bug Report
+description: 报告 Iridium 的崩溃、异常或功能故障
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 感谢反馈！
+        请尽可能详细地填写以下信息，这能帮助我更快定位问题。
+
+  - type: dropdown
+    id: version
+    attributes:
+      label: Iridium 版本
+      description: 你使用的是哪个版本的 Iridium？（可在 Mods/Iridium/Info.json 中查看）
+      options:
+        - Iridium v2.10.0-beta6 (Frontline)
+        - Iridium v2.9.8-beta6 (Main)
+        - Iridium v2.10.0-beta5 (Frontline)
+        - Iridium v2.9.8-beta5 (Main)
+        - 其他（请在下方注明）
+    validations:
+      required: true
+
+  - type: input
+    id: game_version
+    attributes:
+      label: ADOFAI 游戏版本
+      description: 游戏版本号（例如 2.10.0）
+      placeholder: 2.10.0
+    validations:
+      required: true
+
+  - type: input
+    id: umm_version
+    attributes:
+      label: UnityModManager 版本
+      description: 你使用的 UMM 版本号
+      placeholder: 0.32.5.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      description: 发生了什么？预期应该是什么？
+      placeholder: |
+        例如：打开设置页面后游戏崩溃，预期是正常显示设置页面。
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 复现步骤
+      description: 如何复现这个问题？
+      placeholder: |
+        1. 打开游戏
+        2. 点击设置
+        3. 切换到 Iridium 选项卡
+        4. 崩溃
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志 / 错误信息
+      description: 粘贴 Unity 控制台输出、Player.log 或错误弹窗内容
+      placeholder: 如果有错误日志，请粘贴在这里
+      render: shell
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: 确认
+      options:
+        - label: 我使用的是适用于我游戏版本的正确 Iridium 构建
+          required: true
+        - label: 我已检查是否有其他 Mod 导致冲突（尝试仅启用 Iridium 复现）
+          required: false
+        - label: 我没有修改过 Iridium 的源代码
+          required: false

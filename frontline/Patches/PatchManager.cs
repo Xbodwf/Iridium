@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using Iridium.Config;
@@ -67,73 +66,46 @@ namespace Iridium.Patches
             }
         }
 
+        /// <summary>
+        /// 注册一个包含 HarmonyPatch 嵌套类型的补丁类中的所有嵌套补丁
+        /// </summary>
+        private static void RegisterNestedPatches(Type parentType, Func<bool> condition)
+        {
+            foreach (var type in parentType.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
+            {
+                if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
+                    _definitions.Add(new PatchDef(type, condition));
+            }
+        }
+
         private static void RegisterPatches()
         {
             _definitions.Clear();
 
             // --- Optimizer ---
             var optCond = () => Main.Settings.optimizer.enableOptimizer;
-            // Register all nested patch classes in OptimizerPatches
-            foreach (var type in typeof(OptimizerPatches).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
-            {
-                // Only register types that have HarmonyPatch attribute
-                if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
-                {
-                    _definitions.Add(new PatchDef(type, optCond));
-                }
-            }
+            RegisterNestedPatches(typeof(OptimizerPatches), optCond);
             _definitions.Add(new PatchDef(typeof(TrackOptimizationPatches), optCond));
 
             // --- Ffx Optimization Patches ---
-            foreach (var type in typeof(FfxOptimizationPatches).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
-            {
-                if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
-                {
-                    _definitions.Add(new PatchDef(type, optCond));
-                }
-            }
+            RegisterNestedPatches(typeof(FfxOptimizationPatches), optCond);
 
             // --- Scene Optimization Patches ---
-            foreach (var type in typeof(SceneOptimizationPatches).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
-            {
-                if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
-                {
-                    _definitions.Add(new PatchDef(type, optCond));
-                }
-            }
+            RegisterNestedPatches(typeof(SceneOptimizationPatches), optCond);
 
             // --- Loading Optimization Patches ---
-            foreach (var type in typeof(LoadingOptimizationPatches).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
-            {
-                if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
-                {
-                    _definitions.Add(new PatchDef(type, optCond));
-                }
-            }
+            RegisterNestedPatches(typeof(LoadingOptimizationPatches), optCond);
 
             // --- DOTween Optimization Patches ---
             // 注意：DOTween优化现在不使用任何HarmonyPatch，只使用运行时配置
-            // 所以不需要注册任何补丁
 
             // --- Extreme Optimization Patches ---
-            foreach (var type in typeof(ExtremeOptimizationPatches).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
-            {
-                if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
-                {
-                    _definitions.Add(new PatchDef(type, () => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.enableExtremeOptimization));
-                }
-            }
+            RegisterNestedPatches(typeof(ExtremeOptimizationPatches),
+                () => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.enableExtremeOptimization);
 
             // --- Tween Safety Patches ---
-            // 解决 DOTween.defaultRecyclable=true 时，ADOFAI 中 Tween 引用过期导致的动画异常
             var tweenSafetyCond = () => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.dotweenDefaultRecyclable;
-            foreach (var type in typeof(TweenSafetyPatches).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
-            {
-                if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
-                {
-                    _definitions.Add(new PatchDef(type, tweenSafetyCond));
-                }
-            }
+            RegisterNestedPatches(typeof(TweenSafetyPatches), tweenSafetyCond);
 
             // --- UI / Misc ---
             _definitions.Add(new PatchDef(typeof(MiscPatches.RemoveNewsPatch), () => Main.Settings.ui.removeNews));

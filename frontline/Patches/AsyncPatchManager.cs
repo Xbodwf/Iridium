@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 
 namespace Iridium.Patches
@@ -17,7 +18,8 @@ namespace Iridium.Patches
         private static readonly AutoResetEvent _taskEvent = new(false);
         private static volatile bool _isRunning = false;
         private static volatile bool _isProcessing = false;
-        private static DateTime _lastUpdateTime = DateTime.MinValue;
+        private static readonly Stopwatch _debounceTimer = Stopwatch.StartNew();
+        private static long _lastUpdateTimeMs = 0;
         private const int DEBOUNCE_MS = 100; // 防抖延迟100毫秒
 
         /// <summary>
@@ -71,7 +73,7 @@ namespace Iridium.Patches
             lock (_queueLock)
             {
                 _pendingPatchTypes.Add(patchType);
-                _lastUpdateTime = DateTime.Now;
+                _lastUpdateTimeMs = _debounceTimer.ElapsedMilliseconds;
             }
             _taskEvent.Set();
         }
@@ -84,7 +86,7 @@ namespace Iridium.Patches
             lock (_queueLock)
             {
                 _pendingOptimizerUpdate = true;
-                _lastUpdateTime = DateTime.Now;
+                _lastUpdateTimeMs = _debounceTimer.ElapsedMilliseconds;
             }
             _taskEvent.Set();
         }
@@ -97,7 +99,7 @@ namespace Iridium.Patches
             lock (_queueLock)
             {
                 _pendingAllUpdate = true;
-                _lastUpdateTime = DateTime.Now;
+                _lastUpdateTimeMs = _debounceTimer.ElapsedMilliseconds;
             }
             _taskEvent.Set();
         }
@@ -117,7 +119,7 @@ namespace Iridium.Patches
                 bool shouldExecute = false;
                 lock (_queueLock)
                 {
-                    var elapsed = (DateTime.Now - _lastUpdateTime).TotalMilliseconds;
+                    var elapsed = _debounceTimer.ElapsedMilliseconds - _lastUpdateTimeMs;
                     if (elapsed >= DEBOUNCE_MS &&
                         (_pendingAllUpdate || _pendingOptimizerUpdate || _pendingPatchTypes.Count > 0))
                     {

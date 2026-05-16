@@ -3,7 +3,6 @@ using HarmonyLib;
 using UnityEngine;
 using UnityModManagerNet;
 using Iridium.UI;
-using System.Threading.Tasks;
 
 namespace Iridium
 {
@@ -64,7 +63,7 @@ namespace Iridium
         }
 
         private static readonly System.Collections.Concurrent.ConcurrentQueue<System.Action> _actionQueue = new();
-        private static volatile System.Collections.Concurrent.ConcurrentQueue<Object> _destroyImmObj = new();
+        private static System.Collections.Concurrent.ConcurrentQueue<Object> _destroyImmObj = new();
 
         public static void RunOnMainThread(System.Action action)
         {

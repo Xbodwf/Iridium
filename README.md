@@ -5,6 +5,8 @@
 
 An optimized mod for A Dance of Fire and Ice, focusing on performance, visual customization, and compatibility.
 
+[![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](LICENSE)
+
 [Chinese](README_zh-CN.md)
 
 ---
@@ -17,10 +19,14 @@ An optimized mod for A Dance of Fire and Ice, focusing on performance, visual cu
 ### General Deployment
 1. First, go to Releases to download the latest stable release. If you want to experience new features, you can download the latest beta or prerelease.
 
+> [!NOTE]
+> Each release provides multiple versions for different ADOFAI game versions — please choose the one that matches your game version.
+
 2. Ensure that you have UnityModManager installed.
 
 > [!WARNING]
-> For the stability of Iridium, it is recommended to use UMM version 0.27.0.0 or higher.
+> We do not enforce a specific UnityModManager version. However, for ADOFAI versions 2.10.0 and above, using a UnityModManager version lower than **0.32.5.0** can easily cause crashes.
+> Therefore, in Iridium builds targeting ADOFAI **2.10.0+**, we **require UnityModManager 0.32.5.0** to ensure stability and remind users of this requirement.
 
 
 3. Extract the downloaded files to: `Game Directory (same level as A Dance of Fire And Ice_Data)/Mods/Iridium` (Create the folder if it does not exist).

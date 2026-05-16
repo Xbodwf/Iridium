@@ -1,0 +1,46 @@
+name: Question / Support
+description: 关于 Iridium 的安装、使用或兼容性问题
+title: "[Question] "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 提问前请先查阅 README
+        大部分常见问题（安装步骤、版本选择、UMM 要求等）已在 README 中说明。
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: 问题类别
+      options:
+        - 安装 / 部署
+        - 版本选择
+        - 兼容性 / 冲突
+        - 功能使用
+        - 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: 问题内容
+      description: 请详细描述你遇到的问题
+      placeholder: |
+        例如：我按照 README 部署后，游戏中没有出现 Iridium 的选项卡。
+    validations:
+      required: true
+
+  - type: input
+    id: game_version
+    attributes:
+      label: ADOFAI 版本
+      description: 你的游戏版本号
+      placeholder: 2.10.0
+
+  - type: input
+    id: umm_version
+    attributes:
+      label: UnityModManager 版本
+      placeholder: 0.32.5.0

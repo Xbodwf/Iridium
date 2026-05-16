@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using Newtonsoft.Json;
-using UnityEngine;
 
 namespace Iridium
 {
@@ -90,15 +88,23 @@ namespace Iridium
             }
         }
 
+        private static string _lastLanguage = "en";
+        private static Dictionary<string, string>? _currentDict;
+
         public static string Get(string key)
         {
             if (!loaded) Load();
-            
+
             string currentLang = Main.Settings?.language ?? "en";
-            if (languages.TryGetValue(currentLang, out var dict) && dict.TryGetValue(key, out string value))
+
+            if (_currentDict == null || _lastLanguage != currentLang)
             {
-                return value;
+                languages.TryGetValue(currentLang, out _currentDict);
+                _lastLanguage = currentLang;
             }
+
+            if (_currentDict != null && _currentDict.TryGetValue(key, out string value))
+                return value;
 
             // Fallback to 'en' or first available
             if (languages.TryGetValue("en", out var enDict) && enDict.TryGetValue(key, out string enValue))
