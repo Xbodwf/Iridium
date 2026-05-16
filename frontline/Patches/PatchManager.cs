@@ -126,6 +126,7 @@ namespace Iridium.Patches
             var pauseFixCond = () => Main.Settings.compatibility.enableLegacyPauseFix;
             _definitions.Add(new PatchDef(typeof(CompatibilityPatches.LegacyPauseFixPatch_Play), pauseFixCond));
             _definitions.Add(new PatchDef(typeof(CompatibilityPatches.NoFailTooEarlyPatch), () => Main.Settings.compatibility.enableNoFailTooEarly));
+            _definitions.Add(new PatchDef(typeof(CompatibilityPatches.ScaleFilterSpeedWithPitchPatch), () => Main.Settings.compatibility.scaleFilterSpeedWithPitch));
             _definitions.Add(new PatchDef(typeof(JsonPatches.ForceAngleDataPatch), () => Main.Settings.compatibility.forceAngleData));
             _definitions.Add(new PatchDef(typeof(JsonPatches.LegacyBehaviorPatch), () =>
                 Main.Settings.compatibility.legacyFlashMode != LegacyBehaviorMode.Default ||

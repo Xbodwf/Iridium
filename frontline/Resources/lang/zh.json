@@ -43,6 +43,7 @@
   "CompatibilitySettings": "兼容性与修复",
   "EnableLegacyPauseFix": "撤销 2.9.4 对逆时针发卡弯暂停的修复",
   "EnableNoFailTooEarly": "不死模式下死亡装饰物转为紫色判定",
+  "ScaleFilterSpeedWithPitch": "特效动画速度随音高变化",
   "ForceAngleData": "在加载谱面时强制使用 angleData",
   "ModNotInitialized": "Mod 未初始化",
   "TextFileNotFound": "文本文件未找到: {0}",

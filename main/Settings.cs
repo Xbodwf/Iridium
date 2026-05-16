@@ -590,6 +590,10 @@ AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CompatibilityPatches.LegacyPause
                 GUI.changed = false;
                 IridiumPreset.SwitchOption(sizes, ref compatibility.enableNoFailTooEarly, "EnableNoFailTooEarly");
                 if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CompatibilityPatches.NoFailTooEarlyPatch));
+
+                GUI.changed = false;
+                IridiumPreset.SwitchOption(sizes, ref compatibility.scaleFilterSpeedWithPitch, "ScaleFilterSpeedWithPitch");
+                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CompatibilityPatches.ScaleFilterSpeedWithPitchPatch));
             }
             End();
             Separator();

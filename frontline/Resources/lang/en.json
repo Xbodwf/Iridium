@@ -43,6 +43,7 @@
   "CompatibilitySettings": "Compatibility & Fixes",
   "EnableLegacyPauseFix": "Revert 2.9.4 CCW U-Turn Pause Fix",
   "EnableNoFailTooEarly": "Killer Decorations to Purple Judgements in NoFail",
+  "ScaleFilterSpeedWithPitch": "Scale Effect Speed with Song Pitch",
   "ForceAngleData": "Force use of angleData when loading Level",
   "ModNotInitialized": "Mod is not initialized",
   "TextFileNotFound": "Text file not found: {0}",
