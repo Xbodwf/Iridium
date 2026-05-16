@@ -59,60 +59,84 @@ namespace Iridium
 
         public void OnGUI(UnityModManager.ModEntry modEntry)
         {
-            EnsureTexturesAlive();
+            // Record initial stack depth for exception safety
+            int initialStackDepth = IridiumLayout.ContainerStack.Count;
 
-            _defaultLobbyMusicPathCache ??= lobbyMusic.defaultMusicPath;
-            _fastLobbyMusicPathCache ??= lobbyMusic.fastMusicPath;
-
-            Begin(ContainerDirection.Vertical, ContainerStyle.Padding);
+            try
             {
-                Begin(ContainerDirection.Horizontal);
-                {
-                    Space(4);
-                    Selector(ref _currentTabIndex, GetTabDisplayNames(), options: WidthMin);
-                    Fill();
-                    Space(4);
-                    Text($"Iridium {VersionManager.GetFullVersionString()}", TextStyle.Secondary);
-                }
-                End();
+                EnsureTexturesAlive();
 
-                Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
+                _defaultLobbyMusicPathCache ??= lobbyMusic.defaultMusicPath;
+                _fastLobbyMusicPathCache ??= lobbyMusic.fastMusicPath;
+
+                Begin(ContainerDirection.Vertical, ContainerStyle.Padding);
                 {
-                    switch (_currentTabIndex)
+                    Begin(ContainerDirection.Horizontal);
                     {
-                        case 0: DrawOptimizerTab(); break;
-                        case 1: DrawUISettingsTab(); break;
-                        case 2: DrawLevelSelectTab(); break;
-                        case 3: DrawCompatibilityTab(); break;
-                        case 4: DrawHitSoundAndJudgeTextTab(); break;
+                        Space(4);
+                        Selector(ref _currentTabIndex, GetTabDisplayNames(), options: WidthMin);
+                        Fill();
+                        Space(4);
+                        Text($"Iridium {VersionManager.GetFullVersionString()}", TextStyle.Secondary);
                     }
-                }
-                End();
+                    End();
 
-                if (AsyncPatchManager.IsProcessing)
-                {
+                    Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
+                    {
+                        switch (_currentTabIndex)
+                        {
+                            case 0: DrawOptimizerTab(); break;
+                            case 1: DrawUISettingsTab(); break;
+                            case 2: DrawLevelSelectTab(); break;
+                            case 3: DrawCompatibilityTab(); break;
+                            case 4: DrawHitSoundAndJudgeTextTab(); break;
+                        }
+                    }
+                    End();
+
                     Space(2);
-                    Text("⏳ " + Localization.Get("AsyncPatchProcessing"), TextStyle.Secondary, WidthMax);
-                }
-
-                Space(2);
-                Begin(ContainerDirection.Horizontal);
-                {
-                    Fill();
-                    foreach (var lang in Localization.AvailableLanguages)
+                    string asyncStatus = AsyncPatchManager.IsProcessing ? "⏳ " + Localization.Get("AsyncPatchProcessing") : "";
+                    Text(asyncStatus, TextStyle.Secondary, WidthMax);
+                    Space(2);
+                    Begin(ContainerDirection.Horizontal);
                     {
-                        var isCurrent = language == lang;
-                        var displayName = Localization.GetDisplayName(lang);
-                        if (Button(displayName.ToUpper(), isCurrent ? ButtonStyle.Primary : ButtonStyle.Element, Height(28)))
-                            language = lang;
-                        Space(2);
+                        Fill();
+                        foreach (var lang in Localization.AvailableLanguages)
+                        {
+                            var isCurrent = language == lang;
+                            var displayName = Localization.GetDisplayName(lang);
+                            if (Button(displayName.ToUpper(), isCurrent ? ButtonStyle.Primary : ButtonStyle.Element, Height(28)))
+                                language = lang;
+                            Space(2);
+                        }
                     }
+                    End();
                 }
                 End();
-            }
-            End();
 
-            if (GUI.changed) Save(modEntry);
+                if (GUI.changed) Save(modEntry);
+            }
+            catch (Exception ex)
+            {
+                Main.Logger?.Error($"Settings.OnGUI failed: {ex}");
+                throw;
+            }
+            finally
+            {
+                // Ensure all containers are closed if an exception occurred mid-draw
+                while (IridiumLayout.ContainerStack.Count > initialStackDepth)
+                {
+                    try
+                    {
+                        IridiumLayout.End();
+                    }
+                    catch
+                    {
+                        // If End() itself fails, break to avoid infinite loop
+                        break;
+                    }
+                }
+            }
         }
 
         #region Optimizer Tab

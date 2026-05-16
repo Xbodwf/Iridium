@@ -67,7 +67,7 @@ public static class IridiumLayout
         scaleTimes1M => new ResolutionResources(scaleTimes1M)
     );
 
-    private static List<ContainerDirection> ContainerStack { get; } = [ContainerDirection.Vertical];
+    internal static List<ContainerDirection> ContainerStack { get; } = [ContainerDirection.Vertical];
 
     private static List<int> ElementCountStack { get; } = [0];
 
@@ -78,6 +78,9 @@ public static class IridiumLayout
     private static List<bool> ApplyPreMarginVerticalStack { get; } = [false];
 
     private static List<(double?, Sizes)?> SizesStack { get; } = [null];
+
+    // Track the initial container stack depth for exception safety
+    private static int InitialContainerStackDepth { get; set; } = 1; // Start with 1 for the root
 
     private static List<(double, double)?> AlignmentStack { get; } = [null];
 
@@ -266,31 +269,39 @@ public static class IridiumLayout
     }
 
     public static void End()
-        {
-            var direction = ContainerStack[^1];
-            if (IsBackgroundStack[^1]) IsBackground1 = !IsBackground1;
+    {
+        var direction = ContainerStack[^1];
+        if (IsBackgroundStack[^1]) IsBackground1 = !IsBackground1;
 
-            LastMargin = 0;
+        LastMargin = 0;
+
+        if (direction == ContainerDirection.Horizontal)
+        {
+            GUILayout.EndHorizontal();
+            UpdateMaxSize();
+            // Remove current container entries after UpdateMaxSize
             ContainerStack.RemoveAt(ContainerStack.Count - 1);
             ElementCountStack.RemoveAt(ElementCountStack.Count - 1);
             ApplyPreMarginHorizontalStack.RemoveAt(ApplyPreMarginHorizontalStack.Count - 1);
             ApplyPreMarginVerticalStack.RemoveAt(ApplyPreMarginVerticalStack.Count - 1);
             IsBackgroundStack.RemoveAt(IsBackgroundStack.Count - 1);
             SizesStack.RemoveAt(SizesStack.Count - 1);
-
-            if (direction == ContainerDirection.Horizontal)
-            {
-                GUILayout.EndHorizontal();
-                UpdateMaxSize();
-                ApplyPreMarginHorizontalStack[^1] = true;
-            }
-            else if (direction == ContainerDirection.Vertical)
-            {
-                GUILayout.EndVertical();
-                UpdateMaxSize();
-                ApplyPreMarginVerticalStack[^1] = true;
-            }
+            ApplyPreMarginHorizontalStack[^1] = true;
         }
+        else if (direction == ContainerDirection.Vertical)
+        {
+            GUILayout.EndVertical();
+            UpdateMaxSize();
+            // Remove current container entries after UpdateMaxSize
+            ContainerStack.RemoveAt(ContainerStack.Count - 1);
+            ElementCountStack.RemoveAt(ElementCountStack.Count - 1);
+            ApplyPreMarginHorizontalStack.RemoveAt(ApplyPreMarginHorizontalStack.Count - 1);
+            ApplyPreMarginVerticalStack.RemoveAt(ApplyPreMarginVerticalStack.Count - 1);
+            IsBackgroundStack.RemoveAt(IsBackgroundStack.Count - 1);
+            SizesStack.RemoveAt(SizesStack.Count - 1);
+            ApplyPreMarginVerticalStack[^1] = true;
+        }
+    }
 
     public static void PushAlign(double ratio = 0, double offset = 0)
     {
@@ -449,7 +460,11 @@ public static class IridiumLayout
     )
     {
         var result = Switch(on, options);
-        if (result is not null) on = result.Value;
+        if (result is not null)
+        {
+            on = result.Value;
+            GUI.changed = true;
+        }
         return result;
     }
 
@@ -496,7 +511,11 @@ public static class IridiumLayout
     )
     {
         var result = Selector(selected, selections, style, styleSelected, options);
-        if (result is not null) selected = result.Value;
+        if (result is not null)
+        {
+            selected = result.Value;
+            GUI.changed = true;
+        }
         return result;
     }
 
@@ -509,7 +528,11 @@ public static class IridiumLayout
     )
     {
         var result = Selector(selected, selections, style, styleSelected, options);
-        if (result is not null) selected = result;
+        if (result is not null)
+        {
+            selected = result;
+            GUI.changed = true;
+        }
         return result;
     }
 
