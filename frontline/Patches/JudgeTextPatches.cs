@@ -65,29 +65,46 @@ namespace Iridium.Patches
         [HarmonyPatch(typeof(scrHitTextMesh), "Init")]
         public static class HitTextMeshInitPatch
         {
-            public static void Postfix(scrHitTextMesh __instance, HitMargin hitMargin, TextMesh ___text)
+            public static void Postfix(scrHitTextMesh __instance, HitMargin hitMargin, TextMeshPro ___text)
             {
                 if (!Settings.enableJudgeTextCustomization) return;
-                if (Settings.showAsOffset) return; // Offset mode handled by Show patch
+                if (Settings.showAsOffset) return;
 
                 ___text.text = Settings.GetTextForHitMargin((int)hitMargin);
             }
         }
 
+        // Static field to pass missAngle from ShowHitText to Show
+        private static float _pendingMissAngle = 0f;
+
         /// <summary>
-        /// Patch for scrHitTextMesh.Show - Handles offset mode display
-        /// The 'angle' parameter is the angular offset in radians (targetExitAngle - actualAngle)
+        /// Patch for scrHitTextManager.ShowHitText - Captures missAngle before Show is called
+        /// </summary>
+        [HarmonyPatch(typeof(scrHitTextManager), "ShowHitText")]
+        public static class HitTextManagerShowPatch
+        {
+            public static void Prefix(float missAngle)
+            {
+                _pendingMissAngle = missAngle;
+            }
+        }
+
+        /// <summary>
+        /// Patch for scrHitTextMesh.Show - Modifies text before display animations start
+        /// Uses _pendingMissAngle captured from ShowHitText to calculate timing offset.
+        /// This runs as Prefix so the text is already modified when Show makes it visible,
+        /// preventing the official judgment text from flashing briefly.
         /// </summary>
         [HarmonyPatch(typeof(scrHitTextMesh), "Show")]
         public static class HitTextMeshShowPatch
         {
-            public static void Prefix(scrHitTextMesh __instance, float angle, TextMesh ___text)
+            public static void Prefix(scrHitTextMesh __instance, TextMeshPro ___text)
             {
                 if (!Settings.enableJudgeTextCustomization || !Settings.showAsOffset) return;
 
                 if (___text != null)
                 {
-                    double timing = CalculateTimingFromAngle(angle);
+                    double timing = CalculateTimingFromAngle(_pendingMissAngle);
                     ___text.text = GetOffsetText(timing);
                 }
             }

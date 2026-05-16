@@ -213,6 +213,9 @@
 		<Reference Include="UnityEngine.TextRenderingModule">
 			<HintPath>..\lib\v2.9.8\UnityEngine.TextRenderingModule.dll</HintPath>
 		</Reference>
+		<Reference Include="Unity.TextMeshPro">
+			<HintPath>..\lib\v2.10.0\Unity.TextMeshPro.dll</HintPath>
+		</Reference>
 		<Reference Include="UnityEngine.TilemapModule">
 			<HintPath>..\lib\v2.9.8\UnityEngine.TilemapModule.dll</HintPath>
 		</Reference>

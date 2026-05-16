@@ -141,7 +141,7 @@ namespace Iridium.Patches
 
             public static void Postfix(ref Texture2D? __result)
             {
-                if (__result == null || GCS.internalLevelName != null) return;
+                if (__result == null) return;
                 if (__result.width <= 32 || __result.height <= 32) return;
                 // if (!Main.IsMainThread) return; // Allow background thread optimization
 
@@ -271,6 +271,7 @@ namespace Iridium.Patches
                     {
                         long newSize = Profiler.GetRuntimeMemorySizeLong(__result);
                         savedVRAM_MB += (oldSize - newSize) / 1048576f;
+                        Main.Logger?.Log($"[DEBUG] TextureOptimizationPatch: {__result.name} oldSize={oldSize}, newSize={newSize}, savedVRAM_MB={savedVRAM_MB}");
                     }
                     catch { }
                 }
@@ -283,7 +284,11 @@ namespace Iridium.Patches
             [HarmonyPatch("OnDestroy")]
             [HarmonyPatch("LoadAndPlayLevel")]
             [HarmonyPrefix]
-            public static void FullReset() => ResetDecorOptimization(true);
+            public static void FullReset()
+            {
+                Main.Logger?.Log($"[DEBUG] OptimizationResetPatches.FullReset called, savedVRAM_MB={savedVRAM_MB}");
+                ResetDecorOptimization(true);
+            }
 
             [HarmonyPatch("LoadLevel"), HarmonyPrefix]
             public static void SoftReset() => ResetDecorOptimization(false);
@@ -300,7 +305,6 @@ namespace Iridium.Patches
         {
             public static void Postfix(scrCustomBackgroundSprite __instance)
             {
-                if (GCS.internalLevelName != null) return;
                 var sprite = __instance.displayedSprite?.sprite;
                 if (sprite?.texture == null) return;
 
@@ -345,7 +349,6 @@ namespace Iridium.Patches
 
             public static void Postfix(scrVisualDecoration __instance)
             {
-                if (GCS.internalLevelName != null) return;
                 var sprite = __instance.spriteRenderer?.sprite;
                 if (sprite?.texture == null) return;
 
@@ -373,7 +376,7 @@ namespace Iridium.Patches
         {
             public static void Postfix(scrDecorationManager __instance)
             {
-                if (GCS.internalLevelName != null || Main.Settings.optimizer.dontResizeCollider) return;
+                if (Main.Settings.optimizer.dontResizeCollider) return;
 
                 var selected = ADOBase.editor?.selectedDecorations;
                 if (selected == null || selected.Count == 0) return;
@@ -423,7 +426,7 @@ namespace Iridium.Patches
         {
             public static void Postfix()
             {
-                if (GCS.internalLevelName != null || Main.Settings.optimizer.dontResizeCollider) return;
+                if (Main.Settings.optimizer.dontResizeCollider) return;
 
                 var selected = ADOBase.editor?.selectedDecorations;
                 if (selected == null || selected.Count == 0) return;
@@ -445,7 +448,7 @@ namespace Iridium.Patches
         {
             public static void Postfix(scrVisualDecoration __instance, ref Vector2 __result)
             {
-                if (GCS.internalLevelName != null || Main.Settings.optimizer.dontResizeCollider) return;
+                if (Main.Settings.optimizer.dontResizeCollider) return;
                 var tex = __instance.spriteRenderer?.sprite?.texture;
                 if (tex != null && TryGetDecorRatio(tex.name, out Vector3 ratio))
                 {
@@ -506,14 +509,8 @@ namespace Iridium.Patches
             {
                 if (Main.Settings.optimizer.fastLoading && scnEditor.instance == null)
                 {
-                    #if ADOFAI_2_10_0
                     if (__instance.damageBox != null && __instance.damageBox.enabled)
                         __instance.damageBox.enabled = false;
-#else
-                    if (__instance.boxCollider != null && __instance.boxCollider.enabled)
-                        __instance.boxCollider.enabled = false;
-#endif
-                    return false;
                 }
                 return true;
             }
@@ -521,7 +518,7 @@ namespace Iridium.Patches
             [HarmonyPostfix]
             public static void Postfix(scrVisualDecoration __instance)
             {
-                if (GCS.internalLevelName != null || !__instance.useHitbox || __instance.spriteRenderer == null) return;
+                if (!__instance.useHitbox || __instance.spriteRenderer == null) return;
                 Vector3 ratio = __instance.spriteRenderer.transform.localScale;
                 if (__instance.hitboxType == Hitbox.Box)
                 {
@@ -923,7 +920,7 @@ namespace Iridium.Patches
             public static bool isFinished = false;
             public static void Postfix(bool reloadDecorations)
             {
-                if (GCS.internalLevelName != null || isFinished || !reloadDecorations || Main.Settings.optimizer.dontShowSavedMemory) return;
+                if (isFinished || !reloadDecorations || Main.Settings.optimizer.dontShowSavedMemory) return;
 
                 if (savedVRAM_MB > 0.1f)
                 {

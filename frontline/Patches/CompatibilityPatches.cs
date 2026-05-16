@@ -58,8 +58,9 @@ namespace Iridium.Patches
 
         /// <summary>
         /// 动态滤镜/特效速度随音高变化
+        /// 只对 SetFilter 和 SetFilterAdvanced 生效
         /// 替换 AdjustDurationForHardbake 中的 customLevel getter，
-        /// 当设置开启时返回 null，使原方法 !null=true 自动执行 duration /= pitch
+        /// 当设置开启且为指定特效类型时返回 null，使原方法 !null=true 自动执行 duration /= pitch
         /// </summary>
         [HarmonyPatch(typeof(ffxPlusBase), "AdjustDurationForHardbake")]
         public static class ScaleFilterSpeedWithPitchPatch
@@ -73,15 +74,24 @@ namespace Iridium.Patches
                 foreach (var code in instructions)
                 {
                     if (code.Calls(getter))
+                    {
+                        yield return new CodeInstruction(OpCodes.Ldarg_0);
                         yield return new CodeInstruction(OpCodes.Call, wrapper);
+                    }
                     else
                         yield return code;
                 }
             }
 
-            private static scnGame GetCustomLevel()
+            private static scnGame GetCustomLevel(ffxPlusBase instance)
             {
-                return Main.Settings.compatibility.scaleFilterSpeedWithPitch ? null : ADOBase.customLevel;
+                if (!Main.Settings.compatibility.scaleFilterSpeedWithPitch)
+                    return ADOBase.customLevel;
+
+                if (instance is ffxSetFilterPlus || instance is ffxSetFilterAdvancedPlus)
+                    return null;
+
+                return ADOBase.customLevel;
             }
         }
     }

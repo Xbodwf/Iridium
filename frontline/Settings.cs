@@ -589,6 +589,7 @@ namespace Iridium
                 GUI.changed = false;
                 IridiumPreset.SwitchOption(sizes, ref compatibility.enableNoFailTooEarly, "EnableNoFailTooEarly");
                 if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CompatibilityPatches.NoFailTooEarlyPatch));
+                Separator();
 
                 GUI.changed = false;
                 IridiumPreset.SwitchOption(sizes, ref compatibility.scaleFilterSpeedWithPitch, "ScaleFilterSpeedWithPitch");
@@ -676,6 +677,7 @@ namespace Iridium
                 if (GUI.changed)
                 {
                     AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.HitTextMeshInitPatch));
+                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.HitTextManagerShowPatch));
                     AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.HitTextMeshShowPatch));
                     AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.ResetTimingOnRewindPatch));
                 }
@@ -686,7 +688,11 @@ namespace Iridium
 
                 GUI.changed = false;
                 IridiumPreset.SwitchOption(sizes, ref judgeText.showAsOffset, "ShowAsOffset");
-                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.HitTextMeshShowPatch));
+                if (GUI.changed)
+                {
+                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.HitTextManagerShowPatch));
+                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.HitTextMeshShowPatch));
+                }
 
                 Separator();
 

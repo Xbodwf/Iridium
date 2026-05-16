@@ -138,7 +138,9 @@ namespace Iridium.Patches
             // Judge Text
             // InitPatch: Handles custom text mode
             _definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextMeshInitPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization));
-            // ShowPatch: Handles offset mode
+            // ShowPatch: Captures missAngle from ShowHitText
+            _definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextManagerShowPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization && Main.Settings.judgeText.showAsOffset));
+            // ShowPatch: Modifies text before display
             _definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextMeshShowPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization && Main.Settings.judgeText.showAsOffset));
             // Rewind: Reset
             _definitions.Add(new PatchDef(typeof(JudgeTextPatches.ResetTimingOnRewindPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization));
