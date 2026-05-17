@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Profiling;
@@ -939,7 +940,6 @@ namespace Iridium.Patches
 
                         Dictionary<TweenType, Tween> tweens = dec.eventTweens;
                         bool isVisual = dec is scrVisualDecoration;
-                        bool isParticle = dec is scrParticleDecoration;
                         scrVisualDecoration? visualDec = isVisual ? (scrVisualDecoration)dec : null;
 
                         if ((bool)ADOBase.customLevel && __instance.movementTypeUsed && __instance.movementType != DecPlacementType.LastPosition)
@@ -1201,13 +1201,6 @@ namespace Iridium.Patches
                             dec.SetDepth(__instance.targetDepth);
                         }
 
-                        if (isParticle && __instance.imageFilenameUsed)
-                        {
-                            bool hasImage = !string.IsNullOrEmpty(__instance.targetImageFilename);
-                            var customSprites = scrDecorationManager.instance.imageHolder.customSprites;
-                            ((scrParticleDecoration)dec).SetSprite(hasImage && customSprites.TryGetValue(__instance.targetImageFilename, out var s) ? s : null);
-                        }
-
                         if (isVisual && visualDec != null)
                         {
                             if (__instance.imageFilenameUsed)
@@ -1286,5 +1279,6 @@ namespace Iridium.Patches
                 }
             }
         }
+
     }
 }

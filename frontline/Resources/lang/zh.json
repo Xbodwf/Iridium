@@ -174,5 +174,10 @@
   "FrameSpreadDecorationLoading": "装饰物分帧加载",
   "DecorationsPerFrame": "每帧装饰物数量",
   "FrameSpreadLoadingHint": "将装饰物创建分散到多帧，防止加载大量装饰物谱面时的卡顿",
-  "LoadingDecorationsProgress": "加载装饰物: {0}/{1}"
+  "LoadingDecorationsProgress": "加载装饰物: {0}/{1}",
+  "ParticleOptimizations": "粒子优化",
+  "OptimizeParticle": "启用粒子优化",
+  "OptimizeParticleInactive": "跳过非活跃/屏幕外粒子 (同时启用对象池)",
+  "OptimizeParticleCulling": "暂停屏幕外粒子模拟",
+  "OptimizeParticleLod": "LOD: 跳过远处粒子更新"
 }

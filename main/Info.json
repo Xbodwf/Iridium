@@ -2,7 +2,7 @@
   "Id": "Iridium",
   "DisplayName": "Iridium",
   "Author": "Xbodwf",
-  "Version": "1.2.0",
+  "Version": "1.2.1",
   "Requirements": [],
   "AssemblyName": "Iridium.dll",
   "EntryMethod": "Iridium.Main.Load",

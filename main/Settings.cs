@@ -237,11 +237,29 @@ namespace Iridium
                 IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeFilters, "OptimizeFilters");
                 Separator();
                 IridiumPreset.SwitchOption(sizes, ref optimizer.fastLoading, "FastLoading");
-            }
-            End();
-            Separator();
+			}
+			End();
+			Separator();
 
-            Text(Localization.Get("SceneOptimizations"), TextStyle.Subtitle);
+			Text(Localization.Get("ParticleOptimizations"), TextStyle.Subtitle);
+			Separator();
+			Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
+			{
+				IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeParticle, "OptimizeParticle");
+				if (optimizer.optimizeParticle)
+				{
+					Separator();
+					IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeParticleInactive, "OptimizeParticleInactive");
+					Separator();
+					IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeParticleCulling, "OptimizeParticleCulling");
+					Separator();
+					IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeParticleLod, "OptimizeParticleLod");
+				}
+			}
+			End();
+			Separator();
+
+			Text(Localization.Get("SceneOptimizations"), TextStyle.Subtitle);
             Separator();
             Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
             {

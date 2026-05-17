@@ -174,5 +174,10 @@
   "FrameSpreadDecorationLoading": "Frame-Spread Decoration Loading",
   "DecorationsPerFrame": "Decorations Per Frame",
   "FrameSpreadLoadingHint": "Spreads decoration creation across multiple frames to prevent lag when loading levels with many decorations",
-  "LoadingDecorationsProgress": "Loading decorations: {0}/{1}"
+  "LoadingDecorationsProgress": "Loading decorations: {0}/{1}",
+  "ParticleOptimizations": "Particle Optimizations",
+  "OptimizeParticle": "Enable Particle Optimization",
+  "OptimizeParticleInactive": "Skip Inactive/Off-screen Particles (Also enables Object Pooling)",
+  "OptimizeParticleCulling": "Pause Off-screen Particle Simulation",
+  "OptimizeParticleLod": "LOD: Skip Distant Particle Updates"
 }

@@ -25,6 +25,12 @@ namespace Iridium.Config
         public bool optimizeFloorMesh = false;
         public bool optimizeFfxDecorations = false; // 新增：优化 ffx 装饰物更新
 
+        // Particle Optimization Patches (粒子优化)
+        public bool optimizeParticle = false;             // 主开关
+        public bool optimizeParticleInactive = false;     // 跳过非活跃粒子 + 对象池
+        public bool optimizeParticleCulling = false;      // 离屏暂停模拟
+        public bool optimizeParticleLod = false;          // LOD 跳过
+
         // Scene Optimization Patches
         public bool cacheGameObjectReferences = false;
         public bool optimizeEventProcessing = false;
