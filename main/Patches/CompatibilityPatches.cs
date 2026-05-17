@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Reflection.Emit;
 using ADOFAI;
 using HarmonyLib;
+using UnityEngine;
 
 namespace Iridium.Patches
 {
@@ -79,41 +81,63 @@ namespace Iridium.Patches
         }
 
         /// <summary>
-        /// 动态滤镜/特效速度随音高变化
-        /// 只对 SetFilter 和 SetFilterAdvanced 生效
-        /// 替换 AdjustDurationForHardbake 中的 customLevel getter，
-        /// 当设置开启且为指定特效类型时返回 null，使原方法 !null=true 自动执行 duration /= pitch
+        /// 缩放CameraFilterPack着色器内部动画速度以适应音高变化
+        /// 所有CameraFilterPack组件的OnRenderImage中都有 TimeX += Time.deltaTime 驱动内部动画，
+        /// 该patch将其替换为 TimeX += Time.deltaTime * pitch，
+        /// 使录制降pitch视频后期加速后滤镜着色器动画速度与原始一致
+        /// === 与旧方案的区别 ===
+        /// 旧方案错误地只修正了tween的duration (通过adjustDurationForHardbake)，
+        /// 但滤镜着色器内部的TimeX仍然使用未缩放的Time.deltaTime，
+        /// 导致录制降pitch后着色器动画以原速运行，后期加速后显得更快
+        /// 新方案直接修改着色器的时间推进速度，从根源解决
         /// </summary>
-        [HarmonyPatch(typeof(ffxPlusBase), "AdjustDurationForHardbake")]
+        [HarmonyPatch]
         public static class ScaleFilterSpeedWithPitchPatch
         {
-            [HarmonyTranspiler]
-            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            static IEnumerable<MethodBase> TargetMethods()
             {
-                var getter = AccessTools.PropertyGetter(typeof(ADOBase), "customLevel");
-                var wrapper = AccessTools.Method(typeof(ScaleFilterSpeedWithPitchPatch), nameof(GetCustomLevel));
+                try { Assembly.Load("Assembly-CSharp-firstpass"); }
+                catch { }
 
-                foreach (var code in instructions)
+                foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
                 {
-                    if (code.Calls(getter))
+                    Type[] types;
+                    try { types = asm.GetTypes(); }
+                    catch { continue; }
+
+                    foreach (var type in types)
                     {
-                        yield return new CodeInstruction(OpCodes.Ldarg_0);
-                        yield return new CodeInstruction(OpCodes.Call, wrapper);
+                        if (!type.Name.Contains("CameraFilterPack")) continue;
+                        var method = type.GetMethod("OnRenderImage",
+                            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                        if (method != null) yield return method;
                     }
-                    else
-                        yield return code;
                 }
             }
 
-            private static scnGame GetCustomLevel(ffxPlusBase instance)
+            [HarmonyTranspiler]
+            static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
             {
-                if (!Main.Settings.compatibility.scaleFilterSpeedWithPitch)
-                    return ADOBase.customLevel;
+                var get_deltaTime = AccessTools.PropertyGetter(typeof(Time), "deltaTime");
+                var getMultiplier = AccessTools.Method(typeof(ScaleFilterSpeedWithPitchPatch), nameof(GetPitchMultiplier));
 
-                if (instance is ffxSetFilterPlus || instance is ffxSetFilterAdvancedPlus)
-                    return null;
+                foreach (var code in instructions)
+                {
+                    yield return code;
+                    if (code.Calls(get_deltaTime))
+                    {
+                        yield return new CodeInstruction(OpCodes.Call, getMultiplier);
+                        yield return new CodeInstruction(OpCodes.Mul);
+                    }
+                }
+            }
 
-                return ADOBase.customLevel;
+            static float GetPitchMultiplier()
+            {
+                if (!Main.Settings.compatibility.scaleFilterSpeedWithPitch) return 1f;
+                var cond = scrConductor.instance;
+                if (cond == null || cond.song == null) return 1f;
+                return cond.song.pitch;
             }
         }
     }
