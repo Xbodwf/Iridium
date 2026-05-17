@@ -46,6 +46,10 @@ namespace Iridium.Config
         // Extreme Optimization Patches (极端情况优化)
         public bool enableExtremeOptimization = false; // 启用极端优化（分帧处理）
         public int maxTweensPerFrame = 100; // 每帧最多创建的Tween数量
+
+        // Frame-Spread Loading (分帧加载)
+        public bool frameSpreadDecorationLoading = false; // 启用装饰物分帧加载
+        public int decorationsPerFrame = 50; // 每帧加载的装饰物数量
     }
 
     public class UISettings

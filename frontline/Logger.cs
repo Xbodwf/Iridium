@@ -83,8 +83,8 @@ namespace Iridium
         public static void TaskRun()
         {
             if (_writeQueue.IsEmpty) return;
-            if (_task != null && !_task.Wait(1000))
-                throw new Exception("thread can't stop");
+            if (_task != null && !_task.IsCompleted)
+                return;
             _task = Task.Run(ThreadTask);
             // 不每次都释放_history 减少占用
             int wcount = _writeBack.Count;
