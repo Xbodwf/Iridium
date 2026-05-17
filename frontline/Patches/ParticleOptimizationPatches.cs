@@ -91,7 +91,7 @@ namespace Iridium.Patches
                 var ps = __instance.particleSystem;
                 if (ps == null) return true;
 
-                if (!ps.isPlaying && !__instance.atStart)
+                if (!ps.isPlaying && !__instance.autoPlay)
                     return false;
                 if (!__instance.GetVisible())
                     return false;
@@ -103,7 +103,7 @@ namespace Iridium.Patches
                     state.lastSimSpeed != __instance.simulationSpeed ||
                     state.lastPitch != pitch;
 
-                if (!scaleChanged && !speedChanged && !__instance.atStart)
+                if (!scaleChanged && !speedChanged && !__instance.autoPlay)
                     return false;
 
                 state.initialized = true;
@@ -148,6 +148,14 @@ namespace Iridium.Patches
         [HarmonyPatch(typeof(scrDecorationManager), "CreateDecoration")]
         public static class ParticlePoolOnCreatePatch
         {
+            private static int _oldCount;
+
+            [HarmonyPrefix]
+            public static void Prefix(scrDecorationManager __instance)
+            {
+                _oldCount = __instance.allDecorations.Count;
+            }
+
             [HarmonyPostfix]
             public static void Postfix(scrDecorationManager __instance, LevelEvent levelEvent, int index)
             {
@@ -155,20 +163,18 @@ namespace Iridium.Patches
                 if (levelEvent.eventType != LevelEventType.AddParticle) return;
                 if (_objectPool.Count == 0) return;
 
-                // 最后一项是刚刚 Create 出来的
-                var freshDec = __instance.allDecorations[__instance.allDecorations.Count - 1] as scrParticleDecoration;
+                // 用 index 计算实际插入位置，不依赖 Count-1
+                int pos = (index == -1) ? _oldCount : index + 1;
+                var freshDec = __instance.allDecorations[pos] as scrParticleDecoration;
                 if (freshDec == null) return;
 
                 var pooledGO = _objectPool.Pop();
                 var pooledDec = pooledGO.GetComponent<scrParticleDecoration>();
                 if (pooledDec == null) { _objectPool.Push(pooledGO); return; }
 
-                int idx = __instance.allDecorations.IndexOf(freshDec);
-                if (idx < 0) { _objectPool.Push(pooledGO); return; }
-
                 // 交换：池对象替换新创建的
                 var ev = freshDec.sourceLevelEvent;
-                __instance.allDecorations[idx] = pooledDec;
+                __instance.allDecorations[pos] = pooledDec;
 
                 pooledGO.transform.SetParent(__instance.transform);
                 pooledGO.SetActive(true);

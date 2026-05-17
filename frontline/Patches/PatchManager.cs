@@ -97,6 +97,13 @@ namespace Iridium.Patches
             // --- Scene Optimization Patches ---
             RegisterNestedPatches(typeof(SceneOptimizationPatches), optCond);
 
+            // --- Event Tween Optimization Patches ---
+            var eventTweenCond = () => Main.Settings.optimizer.optimizeEventProcessing;
+            _definitions.Add(new PatchDef(typeof(EventTweenOptimizationPatches.FfxMoveFloorPlusEventTweensPatch), eventTweenCond));
+            _definitions.Add(new PatchDef(typeof(EventTweenOptimizationPatches.FfxMoveDecorationsPlusEventTweensPatch), eventTweenCond));
+            _definitions.Add(new PatchDef(typeof(EventTweenOptimizationPatches.FfxRecolorFloorPlusEventTweensPatch), eventTweenCond));
+            _definitions.Add(new PatchDef(typeof(EventTweenOptimizationPatches.FfxPlusBaseKillCacheInvalidationPatch), eventTweenCond));
+
             // --- Loading Optimization Patches ---
             // 排除 FrameSpreadDecorationLoadingPatch，因为它有独立的子开关条件
             RegisterNestedPatches(typeof(LoadingOptimizationPatches), optCond,

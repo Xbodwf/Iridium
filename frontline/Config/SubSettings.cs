@@ -24,6 +24,7 @@ namespace Iridium.Config
         public bool optimizeMoveDecorations = false;
         public bool optimizeFloorMesh = false;
         public bool optimizeFfxDecorations = false; // 新增：优化 ffx 装饰物更新
+        public bool optimizeDecorationAnimation = false; // 新增：装饰物逐帧动画优化 (RTMaxSize)
 
         // Particle Optimization Patches (粒子优化)
         public bool optimizeParticle = false;             // 主开关
