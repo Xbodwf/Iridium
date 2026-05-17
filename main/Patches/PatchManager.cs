@@ -69,12 +69,16 @@ namespace Iridium.Patches
         /// <summary>
         /// 注册一个包含 HarmonyPatch 嵌套类型的补丁类中的所有嵌套补丁
         /// </summary>
-        private static void RegisterNestedPatches(Type parentType, Func<bool> condition)
+        private static void RegisterNestedPatches(Type parentType, Func<bool> condition, HashSet<Type>? exclude = null)
         {
             foreach (var type in parentType.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
             {
                 if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
+                {
+                    if (exclude != null && exclude.Contains(type))
+                        continue;
                     _definitions.Add(new PatchDef(type, condition));
+                }
             }
         }
 
@@ -94,7 +98,12 @@ namespace Iridium.Patches
             RegisterNestedPatches(typeof(SceneOptimizationPatches), optCond);
 
             // --- Loading Optimization Patches ---
-            RegisterNestedPatches(typeof(LoadingOptimizationPatches), optCond);
+            // 排除 FrameSpreadDecorationLoadingPatch，因为它有独立的子开关条件
+            RegisterNestedPatches(typeof(LoadingOptimizationPatches), optCond,
+                new HashSet<Type> { typeof(LoadingOptimizationPatches.FrameSpreadDecorationLoadingPatch) });
+            // 分帧加载需要额外检查 frameSpreadDecorationLoading 子开关
+            _definitions.Add(new PatchDef(typeof(LoadingOptimizationPatches.FrameSpreadDecorationLoadingPatch),
+                () => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.frameSpreadDecorationLoading));
 
             // --- DOTween Optimization Patches ---
             // 注意：DOTween优化现在不使用任何HarmonyPatch，只使用运行时配置

@@ -74,6 +74,7 @@
   "OptimizeRecolorTrack": "Optimize RecolorTrack Events",
   "SkipEventIfPaused": "Ignore all events when game not started",
   "SkipEventIfPausedWarning": "Enabling this will cause all events to be ignored in editor preview before the level starts playing, including track colors, position tracks, and move tracks (does not affect actual gameplay)",
+  "SkipEventIfPausedWarningDetail": "During level preview, track colors/positions and event icons are in their initial state",
   "OptimizeEventIcons": "Optimize Level Event Icon Generation",
   "OptimizeScnGameUpdate": "Optimize Game's Update logic",
   "OptimizeMoveDecorations": "Optimize MoveDecorations Logic",
@@ -153,8 +154,9 @@
   "PatchManagerSuccessRemove": "Successfully removed {0}",
   "PatchManagerFailedRemove": "Failed to remove {0}: {1}",
   "PatchManagerUnpatchedAll": "Unpatched all",
-  "OptimizeFfxDecorations": "Optimize Ffx Decorations (Reduce Update Frequency)",
-  "DOTweenOptimizations": "DOTween Optimizations",
+  "OptimizeFfxDecorations": "Optimize Ffx Decorations (Experimental, Reduce Update Frequency)",
+  "DOTweenOptimizations": "DOTween Optimizations (Experimental)",
+  "DOTweenOptimizationWarning": "Enabling this may affect effect behavior",
   "EnableDOTweenOptimization": "Enable DOTween Optimization",
   "TweenerCapacity": "Tweener Capacity",
   "SequenceCapacity": "Sequence Capacity",
@@ -168,5 +170,9 @@
   "PatchMode": "Patch Mode",
   "UseILPatch": "Use IL Transpiler (Performance)",
   "UseILPatchHint": "IL Transpiler mode: Direct IL injection, best performance",
-  "UsePrefixPostfixHint": "Prefix/Postfix mode: Standard Harmony patches, best compatibility"
+  "UsePrefixPostfixHint": "Prefix/Postfix mode: Standard Harmony patches, best compatibility",
+  "FrameSpreadDecorationLoading": "Frame-Spread Decoration Loading",
+  "DecorationsPerFrame": "Decorations Per Frame",
+  "FrameSpreadLoadingHint": "Spreads decoration creation across multiple frames to prevent lag when loading levels with many decorations",
+  "LoadingDecorationsProgress": "Loading decorations: {0}/{1}"
 }

@@ -220,6 +220,7 @@ namespace Iridium
                 {
                     Separator();
                     IridiumPreset.IconText(sizes, IconStyle.Warning, "SkipEventIfPausedWarning");
+                    IridiumPreset.IconText(sizes, IconStyle.Information, "SkipEventIfPausedWarningDetail");
                 }
                 Separator();
                 IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeEventIcons, "OptimizeEventIcons");
@@ -229,6 +230,7 @@ namespace Iridium
                 IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeMoveDecorations, "OptimizeMoveDecorations");
                 Separator();
                 IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeFfxDecorations, "OptimizeFfxDecorations");
+                IridiumPreset.IconText(sizes, IconStyle.Warning, "DOTweenOptimizationWarning");
                 Separator();
                 IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeFloorMesh, "OptimizeFloorMesh");
                 Separator();
@@ -263,6 +265,20 @@ namespace Iridium
                 IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeMoveTrackTweens, "OptimizeMoveTrackTweens");
                 Separator();
                 IridiumPreset.SwitchOption(sizes, ref optimizer.batchMoveDecorations, "BatchMoveDecorations");
+                Separator();
+                GUI.changed = false;
+                IridiumPreset.SwitchOption(sizes, ref optimizer.frameSpreadDecorationLoading, "FrameSpreadDecorationLoading");
+                if (GUI.changed) AsyncPatchManager.UpdateOptimizerPatchesAsync();
+                if (optimizer.frameSpreadDecorationLoading)
+                {
+                    Separator();
+                    var decPerFrame = optimizer.decorationsPerFrame;
+                    IridiumPreset.IntOption(sizes, ref decPerFrame, "DecorationsPerFrame", IntFormat(10, 500));
+                    if (decPerFrame != optimizer.decorationsPerFrame)
+                        optimizer.decorationsPerFrame = Mathf.Clamp(decPerFrame, 10, 500);
+                    Separator();
+                    IridiumPreset.IconText(sizes, IconStyle.Information, "FrameSpreadLoadingHint");
+                }
             }
             End();
             Separator();
@@ -305,7 +321,11 @@ namespace Iridium
 
                     GUI.changed = false;
                     IridiumPreset.SwitchOption(sizes, ref optimizer.dotweenDefaultRecyclable, "DOTweenDefaultRecyclable");
-                    if (GUI.changed) DOTweenOptimizationPatches.ApplyRuntimeSettings();
+                    if (GUI.changed)
+                    {
+                        DOTweenOptimizationPatches.ApplyRuntimeSettings();
+                        AsyncPatchManager.UpdatePatchByTypeAsync(typeof(TweenSafetyPatches));
+                    }
                     Separator();
 
                     GUI.changed = false;
@@ -314,6 +334,11 @@ namespace Iridium
                     Separator();
 
                     IridiumPreset.IconText(sizes, IconStyle.Warning, "DOTweenOptimizationRestartRequired");
+                }
+                else
+                {
+                    Separator();
+                    IridiumPreset.IconText(sizes, IconStyle.Warning, "DOTweenOptimizationWarning");
                 }
             }
             End();
@@ -417,7 +442,9 @@ namespace Iridium
                 if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.ForceDifficultyUIPatch));
                 Separator();
 
+                GUI.changed = false;
                 IridiumPreset.SwitchOption(sizes, ref ui.alwaysCountdown, "AlwaysCountdown");
+                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.AlwaysCountdownPatch));
                 Separator();
 
                 GUI.changed = false;

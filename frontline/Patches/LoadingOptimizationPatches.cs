@@ -4,8 +4,39 @@ using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
+using UnityEngine.UI;
 using ADOFAI;
 using DG.Tweening;
+using Iridium.UI;
+
+#region debug-point instrumentation
+public static class DebugLog
+{
+    private static readonly string ENDPOINT = "http://127.0.0.1:28769";
+    public static void Send(string category, string message, object? extra = null)
+        {
+            try
+            {
+                var data = new Dictionary<string, object?>
+                {
+                    ["session"] = "frame-spread-crash",
+                    ["category"] = category,
+                    ["message"] = message,
+                    ["timestamp"] = DateTime.UtcNow.ToString("o"),
+                    ["extra"] = extra
+                };
+                string json = Newtonsoft.Json.JsonConvert.SerializeObject(data);
+                System.Threading.Tasks.Task.Run(() =>
+                {
+                    using var client = new System.Net.WebClient();
+                    client.Headers[System.Net.HttpRequestHeader.ContentType] = "application/json";
+                    try { client.UploadString(new Uri(ENDPOINT), json); } catch { }
+                });
+            }
+            catch { }
+        }
+}
+#endregion
 
 namespace Iridium.Patches
 {
@@ -175,6 +206,277 @@ namespace Iridium.Patches
                 // 已在 OptimizerPatches.MoveDecorationsOptimizationPatch 中优化
                 // 这里记录性能数据
                 Main.Logger?.Log($"[LoadingOptimization] MoveDecoration effect started");
+            }
+        }
+
+        #endregion
+
+        #region Frame-Spread Decoration Loading
+
+        /// <summary>
+        /// 装饰物分帧加载 - 将 UpdateDecorationObjects 中的 CreateDecoration 分散到多帧执行
+        /// 防止几千个装饰物在同一帧 Instantiate 导致卡死
+        /// </summary>
+        [HarmonyPatch(typeof(scnGame), "UpdateDecorationObjects")]
+        public static class FrameSpreadDecorationLoadingPatch
+        {
+            private static readonly Queue<LevelEvent> _pendingDecorations = new();
+            private static readonly Queue<LevelEvent> _pendingMoveDecEvents = new();
+            private static bool _isLoading = false;
+            private static readonly List<GraphicRaycaster> _disabledRaycasters = new();
+
+            public static bool IsLoading => _isLoading;
+
+            [HarmonyPrefix]
+            public static bool Prefix(scnGame __instance, bool reloadDecorations)
+            {
+                DebugLog.Send("prefix-enter", "FrameSpreadDecorationLoading Prefix triggered", new { instance = __instance?.name, reload = reloadDecorations, hasSettings = Main.Settings?.optimizer != null });
+
+                if (!Main.Settings.optimizer.enableOptimizer || !Main.Settings.optimizer.frameSpreadDecorationLoading)
+                {
+                    DebugLog.Send("prefix-skip", "Skipped: optimizer or frameSpread disabled");
+                    return true;
+                }
+
+                if (_isLoading)
+                {
+                    DebugLog.Send("prefix-skip", "Skipped: already loading");
+                    return false;
+                }
+
+                try
+                {
+                    var decorations = __instance.decorations;
+                    if (decorations == null || decorations.Count == 0)
+                    {
+                        DebugLog.Send("prefix-skip", "Skipped: no decorations");
+                        return true;
+                    }
+
+                    int totalActive = 0;
+                    foreach (var dec in decorations)
+                    {
+                        if (dec.active) totalActive++;
+                    }
+
+                    if (totalActive < 100)
+                    {
+                        DebugLog.Send("prefix-skip", $"Skipped: only {totalActive} active decorations");
+                        return true;
+                    }
+
+                    DebugLog.Send("prefix-start", $"Starting frame-spread loading", new { totalActive, totalDecorations = decorations.Count, reload = reloadDecorations, levelPath = __instance.levelPath });
+
+                    _isLoading = true;
+                    _pendingDecorations.Clear();
+                    _pendingMoveDecEvents.Clear();
+                    _disabledRaycasters.Clear();
+
+                    foreach (var dec in decorations)
+                    {
+                        if (dec.active)
+                            _pendingDecorations.Enqueue(dec);
+                    }
+
+                    foreach (var evt in __instance.events)
+                    {
+                        if (evt.eventType == LevelEventType.MoveDecorations)
+                            _pendingMoveDecEvents.Enqueue(evt);
+                    }
+
+                    DebugLog.Send("prefix-queued", $"Queued {_pendingDecorations.Count} decorations, {_pendingMoveDecEvents.Count} moveDec events");
+
+                    BlockUIInput();
+
+                    __instance.StartCoroutine(FrameSpreadLoadCoroutine(__instance, reloadDecorations));
+                    return false;
+                }
+                catch (System.Exception ex)
+                {
+                    DebugLog.Send("prefix-error", $"Exception in Prefix: {ex.Message}", new { stack = ex.StackTrace });
+                    _isLoading = false;
+                    _pendingDecorations.Clear();
+                    _pendingMoveDecEvents.Clear();
+                    RestoreUIInput();
+                    return true;
+                }
+            }
+
+            private static void BlockUIInput()
+            {
+                try
+                {
+                    var canvases = Resources.FindObjectsOfTypeAll<Canvas>();
+                    foreach (var canvas in canvases)
+                    {
+                        var raycaster = canvas.GetComponent<GraphicRaycaster>();
+                        if (raycaster != null && raycaster.enabled)
+                        {
+                            raycaster.enabled = false;
+                            _disabledRaycasters.Add(raycaster);
+                        }
+                    }
+                    Main.Logger?.Log($"[LoadingOptimization] Blocked UI input: disabled {_disabledRaycasters.Count} raycaster(s)");
+                }
+                catch (Exception ex)
+                {
+                    Main.Logger?.Error($"[LoadingOptimization] Failed to block UI input: {ex}");
+                }
+            }
+
+            private static void RestoreUIInput()
+            {
+                try
+                {
+                    foreach (var raycaster in _disabledRaycasters)
+                    {
+                        if (raycaster != null)
+                            raycaster.enabled = true;
+                    }
+                    _disabledRaycasters.Clear();
+                }
+                catch (Exception ex)
+                {
+                    Main.Logger?.Error($"[LoadingOptimization] Failed to restore UI input: {ex}");
+                }
+            }
+
+            private static System.Collections.IEnumerator FrameSpreadLoadCoroutine(scnGame instance, bool reloadDecorations)
+            {
+                int perFrame = Main.Settings.optimizer.decorationsPerFrame;
+                if (perFrame < 1) perFrame = 50;
+
+                DebugLog.Send("coro-start", "Coroutine started", new { perFrame, totalPending = _pendingDecorations.Count, reload = reloadDecorations, instanceAlive = instance != null, decManagerAlive = instance?.decManager != null });
+
+                if (instance == null || instance.decManager == null)
+                {
+                    DebugLog.Send("coro-abort", "instance or decManager is null at coroutine start");
+                    _isLoading = false;
+                    _pendingDecorations.Clear();
+                    _pendingMoveDecEvents.Clear();
+                    RestoreUIInput();
+                    yield break;
+                }
+
+                instance.decManager.ClearDecorations();
+
+                int processed = 0;
+                int total = _pendingDecorations.Count;
+
+                UI.VRAMNotificationUI.ShowPersistent(Localization.Get("LoadingDecorationsProgress", 0, total));
+                Main.Logger?.Log($"[LoadingOptimization] Starting frame-spread loading: {total} decorations");
+
+                while (_pendingDecorations.Count > 0)
+                {
+                    if (instance == null || instance.decManager == null)
+                    {
+                        DebugLog.Send("coro-abort", "scnGame destroyed during loading, aborting");
+                        _isLoading = false;
+                        _pendingDecorations.Clear();
+                        _pendingMoveDecEvents.Clear();
+                        RestoreUIInput();
+                        yield break;
+                    }
+
+                    int batchSize = Mathf.Min(perFrame, _pendingDecorations.Count);
+                    DebugLog.Send("coro-batch", $"Processing batch", new { batchSize, remaining = _pendingDecorations.Count, processed, total });
+
+                    for (int i = 0; i < batchSize && _pendingDecorations.Count > 0; i++)
+                    {
+                        var ev = _pendingDecorations.Dequeue();
+                        try
+                        {
+                            if (reloadDecorations)
+                            {
+                                bool spritesLoaded = false;
+                                instance.decManager.CreateDecoration(ev, out spritesLoaded);
+                            }
+                            else
+                            {
+                                string output;
+                                if (ev.TryGet<string>("decorationImage", out output))
+                                {
+                                    bool isPrefab = output.StartsWith("prefab:", StringComparison.CurrentCultureIgnoreCase);
+                                    if (!string.IsNullOrEmpty(output) && !isPrefab && !ADOBase.IsNotAMikoSkipMandatorySprite(output))
+                                    {
+                                        string filePath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(instance.levelPath), output);
+                                        LoadResult status;
+                                        instance.imgHolder.AddSprite(output, filePath, out status);
+                                        if (ADOBase.editor != null)
+                                            ADOBase.editor.UpdateImageLoadResult(output, status);
+                                    }
+                                }
+                            }
+                        }
+                        catch (System.Exception ex)
+                        {
+                            DebugLog.Send("coro-decor-error", $"Failed to create decoration: {ex.Message}", new { stack = ex.StackTrace });
+                        }
+                        processed++;
+                    }
+
+                    if (_pendingDecorations.Count > 0)
+                    {
+                        DebugLog.Send("coro-yield", $"Yielding after {processed}/{total}", new { remaining = _pendingDecorations.Count });
+                        UI.VRAMNotificationUI.UpdateProgress(Localization.Get("LoadingDecorationsProgress", processed, total));
+                        yield return null;
+                    }
+                }
+
+                DebugLog.Send("coro-movedec-start", $"Processing {_pendingMoveDecEvents.Count} MoveDecorations events");
+
+                while (_pendingMoveDecEvents.Count > 0)
+                {
+                    if (instance == null)
+                    {
+                        DebugLog.Send("coro-abort", "scnGame destroyed during MoveDecorations loading, aborting");
+                        _isLoading = false;
+                        _pendingMoveDecEvents.Clear();
+                        RestoreUIInput();
+                        yield break;
+                    }
+
+                    var evt = _pendingMoveDecEvents.Dequeue();
+                    try
+                    {
+                        string? output2 = null;
+                        if (evt.TryGetAndSet("decorationImage", ref output2, onlyIfEnabled: true) && !output2.IsNullOrEmpty())
+                        {
+                            string filePath2 = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(instance.levelPath), output2!);
+                            LoadResult status2;
+                            instance.imgHolder.AddSprite(output2!, filePath2, out status2);
+                            if (ADOBase.editor != null)
+                                ADOBase.editor.UpdateImageLoadResult(output2!, status2);
+                        }
+                    }
+                    catch (System.Exception ex)
+                    {
+                        DebugLog.Send("coro-movedec-error", $"Failed to load MoveDecorations image: {ex.Message}", new { stack = ex.StackTrace });
+                    }
+                }
+
+                _isLoading = false;
+                RestoreUIInput();
+                DebugLog.Send("coro-done", $"Finished loading {processed} decorations across multiple frames");
+
+                if (reloadDecorations && !Main.Settings.optimizer.dontShowSavedMemory)
+                {
+                    if (OptimizerPatches.savedVRAM_MB > 0.1f)
+                    {
+                        UI.VRAMNotificationUI.UpdateProgress(Localization.Get("SavedMemoryMsg", OptimizerPatches.savedVRAM_MB.ToString("F2")));
+                        Main.Logger?.Log(Localization.Get("SavedMemoryLog", OptimizerPatches.savedVRAM_MB.ToString("F2")));
+                    }
+                    else
+                    {
+                        UI.VRAMNotificationUI.UpdateProgress(Localization.Get("LoadingDecorationsProgress", processed, total));
+                    }
+                    UI.VRAMNotificationUI.Complete();
+                    OptimizerPatches.VRAMNotificationPatch.isFinished = true;
+                }
+                else
+                {
+                    UI.VRAMNotificationUI.Complete();
+                }
             }
         }
 

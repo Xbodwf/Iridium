@@ -74,6 +74,7 @@
   "OptimizeRecolorTrack": "优化 重新设置轨道颜色(实验性)",
   "SkipEventIfPaused": "游戏未开始时忽略所有事件",
   "SkipEventIfPausedWarning": "启用此功能将会导致谱面开始播放前，任何事件在编辑器预览时失效，包括轨道颜色、位置轨道和移动轨道(不影响实际播放)",
+  "SkipEventIfPausedWarningDetail": "谱面预览阶段轨道的颜色/位置及事件图标均处于初始状态",
   "OptimizeEventIcons": "优化关卡事件图标生成",
   "OptimizeScnGameUpdate": "优化 游戏时 每一帧的计算逻辑",
   "OptimizeMoveDecorations": "优化 移动装饰物 逻辑",
@@ -153,8 +154,9 @@
   "PatchManagerSuccessRemove": "成功移除 {0}",
   "PatchManagerFailedRemove": "移除 {0} 失败: {1}",
   "PatchManagerUnpatchedAll": "已移除所有补丁",
-  "OptimizeFfxDecorations": "优化 Ffx 装饰物 (减少更新频率)",
-  "DOTweenOptimizations": "DOTween 优化",
+  "OptimizeFfxDecorations": "优化 Ffx 装饰物 (高实验性, 减少更新频率)",
+  "DOTweenOptimizations": "DOTween 优化 (实验性)",
+  "DOTweenOptimizationWarning": "启用此功能可能影响特效行为",
   "EnableDOTweenOptimization": "启用 DOTween 优化",
   "TweenerCapacity": "Tweener 容量",
   "SequenceCapacity": "Sequence 容量",
@@ -168,5 +170,9 @@
   "PatchMode": "补丁模式",
   "UseILPatch": "使用 IL Transpiler (性能优先)",
   "UseILPatchHint": "IL Transpiler 模式：直接 IL 注入，性能最佳",
-  "UsePrefixPostfixHint": "Prefix/Postfix 模式：标准 Harmony 补丁，兼容性最佳"
+  "UsePrefixPostfixHint": "Prefix/Postfix 模式：标准 Harmony 补丁，兼容性最佳",
+  "FrameSpreadDecorationLoading": "装饰物分帧加载",
+  "DecorationsPerFrame": "每帧装饰物数量",
+  "FrameSpreadLoadingHint": "将装饰物创建分散到多帧，防止加载大量装饰物谱面时的卡顿",
+  "LoadingDecorationsProgress": "加载装饰物: {0}/{1}"
 }
