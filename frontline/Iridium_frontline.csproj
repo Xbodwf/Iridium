@@ -307,7 +307,7 @@
 		<MakeDir Directories="$(OutDir)" />
 		<MakeDir Directories="$(OutDir)Resources" />
 		<ItemGroup>
-			<FilesToCopy Include="$(OutputPath)$(TargetName).dll" />
+			<FilesToCopy Include="$(OutputPath)$(AssemblyName).dll" />
 			<FilesToCopy Include="$(ProjectDir)Info.json" />
 			<ResourceFiles Include="$(ProjectDir)Resources\**\*" Exclude="$(ProjectDir)Resources\**\*\" />
 		</ItemGroup>
@@ -322,7 +322,7 @@
 	<Target Name="DeployAndLaunch" AfterTargets="CopyToOut" Condition="'$(GameExePath)' != '' AND Exists('$(GameExePath)')">
 		<PropertyGroup>
 			<GameDir>$([System.IO.Path]::GetDirectoryName($(GameExePath)))</GameDir>
-			<ModsDir>$(GameDir)\Mods\Iridium\</ModsDir>
+			<ModsDir>$(GameDir)\Mods\$(AssemblyName)\</ModsDir>
 		</PropertyGroup>
 		<MakeDir Directories="$(ModsDir)" />
 		<MakeDir Directories="$(ModsDir)Resources" />

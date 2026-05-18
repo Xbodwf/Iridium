@@ -9,35 +9,6 @@ using ADOFAI;
 using DG.Tweening;
 using Iridium.UI;
 
-#region debug-point instrumentation
-public static class DebugLog
-{
-    private static readonly string ENDPOINT = "http://127.0.0.1:28769";
-    public static void Send(string category, string message, object? extra = null)
-        {
-            try
-            {
-                var data = new Dictionary<string, object?>
-                {
-                    ["session"] = "frame-spread-crash",
-                    ["category"] = category,
-                    ["message"] = message,
-                    ["timestamp"] = DateTime.UtcNow.ToString("o"),
-                    ["extra"] = extra
-                };
-                string json = Newtonsoft.Json.JsonConvert.SerializeObject(data);
-                System.Threading.Tasks.Task.Run(() =>
-                {
-                    using var client = new System.Net.WebClient();
-                    client.Headers[System.Net.HttpRequestHeader.ContentType] = "application/json";
-                    try { client.UploadString(new Uri(ENDPOINT), json); } catch { }
-                });
-            }
-            catch { }
-        }
-}
-#endregion
-
 namespace Iridium.Patches
 {
     /// <summary>
@@ -236,40 +207,20 @@ namespace Iridium.Patches
             [HarmonyPrefix]
             public static bool Prefix(scnGame __instance, bool reloadDecorations)
             {
-                DebugLog.Send("prefix-enter", "FrameSpreadDecorationLoading Prefix triggered", new { instance = __instance?.name, reload = reloadDecorations, hasSettings = Main.Settings?.optimizer != null });
-
                 if (!Main.Settings.optimizer.enableOptimizer || !Main.Settings.optimizer.frameSpreadDecorationLoading)
-                {
-                    DebugLog.Send("prefix-skip", "Skipped: optimizer or frameSpread disabled");
                     return true;
-                }
 
-                if (_isLoading)
-                {
-                    DebugLog.Send("prefix-skip", "Skipped: already loading");
-                    return false;
-                }
+                if (_isLoading) return false;
 
-                if (ADOBase.isOfficialLevel)
-                {
-                    DebugLog.Send("prefix-skip", "Skipped: official level");
-                    return true;
-                }
+                if (ADOBase.isOfficialLevel) return true;
 
-                if (!reloadDecorations)
-                {
-                    DebugLog.Send("prefix-skip", "Skipped: reloadDecorations is false (dead path)");
-                    return true;
-                }
+                if (!reloadDecorations) return true;
 
                 try
                 {
                     var decorations = __instance.decorations;
                     if (decorations == null || decorations.Count == 0)
-                    {
-                        DebugLog.Send("prefix-skip", "Skipped: no decorations");
                         return true;
-                    }
 
                     int totalActive = 0;
                     foreach (var dec in decorations)
@@ -278,12 +229,9 @@ namespace Iridium.Patches
                     }
 
                     if (totalActive < 100)
-                    {
-                        DebugLog.Send("prefix-skip", $"Skipped: only {totalActive} active decorations");
                         return true;
-                    }
 
-                    DebugLog.Send("prefix-start", $"Starting frame-spread loading", new { totalActive, totalDecorations = decorations.Count, levelPath = __instance.levelPath });
+                    Main.Logger?.Log($"[LoadingOptimization] Frame-spread loading {totalActive} decorations ({decorations.Count} total)");
 
                     _isLoading = true;
                     _pendingDecorations.Clear();
@@ -295,8 +243,6 @@ namespace Iridium.Patches
                             _pendingDecorations.Enqueue(dec);
                     }
 
-                    DebugLog.Send("prefix-queued", $"Queued {_pendingDecorations.Count} decorations");
-
                     BlockUIInput();
 
                     __instance.StartCoroutine(FrameSpreadLoadCoroutine(__instance));
@@ -304,7 +250,7 @@ namespace Iridium.Patches
                 }
                 catch (System.Exception ex)
                 {
-                    DebugLog.Send("prefix-error", $"Exception in Prefix: {ex.Message}", new { stack = ex.StackTrace });
+                    Main.Logger?.Error($"[LoadingOptimization] FrameSpreadDecorationLoading failed: {ex}");
                     _isLoading = false;
                     _pendingDecorations.Clear();
                     RestoreUIInput();
@@ -356,11 +302,8 @@ namespace Iridium.Patches
                 int maxPerFrame = Main.Settings.optimizer.decorationsPerFrame;
                 if (maxPerFrame < 1) maxPerFrame = 50;
 
-                DebugLog.Send("coro-start", "Coroutine started", new { maxPerFrame, totalPending = _pendingDecorations.Count, instanceAlive = instance != null, decManagerAlive = instance?.decManager != null });
-
                 if (instance == null || instance.decManager == null)
                 {
-                    DebugLog.Send("coro-abort", "instance or decManager is null at coroutine start");
                     _isLoading = false;
                     _pendingDecorations.Clear();
                     RestoreUIInput();
@@ -379,7 +322,7 @@ namespace Iridium.Patches
                 {
                     if (instance == null || instance.decManager == null)
                     {
-                        DebugLog.Send("coro-abort", "scnGame destroyed during loading, aborting");
+                        Main.Logger?.Log($"[LoadingOptimization] scnGame destroyed during loading, aborting");
                         _isLoading = false;
                         _pendingDecorations.Clear();
                         RestoreUIInput();
@@ -388,7 +331,6 @@ namespace Iridium.Patches
 
                     float frameStart = Time.realtimeSinceStartup;
                     int batchLimit = Mathf.Min(maxPerFrame, _pendingDecorations.Count);
-                    DebugLog.Send("coro-batch", $"Processing batch", new { batchLimit, remaining = _pendingDecorations.Count, processed, total });
 
                     for (int i = 0; i < batchLimit && _pendingDecorations.Count > 0; i++)
                     {
@@ -400,7 +342,7 @@ namespace Iridium.Patches
                         }
                         catch (System.Exception ex)
                         {
-                            DebugLog.Send("coro-decor-error", $"Failed to create decoration: {ex.Message}", new { stack = ex.StackTrace });
+                            Main.Logger?.Error($"[LoadingOptimization] Failed to create decoration: {ex}");
                         }
                         processed++;
 
@@ -410,13 +352,10 @@ namespace Iridium.Patches
 
                     if (_pendingDecorations.Count > 0)
                     {
-                        DebugLog.Send("coro-yield", $"Yielding after {processed}/{total}", new { remaining = _pendingDecorations.Count });
                         UI.VRAMNotificationUI.UpdateProgress(Localization.Get("LoadingDecorationsProgress", processed, total));
                         yield return null;
                     }
                 }
-
-                DebugLog.Send("coro-movedec-start", "Preloading MoveDecoration images");
 
                 foreach (var evt in instance.events)
                 {
@@ -435,13 +374,13 @@ namespace Iridium.Patches
                     }
                     catch (System.Exception ex)
                     {
-                        DebugLog.Send("coro-movedec-error", $"Failed to load MoveDecorations image: {ex.Message}", new { stack = ex.StackTrace });
+                        Main.Logger?.Error($"[LoadingOptimization] Failed to load MoveDecoration image: {ex}");
                     }
                 }
 
                 _isLoading = false;
                 RestoreUIInput();
-                DebugLog.Send("coro-done", $"Finished loading {processed} decorations across multiple frames");
+                Main.Logger?.Log($"[LoadingOptimization] Finished loading {processed} decorations across multiple frames");
 
                 if (!Main.Settings.optimizer.dontShowSavedMemory)
                 {

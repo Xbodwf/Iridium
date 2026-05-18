@@ -123,6 +123,14 @@ namespace Iridium.Patches
             var tweenSafetyCond = () => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.dotweenDefaultRecyclable;
             RegisterNestedPatches(typeof(TweenSafetyPatches), tweenSafetyCond);
 
+            // --- Bugfix Patches (2.10.0 only) ---
+            _definitions.Add(new PatchDef(typeof(BugfixPatches.PortalTravelFixPatch),
+                () => Main.Settings.compatibility.portalTravelFix));
+            _definitions.Add(new PatchDef(typeof(BugfixPatches.SyncSpeedTrialPatch),
+                () => Main.Settings.compatibility.syncSpeedTrialOnLoad));
+            _definitions.Add(new PatchDef(typeof(EditorPausePatches),
+                () => true)); // always on — reads settings at runtime
+
             // --- UI / Misc ---
             _definitions.Add(new PatchDef(typeof(MiscPatches.RemoveNewsPatch), () => Main.Settings.ui.removeNews));
             _definitions.Add(new PatchDef(typeof(MiscPatches.HideBetaWatermarkPatch), () => Main.Settings.ui.hideBetaWatermark));

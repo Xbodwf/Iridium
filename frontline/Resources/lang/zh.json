@@ -179,5 +179,11 @@
   "OptimizeParticle": "启用粒子优化",
   "OptimizeParticleInactive": "跳过非活跃/屏幕外粒子 (同时启用对象池)",
   "OptimizeParticleCulling": "暂停屏幕外粒子模拟",
-  "OptimizeParticleLod": "LOD: 跳过远处粒子更新"
+  "OptimizeParticleLod": "LOD: 跳过远处粒子更新",
+  "PortalTravelFix": "修复传送卡死",
+  "SyncSpeedTrialOnLoad": "修复飙速模式背景同步",
+  "EditorPauseEnabled": "编辑器暂停快捷键",
+  "EditorPauseKey": "暂停快捷键",
+  "EditorPauseKeyPress": "按下按键...",
+  "EditorPauseKeyHint": "在自动播放模式下按此键暂停/恢复。点击按钮后按下键盘按键绑定"
 }

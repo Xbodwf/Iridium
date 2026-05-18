@@ -43,6 +43,8 @@ namespace Iridium
 
         private int _compatFlashMode = -1;
         private int _compatCamRelMode = -1;
+        private bool _isBindingPauseKey = false;
+        private int _bindKeyStartFrame = -1;
 
         private string[] _cachedTabDisplayNames = System.Array.Empty<string>();
         private string _cachedLanguage = "";
@@ -639,6 +641,28 @@ namespace Iridium
                 GUI.changed = false;
                 IridiumPreset.SwitchOption(sizes, ref compatibility.scaleFilterSpeedWithPitch, "ScaleFilterSpeedWithPitch");
                 if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CompatibilityPatches.ScaleFilterSpeedWithPitchPatch));
+                Separator();
+
+                GUI.changed = false;
+                IridiumPreset.SwitchOption(sizes, ref compatibility.portalTravelFix, "PortalTravelFix");
+                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.PortalTravelFixPatch));
+                Separator();
+
+                GUI.changed = false;
+                IridiumPreset.SwitchOption(sizes, ref compatibility.syncSpeedTrialOnLoad, "SyncSpeedTrialOnLoad");
+                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.SyncSpeedTrialPatch));
+                Separator();
+
+                GUI.changed = false;
+                IridiumPreset.SwitchOption(sizes, ref compatibility.editorPauseEnabled, "EditorPauseEnabled");
+                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(EditorPausePatches));
+                if (compatibility.editorPauseEnabled)
+                {
+                    Separator();
+                    DrawPauseKeyBinding(sizes);
+                    Separator();
+                    IridiumPreset.IconText(sizes, IconStyle.Information, "EditorPauseKeyHint");
+                }
             }
             End();
             Separator();
@@ -812,6 +836,91 @@ namespace Iridium
             }
             PopAlign();
             End();
+        }
+
+        private void DrawPauseKeyBinding(Sizes sizes)
+        {
+            string display = _isBindingPauseKey
+                ? $"< {Localization.Get("EditorPauseKeyPress")} >"
+                : GetKeyDisplay(compatibility.editorPauseKey, compatibility.editorPauseModifiers);
+
+            Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
+            PushAlign(0.5);
+            {
+                Text(Localization.Get("EditorPauseKey"), options: WidthMin);
+                Fill();
+                if (GUILayout.Button(display, GUILayout.Width(160)))
+                {
+                    _isBindingPauseKey = true;
+                    _bindKeyStartFrame = Time.frameCount;
+                }
+                if (GUILayout.Button("+", GUILayout.Width(28)))
+                {
+                    AddModifier();
+                }
+                if (GUILayout.Button("-", GUILayout.Width(28)))
+                {
+                    RemoveModifier();
+                }
+            }
+            PopAlign();
+            End();
+
+            if (_isBindingPauseKey)
+            {
+                var e = Event.current;
+                if (e.type == EventType.KeyDown)
+                {
+                    compatibility.editorPauseKey = (int)e.keyCode;
+                    _isBindingPauseKey = false;
+                    e.Use();
+                }
+                else if (e.type == EventType.MouseDown && Time.frameCount != _bindKeyStartFrame)
+                {
+                    _isBindingPauseKey = false;
+                }
+            }
+        }
+
+        private static readonly int[] _modifierBits = { 1, 4, 2, 8 }; // Ctrl, Shift, Alt, Win
+
+        private void AddModifier()
+        {
+            int mods = compatibility.editorPauseModifiers;
+            foreach (int bit in _modifierBits)
+            {
+                if ((mods & bit) == 0)
+                {
+                    compatibility.editorPauseModifiers = mods | bit;
+                    return;
+                }
+            }
+            compatibility.editorPauseModifiers = 0;
+        }
+
+        private void RemoveModifier()
+        {
+            int mods = compatibility.editorPauseModifiers;
+            for (int i = _modifierBits.Length - 1; i >= 0; i--)
+            {
+                int bit = _modifierBits[i];
+                if ((mods & bit) != 0)
+                {
+                    compatibility.editorPauseModifiers = mods & ~bit;
+                    return;
+                }
+            }
+        }
+
+        private static string GetKeyDisplay(int key, int mods)
+        {
+            string result = "";
+            if ((mods & 1) != 0) result += "Ctrl+";
+            if ((mods & 4) != 0) result += "Shift+";
+            if ((mods & 2) != 0) result += "Alt+";
+            if ((mods & 8) != 0) result += "Win+";
+            result += ((KeyCode)key).ToString();
+            return result;
         }
         #endregion
 
