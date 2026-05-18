@@ -1,5 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
+using GDMiniJSON;
 using HarmonyLib;
 using ADOFAI;
 using Iridium.Config;
@@ -8,6 +11,33 @@ namespace Iridium.Patches
 {
     public static class JsonPatches
     {
+        private static readonly MethodInfo _deserializePartially = typeof(Json).GetMethod(nameof(Json.DeserializePartially), new[] { typeof(string), typeof(string) });
+
+        /// <summary>
+        /// LevelDataCLS.LoadLevel 只取 settings，跳过 actions 数组解析。
+        /// </summary>
+        [HarmonyPatch(typeof(LevelDataCLS), nameof(LevelDataCLS.LoadLevel))]
+        public static class PatchLevelDataCLSLoadLevel
+        {
+            [HarmonyTranspiler]
+            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            {
+                foreach (var inst in instructions)
+                {
+                    if (inst.opcode == OpCodes.Call && inst.operand is MethodInfo method &&
+                        method.Name == nameof(Json.Deserialize) && method.DeclaringType == typeof(Json))
+                    {
+                        yield return new CodeInstruction(OpCodes.Ldstr, "actions");
+                        yield return new CodeInstruction(OpCodes.Call, _deserializePartially);
+                    }
+                    else
+                    {
+                        yield return inst;
+                    }
+                }
+            }
+        }
+
         [HarmonyPatch(typeof(LevelData), nameof(LevelData.Decode))]
         public static class ForceAngleDataPatch
         {

@@ -57,6 +57,9 @@ namespace Iridium.Config
         // Frame-Spread Loading (分帧加载)
         public bool frameSpreadDecorationLoading = false; // 启用装饰物分帧加载
         public int decorationsPerFrame = 50; // 每帧加载的装饰物数量
+
+        // JSON Deserialize Optimization
+        public bool customLevelReadOptimization = true; // 自定义关卡谱面读取优化
     }
 
     public class UISettings

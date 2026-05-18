@@ -123,6 +123,11 @@ namespace Iridium.Patches
             var tweenSafetyCond = () => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.dotweenDefaultRecyclable;
             RegisterNestedPatches(typeof(TweenSafetyPatches), tweenSafetyCond);
 
+            // --- JSON Deserialize Optimization ---
+            var jsonOptCond = () => Main.Settings.optimizer.customLevelReadOptimization;
+            _definitions.Add(new PatchDef(typeof(JsonPatches.PatchGetCustomLevelName), jsonOptCond));
+            _definitions.Add(new PatchDef(typeof(JsonPatches.PatchLevelDataCLSLoadLevel), jsonOptCond));
+
             // --- Bugfix Patches (2.10.0 only) ---
             _definitions.Add(new PatchDef(typeof(BugfixPatches.PortalTravelFixPatch),
                 () => Main.Settings.compatibility.portalTravelFix));

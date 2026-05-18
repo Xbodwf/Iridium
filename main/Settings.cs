@@ -285,6 +285,11 @@ namespace Iridium
                 IridiumPreset.SwitchOption(sizes, ref optimizer.batchMoveDecorations, "BatchMoveDecorations");
                 Separator();
                 GUI.changed = false;
+                IridiumPreset.SwitchOption(sizes, ref optimizer.customLevelReadOptimization, "CustomLevelReadOptimization");
+                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JsonPatches.PatchLevelDataCLSLoadLevel));
+                Separator();
+
+                GUI.changed = false;
                 IridiumPreset.SwitchOption(sizes, ref optimizer.frameSpreadDecorationLoading, "FrameSpreadDecorationLoading");
                 if (GUI.changed) AsyncPatchManager.UpdateOptimizerPatchesAsync();
                 if (optimizer.frameSpreadDecorationLoading)

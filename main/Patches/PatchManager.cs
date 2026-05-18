@@ -116,6 +116,10 @@ namespace Iridium.Patches
             var tweenSafetyCond = () => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.dotweenDefaultRecyclable;
             RegisterNestedPatches(typeof(TweenSafetyPatches), tweenSafetyCond);
 
+            // --- JSON Deserialize Optimization ---
+            var jsonOptCond = () => Main.Settings.optimizer.customLevelReadOptimization;
+            _definitions.Add(new PatchDef(typeof(JsonPatches.PatchLevelDataCLSLoadLevel), jsonOptCond));
+
             // --- UI / Misc ---
             _definitions.Add(new PatchDef(typeof(MiscPatches.RemoveNewsPatch), () => Main.Settings.ui.removeNews));
             _definitions.Add(new PatchDef(typeof(MiscPatches.HideBetaWatermarkPatch), () => Main.Settings.ui.hideBetaWatermark));

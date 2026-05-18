@@ -175,6 +175,7 @@
   "DecorationsPerFrame": "Decorations Per Frame",
   "FrameSpreadLoadingHint": "Spreads decoration creation across multiple frames to prevent lag when loading levels with many decorations",
   "LoadingDecorationsProgress": "Loading decorations: {0}/{1}",
+  "CustomLevelReadOptimization": "Optimize custom level JSON reading",
   "ParticleOptimizations": "Particle Optimizations",
   "OptimizeParticle": "Enable Particle Optimization",
   "OptimizeParticleInactive": "Skip Inactive/Off-screen Particles (Also enables Object Pooling)",
