@@ -96,6 +96,11 @@ namespace Iridium.Config
         public bool enableNoFailTooEarly = false;
         public bool forceAngleData = false;
         public bool scaleFilterSpeedWithPitch = false;
+        public bool portalTravelFix = false;
+        public bool syncSpeedTrialOnLoad = false;
+        public bool editorPauseEnabled = true;
+        public int editorPauseKey = 32; // KeyCode.Space
+        public int editorPauseModifiers = 0; // bit: 1=Ctrl 2=Alt 4=Shift 8=Win
         public LegacyBehaviorMode legacyFlashMode = LegacyBehaviorMode.Default;
         public LegacyBehaviorMode legacyCamRelativeToMode = LegacyBehaviorMode.Default;
     }

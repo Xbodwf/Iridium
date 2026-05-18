@@ -179,5 +179,11 @@
   "OptimizeParticle": "Enable Particle Optimization",
   "OptimizeParticleInactive": "Skip Inactive/Off-screen Particles (Also enables Object Pooling)",
   "OptimizeParticleCulling": "Pause Off-screen Particle Simulation",
-  "OptimizeParticleLod": "LOD: Skip Distant Particle Updates"
+  "OptimizeParticleLod": "LOD: Skip Distant Particle Updates",
+  "PortalTravelFix": "Portal Travel Fix",
+  "SyncSpeedTrialOnLoad": "Fix Speed Trial Background Sync",
+  "EditorPauseEnabled": "Editor Pause Shortcut",
+  "EditorPauseKey": "Pause Key",
+  "EditorPauseKeyPress": "Press a key...",
+  "EditorPauseKeyHint": "Press this key during auto-play to pause/resume. Click the button then press a keyboard key to bind"
 }
