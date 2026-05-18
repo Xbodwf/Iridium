@@ -91,7 +91,7 @@ namespace Iridium.Patches
                 var ps = __instance.particleSystem;
                 if (ps == null) return true;
 
-                if (!ps.isPlaying && !__instance.autoPlay)
+                if (!ps.isPlaying && !__instance.atStart && !__instance.autoPlay)
                     return false;
                 if (!__instance.GetVisible())
                     return false;
@@ -103,7 +103,7 @@ namespace Iridium.Patches
                     state.lastSimSpeed != __instance.simulationSpeed ||
                     state.lastPitch != pitch;
 
-                if (!scaleChanged && !speedChanged && !__instance.autoPlay)
+                if (!scaleChanged && !speedChanged && !__instance.atStart && !__instance.autoPlay)
                     return false;
 
                 state.initialized = true;
