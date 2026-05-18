@@ -134,7 +134,7 @@ namespace Iridium.Patches
             _definitions.Add(new PatchDef(typeof(BugfixPatches.SyncSpeedTrialPatch),
                 () => Main.Settings.compatibility.syncSpeedTrialOnLoad));
             _definitions.Add(new PatchDef(typeof(EditorPausePatches),
-                () => true)); // always on — reads settings at runtime
+                () => Main.Settings.compatibility.editorPauseEnabled));
 
             // --- UI / Misc ---
             _definitions.Add(new PatchDef(typeof(MiscPatches.RemoveNewsPatch), () => Main.Settings.ui.removeNews));
