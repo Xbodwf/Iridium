@@ -1,7 +1,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Iridium (v2.9.8)", "main\Iridium.csproj", "{3068C9C7-86F1-4F84-ADAA-A94291B7B28F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Iridium (v2.10.0)", "frontline\Iridium.csproj", "{8BD24856-6072-43F4-AAC1-D9DF48584677}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Iridium (v2.10.0)", "frontline\Iridium_frontline.csproj", "{8BD24856-6072-43F4-AAC1-D9DF48584677}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

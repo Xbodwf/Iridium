@@ -187,15 +187,23 @@ namespace Iridium.Patches
         /// <summary>
         /// 装饰物分帧加载 - 将 UpdateDecorationObjects 中的 CreateDecoration 分散到多帧执行
         /// 防止几千个装饰物在同一帧 Instantiate 导致卡死
+        /// 
+        /// v2.10.0 专项优化：
+        /// - 去掉 reloadDecorations=false 死代码路径（此路径在游戏中从未被调用）
+        /// - 时间预算分帧：不固定每帧数量，改为双限制（最大数量 + 帧时间预算），
+        ///   简单装饰物加载更快，复杂装饰物也不会卡帧
+        /// - 简化 MoveDecoration 图片预加载，去掉冗余队列直接遍历 events
         /// </summary>
         [HarmonyPatch(typeof(scnGame), "UpdateDecorationObjects")]
         public static class FrameSpreadDecorationLoadingPatch
         {
             private static readonly Queue<LevelEvent> _pendingDecorations = new();
-            private static readonly Queue<LevelEvent> _pendingMoveDecEvents = new();
             private static bool _isLoading = false;
             private static readonly List<GraphicRaycaster> _disabledRaycasters = new();
             public static bool IsLoading => _isLoading;
+
+            // 每帧时间预算(秒)，超出后 yield 到下一帧
+            private const float TIME_BUDGET_PER_FRAME = 0.012f;
 
             [HarmonyPrefix]
             public static bool Prefix(scnGame __instance, bool reloadDecorations)
@@ -204,6 +212,12 @@ namespace Iridium.Patches
                     return true;
 
                 if (_isLoading) return false;
+
+                if (ADOBase.isOfficialLevel) return true;
+
+                // reloadDecorations=false 只在 ReloadAssets(force=true, reloadDecorations=true) 内部调用，
+                // 但游戏中所有 ReloadAssets 调用点均传 reloadDecorations=false，故此路径为死代码
+                if (!reloadDecorations) return true;
 
                 try
                 {
@@ -224,7 +238,6 @@ namespace Iridium.Patches
 
                     _isLoading = true;
                     _pendingDecorations.Clear();
-                    _pendingMoveDecEvents.Clear();
                     _disabledRaycasters.Clear();
 
                     foreach (var dec in decorations)
@@ -233,15 +246,9 @@ namespace Iridium.Patches
                             _pendingDecorations.Enqueue(dec);
                     }
 
-                    foreach (var evt in __instance.events)
-                    {
-                        if (evt.eventType == LevelEventType.MoveDecorations)
-                            _pendingMoveDecEvents.Enqueue(evt);
-                    }
-
                     BlockUIInput();
 
-                    __instance.StartCoroutine(FrameSpreadLoadCoroutine(__instance, reloadDecorations));
+                    __instance.StartCoroutine(FrameSpreadLoadCoroutine(__instance));
                     return false;
                 }
                 catch (System.Exception ex)
@@ -249,7 +256,6 @@ namespace Iridium.Patches
                     Main.Logger?.Error($"[LoadingOptimization] FrameSpreadDecorationLoading failed: {ex}");
                     _isLoading = false;
                     _pendingDecorations.Clear();
-                    _pendingMoveDecEvents.Clear();
                     RestoreUIInput();
                     return true;
                 }
@@ -294,16 +300,15 @@ namespace Iridium.Patches
                 }
             }
 
-            private static System.Collections.IEnumerator FrameSpreadLoadCoroutine(scnGame instance, bool reloadDecorations)
+            private static System.Collections.IEnumerator FrameSpreadLoadCoroutine(scnGame instance)
             {
-                int perFrame = Main.Settings.optimizer.decorationsPerFrame;
-                if (perFrame < 1) perFrame = 50;
+                int maxPerFrame = Main.Settings.optimizer.decorationsPerFrame;
+                if (maxPerFrame < 1) maxPerFrame = 50;
 
                 if (instance == null || instance.decManager == null)
                 {
                     _isLoading = false;
                     _pendingDecorations.Clear();
-                    _pendingMoveDecEvents.Clear();
                     RestoreUIInput();
                     yield break;
                 }
@@ -323,45 +328,29 @@ namespace Iridium.Patches
                         Main.Logger?.Log($"[LoadingOptimization] scnGame destroyed during loading, aborting");
                         _isLoading = false;
                         _pendingDecorations.Clear();
-                        _pendingMoveDecEvents.Clear();
                         RestoreUIInput();
                         yield break;
                     }
 
-                    int batchSize = Mathf.Min(perFrame, _pendingDecorations.Count);
-                    for (int i = 0; i < batchSize && _pendingDecorations.Count > 0; i++)
+                    float frameStart = Time.realtimeSinceStartup;
+                    int batchLimit = Mathf.Min(maxPerFrame, _pendingDecorations.Count);
+                    for (int i = 0; i < batchLimit && _pendingDecorations.Count > 0; i++)
                     {
                         var ev = _pendingDecorations.Dequeue();
                         try
                         {
-                            if (reloadDecorations)
-                            {
-                                bool spritesLoaded = false;
-                                instance.decManager.CreateDecoration(ev, out spritesLoaded, -1);
-                            }
-                            else
-                            {
-                                object obj;
-                                if (ev.data.TryGetValue("decorationImage", out obj))
-                                {
-                                    string text = (string)obj;
-                                    bool isPrefab = text.StartsWith("prefab:", StringComparison.CurrentCultureIgnoreCase);
-                                    if (!string.IsNullOrEmpty(text) && !isPrefab && !ADOBase.IsNotAMikoSkipMandatorySprite(text))
-                                    {
-                                        string filePath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(instance.levelPath), text);
-                                        LoadResult status;
-                                        instance.imgHolder.AddSprite(text, filePath, out status);
-                                        if (ADOBase.editor != null)
-                                            ADOBase.editor.UpdateImageLoadResult(text, status);
-                                    }
-                                }
-                            }
+                            bool spritesLoaded = false;
+                            instance.decManager.CreateDecoration(ev, out spritesLoaded, -1);
                         }
                         catch (System.Exception ex)
                         {
                             Main.Logger?.Error($"[LoadingOptimization] Failed to create decoration: {ex}");
                         }
                         processed++;
+
+                        // 超过帧时间预算则提前退出本帧
+                        if (Time.realtimeSinceStartup - frameStart > TIME_BUDGET_PER_FRAME)
+                            break;
                     }
 
                     if (_pendingDecorations.Count > 0)
@@ -371,18 +360,10 @@ namespace Iridium.Patches
                     }
                 }
 
-                while (_pendingMoveDecEvents.Count > 0)
+                // MoveDecoration 图片预加载（ffxMoveDecorationsPlus.StartEffect 需要已加载的 sprite）
+                foreach (var evt in instance.events)
                 {
-                    if (instance == null)
-                    {
-                        Main.Logger?.Log($"[LoadingOptimization] scnGame destroyed during MoveDecorations loading, aborting");
-                        _isLoading = false;
-                        _pendingMoveDecEvents.Clear();
-                        RestoreUIInput();
-                        yield break;
-                    }
-
-                    var evt = _pendingMoveDecEvents.Dequeue();
+                    if (evt.eventType != LevelEventType.MoveDecorations) continue;
                     try
                     {
                         object obj2;
@@ -401,7 +382,7 @@ namespace Iridium.Patches
                     }
                     catch (System.Exception ex)
                     {
-                        Main.Logger?.Error($"[LoadingOptimization] Failed to load MoveDecorations image: {ex}");
+                        Main.Logger?.Error($"[LoadingOptimization] Failed to load MoveDecoration image: {ex}");
                     }
                 }
 
@@ -409,7 +390,7 @@ namespace Iridium.Patches
                 RestoreUIInput();
                 Main.Logger?.Log($"[LoadingOptimization] Finished loading {processed} decorations across multiple frames");
 
-                if (reloadDecorations && !Main.Settings.optimizer.dontShowSavedMemory)
+                if (!Main.Settings.optimizer.dontShowSavedMemory)
                 {
                     if (OptimizerPatches.savedVRAM_MB > 0.1f)
                     {

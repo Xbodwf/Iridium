@@ -216,16 +216,22 @@ namespace Iridium.Patches
         /// <summary>
         /// 装饰物分帧加载 - 将 UpdateDecorationObjects 中的 CreateDecoration 分散到多帧执行
         /// 防止几千个装饰物在同一帧 Instantiate 导致卡死
+        /// 
+        /// v2.10.0 专项优化：
+        /// - 去掉 reloadDecorations=false 死代码路径（此路径在游戏中从未被调用）
+        /// - 时间预算分帧：双限制（最大数量 + 帧时间预算）
+        /// - 简化 MoveDecoration 图片预加载，去掉冗余队列直接遍历 events
         /// </summary>
         [HarmonyPatch(typeof(scnGame), "UpdateDecorationObjects")]
         public static class FrameSpreadDecorationLoadingPatch
         {
             private static readonly Queue<LevelEvent> _pendingDecorations = new();
-            private static readonly Queue<LevelEvent> _pendingMoveDecEvents = new();
             private static bool _isLoading = false;
             private static readonly List<GraphicRaycaster> _disabledRaycasters = new();
 
             public static bool IsLoading => _isLoading;
+
+            private const float TIME_BUDGET_PER_FRAME = 0.012f;
 
             [HarmonyPrefix]
             public static bool Prefix(scnGame __instance, bool reloadDecorations)
@@ -242,6 +248,18 @@ namespace Iridium.Patches
                 {
                     DebugLog.Send("prefix-skip", "Skipped: already loading");
                     return false;
+                }
+
+                if (ADOBase.isOfficialLevel)
+                {
+                    DebugLog.Send("prefix-skip", "Skipped: official level");
+                    return true;
+                }
+
+                if (!reloadDecorations)
+                {
+                    DebugLog.Send("prefix-skip", "Skipped: reloadDecorations is false (dead path)");
+                    return true;
                 }
 
                 try
@@ -265,11 +283,10 @@ namespace Iridium.Patches
                         return true;
                     }
 
-                    DebugLog.Send("prefix-start", $"Starting frame-spread loading", new { totalActive, totalDecorations = decorations.Count, reload = reloadDecorations, levelPath = __instance.levelPath });
+                    DebugLog.Send("prefix-start", $"Starting frame-spread loading", new { totalActive, totalDecorations = decorations.Count, levelPath = __instance.levelPath });
 
                     _isLoading = true;
                     _pendingDecorations.Clear();
-                    _pendingMoveDecEvents.Clear();
                     _disabledRaycasters.Clear();
 
                     foreach (var dec in decorations)
@@ -278,17 +295,11 @@ namespace Iridium.Patches
                             _pendingDecorations.Enqueue(dec);
                     }
 
-                    foreach (var evt in __instance.events)
-                    {
-                        if (evt.eventType == LevelEventType.MoveDecorations)
-                            _pendingMoveDecEvents.Enqueue(evt);
-                    }
-
-                    DebugLog.Send("prefix-queued", $"Queued {_pendingDecorations.Count} decorations, {_pendingMoveDecEvents.Count} moveDec events");
+                    DebugLog.Send("prefix-queued", $"Queued {_pendingDecorations.Count} decorations");
 
                     BlockUIInput();
 
-                    __instance.StartCoroutine(FrameSpreadLoadCoroutine(__instance, reloadDecorations));
+                    __instance.StartCoroutine(FrameSpreadLoadCoroutine(__instance));
                     return false;
                 }
                 catch (System.Exception ex)
@@ -296,7 +307,6 @@ namespace Iridium.Patches
                     DebugLog.Send("prefix-error", $"Exception in Prefix: {ex.Message}", new { stack = ex.StackTrace });
                     _isLoading = false;
                     _pendingDecorations.Clear();
-                    _pendingMoveDecEvents.Clear();
                     RestoreUIInput();
                     return true;
                 }
@@ -341,19 +351,18 @@ namespace Iridium.Patches
                 }
             }
 
-            private static System.Collections.IEnumerator FrameSpreadLoadCoroutine(scnGame instance, bool reloadDecorations)
+            private static System.Collections.IEnumerator FrameSpreadLoadCoroutine(scnGame instance)
             {
-                int perFrame = Main.Settings.optimizer.decorationsPerFrame;
-                if (perFrame < 1) perFrame = 50;
+                int maxPerFrame = Main.Settings.optimizer.decorationsPerFrame;
+                if (maxPerFrame < 1) maxPerFrame = 50;
 
-                DebugLog.Send("coro-start", "Coroutine started", new { perFrame, totalPending = _pendingDecorations.Count, reload = reloadDecorations, instanceAlive = instance != null, decManagerAlive = instance?.decManager != null });
+                DebugLog.Send("coro-start", "Coroutine started", new { maxPerFrame, totalPending = _pendingDecorations.Count, instanceAlive = instance != null, decManagerAlive = instance?.decManager != null });
 
                 if (instance == null || instance.decManager == null)
                 {
                     DebugLog.Send("coro-abort", "instance or decManager is null at coroutine start");
                     _isLoading = false;
                     _pendingDecorations.Clear();
-                    _pendingMoveDecEvents.Clear();
                     RestoreUIInput();
                     yield break;
                 }
@@ -373,46 +382,30 @@ namespace Iridium.Patches
                         DebugLog.Send("coro-abort", "scnGame destroyed during loading, aborting");
                         _isLoading = false;
                         _pendingDecorations.Clear();
-                        _pendingMoveDecEvents.Clear();
                         RestoreUIInput();
                         yield break;
                     }
 
-                    int batchSize = Mathf.Min(perFrame, _pendingDecorations.Count);
-                    DebugLog.Send("coro-batch", $"Processing batch", new { batchSize, remaining = _pendingDecorations.Count, processed, total });
+                    float frameStart = Time.realtimeSinceStartup;
+                    int batchLimit = Mathf.Min(maxPerFrame, _pendingDecorations.Count);
+                    DebugLog.Send("coro-batch", $"Processing batch", new { batchLimit, remaining = _pendingDecorations.Count, processed, total });
 
-                    for (int i = 0; i < batchSize && _pendingDecorations.Count > 0; i++)
+                    for (int i = 0; i < batchLimit && _pendingDecorations.Count > 0; i++)
                     {
                         var ev = _pendingDecorations.Dequeue();
                         try
                         {
-                            if (reloadDecorations)
-                            {
-                                bool spritesLoaded = false;
-                                instance.decManager.CreateDecoration(ev, out spritesLoaded);
-                            }
-                            else
-                            {
-                                string output;
-                                if (ev.TryGet<string>("decorationImage", out output))
-                                {
-                                    bool isPrefab = output.StartsWith("prefab:", StringComparison.CurrentCultureIgnoreCase);
-                                    if (!string.IsNullOrEmpty(output) && !isPrefab && !ADOBase.IsNotAMikoSkipMandatorySprite(output))
-                                    {
-                                        string filePath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(instance.levelPath), output);
-                                        LoadResult status;
-                                        instance.imgHolder.AddSprite(output, filePath, out status);
-                                        if (ADOBase.editor != null)
-                                            ADOBase.editor.UpdateImageLoadResult(output, status);
-                                    }
-                                }
-                            }
+                            bool spritesLoaded = false;
+                            instance.decManager.CreateDecoration(ev, out spritesLoaded);
                         }
                         catch (System.Exception ex)
                         {
                             DebugLog.Send("coro-decor-error", $"Failed to create decoration: {ex.Message}", new { stack = ex.StackTrace });
                         }
                         processed++;
+
+                        if (Time.realtimeSinceStartup - frameStart > TIME_BUDGET_PER_FRAME)
+                            break;
                     }
 
                     if (_pendingDecorations.Count > 0)
@@ -423,20 +416,11 @@ namespace Iridium.Patches
                     }
                 }
 
-                DebugLog.Send("coro-movedec-start", $"Processing {_pendingMoveDecEvents.Count} MoveDecorations events");
+                DebugLog.Send("coro-movedec-start", "Preloading MoveDecoration images");
 
-                while (_pendingMoveDecEvents.Count > 0)
+                foreach (var evt in instance.events)
                 {
-                    if (instance == null)
-                    {
-                        DebugLog.Send("coro-abort", "scnGame destroyed during MoveDecorations loading, aborting");
-                        _isLoading = false;
-                        _pendingMoveDecEvents.Clear();
-                        RestoreUIInput();
-                        yield break;
-                    }
-
-                    var evt = _pendingMoveDecEvents.Dequeue();
+                    if (evt.eventType != LevelEventType.MoveDecorations) continue;
                     try
                     {
                         string? output2 = null;
@@ -459,7 +443,7 @@ namespace Iridium.Patches
                 RestoreUIInput();
                 DebugLog.Send("coro-done", $"Finished loading {processed} decorations across multiple frames");
 
-                if (reloadDecorations && !Main.Settings.optimizer.dontShowSavedMemory)
+                if (!Main.Settings.optimizer.dontShowSavedMemory)
                 {
                     if (OptimizerPatches.savedVRAM_MB > 0.1f)
                     {

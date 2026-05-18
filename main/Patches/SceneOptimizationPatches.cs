@@ -295,7 +295,9 @@ namespace Iridium.Patches
                             resultList.Add(hit.gameObject);
                     }
 
-                    __result = resultList.ToArray();
+                    // Match original: return null when nothing hit so caller can
+                    // DeselectFloors() + DeselectAllDecorations() on empty clicks
+                    __result = resultList.Count > 0 ? resultList.ToArray() : null;
                     _cachedResult = __result;
 
                     return false;

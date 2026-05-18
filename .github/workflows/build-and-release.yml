@@ -22,8 +22,10 @@ jobs:
         include:
           - game-version: v2.9.8
             project-dir: main
+            project-file: Iridium.csproj
           - game-version: v2.10.0
             project-dir: frontline
+            project-file: Iridium_frontline.csproj
     runs-on: ubuntu-latest
 
     steps:
@@ -43,7 +45,7 @@ jobs:
         node-version: '18'
 
     - name: Build project (${{ matrix.game-version }})
-      run: dotnet build ${{ matrix.project-dir }}/Iridium.csproj --configuration Release
+      run: dotnet build ${{ matrix.project-dir }}/${{ matrix.project-file }} --configuration Release
 
     - name: Get version
       id: get_version
