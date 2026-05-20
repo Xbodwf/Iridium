@@ -183,6 +183,7 @@
   "OptimizeParticleLod": "LOD: Skip Distant Particle Updates",
   "PortalTravelFix": "Portal Travel Fix",
   "SyncSpeedTrialOnLoad": "Fix Speed Trial Background Sync",
+  "FixMarginTrackerReset": "Fix Results Accumulation When Entering Editor",
   "EditorPauseEnabled": "Editor Pause Shortcut",
   "EditorPauseKey": "Pause Key",
   "EditorPauseKeyPress": "Press a key...",

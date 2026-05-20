@@ -101,6 +101,7 @@ namespace Iridium.Config
         public bool scaleFilterSpeedWithPitch = false;
         public bool portalTravelFix = false;
         public bool syncSpeedTrialOnLoad = false;
+        public bool fixMarginTrackerReset = true;
         public bool editorPauseEnabled = true;
         public int editorPauseKey = 32; // KeyCode.Space
         public int editorPauseModifiers = 0; // bit: 1=Ctrl 2=Alt 4=Shift 8=Win
