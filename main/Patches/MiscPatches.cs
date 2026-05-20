@@ -78,15 +78,17 @@ namespace Iridium.Patches
         {
             public static void Postfix(scrEnableIfBeta __instance)
             {
-                __instance.gameObject.SetActive(false);
+                if (Main.Settings.ui.hideBetaWatermark)
+                    __instance.gameObject.SetActive(false);
             }
         }
 
         public static void RefreshBetaWatermark()
         {
+            var hide = Main.Settings.ui.hideBetaWatermark;
             foreach (var watermark in Resources.FindObjectsOfTypeAll<scrEnableIfBeta>())
             {
-                watermark.gameObject.SetActive(false);
+                watermark.gameObject.SetActive(!hide);
             }
         }
 

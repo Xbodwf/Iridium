@@ -183,6 +183,7 @@
   "OptimizeParticleLod": "LOD: 跳过远处粒子更新",
   "PortalTravelFix": "修复传送卡死",
   "SyncSpeedTrialOnLoad": "修复飙速模式背景同步",
+  "FixMarginTrackerReset": "修复进入编辑器时结算异常累积",
   "EditorPauseEnabled": "编辑器暂停快捷键",
   "EditorPauseKey": "暂停快捷键",
   "EditorPauseKeyPress": "按下按键...",

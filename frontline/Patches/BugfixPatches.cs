@@ -49,5 +49,24 @@ namespace Iridium.Patches
                 }
             }
         }
+
+        /// <summary>
+        /// scnEditor.Awake() in v2.10.0 calls scrPlayerManager.SetPlayerCount(1)
+        /// which creates a new marginTrackers array. The active scrPlayer instances
+        /// still reference the old marginTracker objects, so mistaksManager.Reset()
+        /// (called later in SwitchToEditMode) only clears the new unused trackers,
+        /// leaving stale checkpoint/death margins on the players' real trackers.
+        /// This postfix ensures every player's marginTracker is cleared too.
+        /// </summary>
+        [HarmonyPatch(typeof(scrMistakesManager), "Reset")]
+        public static class MarginTrackerResetFix
+        {
+            [HarmonyPostfix]
+            public static void Postfix()
+            {
+                foreach (var player in scrPlayerManager.instance?.players ?? [])
+                    player?.marginTracker?.Reset();
+            }
+        }
     }
 }

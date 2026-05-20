@@ -133,6 +133,9 @@ namespace Iridium.Patches
                 () => Main.Settings.compatibility.portalTravelFix));
             _definitions.Add(new PatchDef(typeof(BugfixPatches.SyncSpeedTrialPatch),
                 () => Main.Settings.compatibility.syncSpeedTrialOnLoad));
+            // Always-on: fixes SetPlayerCount creating orphaned marginTrackers
+            _definitions.Add(new PatchDef(typeof(BugfixPatches.MarginTrackerResetFix),
+                () => Main.Settings.compatibility.fixMarginTrackerReset));
             _definitions.Add(new PatchDef(typeof(EditorPausePatches),
                 () => Main.Settings.compatibility.editorPauseEnabled));
 
