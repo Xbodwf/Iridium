@@ -6,6 +6,7 @@ using System.Xml.Serialization;
 using Newtonsoft.Json;
 using MelonLoader;
 using UnityEngine;
+using static Iridium.UI.IridiumLayout;
 
 namespace Iridium
 {
@@ -17,6 +18,9 @@ namespace Iridium
         private bool _uiVisible;
         private Rect _rect;
         private Vector2 _scrollPos;
+        private bool _isDragging;
+        private Vector2 _dragOffset;
+        private float _titleBarHeight = 40f; // 标题栏高度，用于判断拖拽区域
 
         private static string GetModPath()
         {
@@ -150,17 +154,64 @@ namespace Iridium
         {
             if (!_uiVisible) return;
 
-            _rect = GUILayout.Window(0, _rect, GUIFunc, "", new GUIStyle(GUI.skin.window));
+            EnsureTexturesAlive();
+            HandleWindowDrag();
+
+            GUILayout.BeginArea(_rect);
+            {
+                Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
+                {
+                    // Title bar: 拖拽区域 + 关闭按钮
+                    Begin(ContainerDirection.Horizontal, options: WidthMax);
+                    {
+                        Text("Iridium", TextStyle.Title);
+                        Fill();
+                        if (Button("\u00d7", ButtonStyle.Element, GUILayout.Width(28), GUILayout.Height(28)))
+                            _uiVisible = false;
+                    }
+                    End();
+
+                    Space(8);
+
+                    // Content area with scroll
+                    _scrollPos = GUILayout.BeginScrollView(_scrollPos);
+                    OnGUI?.Invoke();
+                    GUILayout.EndScrollView();
+                }
+                End();
+            }
+            GUILayout.EndArea();
+
             _rect.x = (int)_rect.x;
             _rect.y = (int)_rect.y;
         }
-        private void GUIFunc(int id)
+
+        private void HandleWindowDrag()
         {
-            GUI.DragWindow(new Rect(0f, 0f, 10000f, 64f)); // is 48 + 16
-            GUILayout.Label("Iridium", new GUIStyle(GUI.skin.label) { fontSize = 24, alignment = TextAnchor.MiddleCenter });
-            _scrollPos = GUILayout.BeginScrollView(_scrollPos);
-            OnGUI?.Invoke();
-            GUILayout.EndScrollView();
+            var e = Event.current;
+            switch (e.type)
+            {
+                case EventType.MouseDown:
+                    // 只在标题栏区域内才启动拖拽，排除关闭按钮区域
+                    if (e.mousePosition.y >= _rect.y && e.mousePosition.y <= _rect.y + _titleBarHeight
+                        && e.mousePosition.x < _rect.xMax - 36) // 关闭按钮在右侧约 28+8px 区域
+                    {
+                        _isDragging = true;
+                        _dragOffset = e.mousePosition - _rect.position;
+                        e.Use();
+                    }
+                    break;
+                case EventType.MouseUp:
+                    _isDragging = false;
+                    break;
+                case EventType.MouseDrag:
+                    if (_isDragging)
+                    {
+                        _rect.position = e.mousePosition - _dragOffset;
+                        e.Use();
+                    }
+                    break;
+            }
         }
     }
 }

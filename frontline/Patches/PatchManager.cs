@@ -339,6 +339,25 @@ namespace Iridium.Patches
             try
             {
                 Main.Logger?.Log(Localization.Get("PatchManagerAttemptApply", type.Name));
+
+                // CoopPauseLockFix: runtime detection for LockInput location (scrController vs scrPlayer)
+                if (type == typeof(CoopPauseLockFix))
+                {
+                    var original = CoopPauseLockFix.Apply(_harmony);
+                    if (original != null)
+                    {
+                        var prefix = SymbolExtensions.GetMethodInfo(() => CoopPauseLockFix.Prefix());
+                        _patchedBindings[type] = new List<(MethodBase Original, MethodInfo PatchMethod)> { (original, prefix) };
+                        _activePatches[type] = true;
+                        Main.Logger?.Log(Localization.Get("PatchManagerSuccessApply", type.Name, "1"));
+                    }
+                    else
+                    {
+                        Main.Logger?.Log(Localization.Get("PatchManagerNoMethods", type.Name));
+                    }
+                    return;
+                }
+
                 var processor = _harmony.CreateClassProcessor(type);
                 var originals = processor.Patch();
 
@@ -392,6 +411,17 @@ namespace Iridium.Patches
             try
             {
                 Main.Logger?.Log(Localization.Get("PatchManagerAttemptRemove", type.Name));
+
+                // CoopPauseLockFix: use its own Unapply method
+                if (type == typeof(CoopPauseLockFix))
+                {
+                    CoopPauseLockFix.Unapply(_harmony);
+                    _patchedBindings.Remove(type);
+                    _activePatches[type] = false;
+                    Main.Logger?.Log(Localization.Get("PatchManagerSuccessRemove", type.Name));
+                    return;
+                }
+
                 if (_patchedBindings.TryGetValue(type, out var bindings) && bindings.Count > 0)
                 {
                     Main.Logger?.Log(Localization.Get("PatchManagerUsingCache", type.Name, bindings.Count.ToString()));

@@ -6,5 +6,5 @@ public static class BuildInfo
     /// Hardcoded ADOFAI version this build targets.
     /// Set by the build script / CI for each variant.
     /// </summary>
-    public const string AdofaiVersion = "3.1.0";
+    public const string AdofaiVersion = "v3";
 }

@@ -130,20 +130,66 @@ namespace Iridium.Patches
         /// Coop mode: LockInput is global (scrController.responsive = false),
         /// which blocks ALL players' input when one player hits a pause beat.
         ///
+        /// LockInput moved from scrController (≤3.1.1) to scrPlayer (≥3.1.2).
+        /// This patch detects the target at runtime via reflection.
+        ///
         /// Fix uses per-player pause tracking:
         ///   1) LockInput Prefix — coop mode skips global responsive=false
         ///   2) HandlePause Postfix — detects pause events, stores per-player state
         ///   3) scrPlayer.Hit Prefix — coop mode checks per-player pause state
         /// </summary>
-        [HarmonyPatch(typeof(scrPlayer), nameof(scrPlayer.LockInput))]
         public static class CoopPauseLockFix
         {
             internal static readonly Dictionary<int, float> _playerPauseEndTimes = new();
+
+            private static MethodBase? _patchedOriginal;
+            private static MethodInfo? _prefixMethod;
 
             [HarmonyPrefix]
             public static bool Prefix()
             {
                 return !scrController.coopMode;
+            }
+
+            /// <summary>
+            /// Runtime detection: try scrPlayer.LockInput first (≥3.1.2),
+            /// fall back to scrController.LockInput (≤3.1.1).
+            /// Returns the patched original method, or null if neither exists.
+            /// </summary>
+            public static MethodBase? Apply(Harmony harmony)
+            {
+                _prefixMethod = SymbolExtensions.GetMethodInfo(() => Prefix());
+
+                // ≥3.1.2: LockInput moved to scrPlayer
+                var playerMethod = AccessTools.Method(typeof(scrPlayer), "LockInput");
+                if (playerMethod != null)
+                {
+                    Main.Logger?.Log("CoopPauseLockFix: patching scrPlayer.LockInput (≥3.1.2)");
+                    _patchedOriginal = harmony.Patch(playerMethod, prefix: new HarmonyMethod(_prefixMethod));
+                    return _patchedOriginal;
+                }
+
+                // ≤3.1.1: LockInput is on scrController
+                var controllerMethod = AccessTools.Method(typeof(scrController), "LockInput");
+                if (controllerMethod != null)
+                {
+                    Main.Logger?.Log("CoopPauseLockFix: patching scrController.LockInput (≤3.1.1)");
+                    _patchedOriginal = harmony.Patch(controllerMethod, prefix: new HarmonyMethod(_prefixMethod));
+                    return _patchedOriginal;
+                }
+
+                Main.Logger?.Warning("CoopPauseLockFix: LockInput not found on scrPlayer or scrController, skipping");
+                return null;
+            }
+
+            public static void Unapply(Harmony harmony)
+            {
+                if (_patchedOriginal != null && _prefixMethod != null)
+                {
+                    harmony.Unpatch(_patchedOriginal, _prefixMethod);
+                    _patchedOriginal = null;
+                    _prefixMethod = null;
+                }
             }
 
             public static void SetPause(scrPlayer player, float lockTime)

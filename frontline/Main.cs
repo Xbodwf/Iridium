@@ -31,6 +31,9 @@ namespace Iridium
 
             Harmony = new Harmony(handler.ModId);
 
+            // 预加载 UI 纹理资源，避免首次打开面板时卡顿
+            Iridium.UI.IridiumLayout.EnsureTexturesAlive();
+
             Logger?.Log(Localization.Get("ModLoaded", Settings.language));
             return true;
         }
