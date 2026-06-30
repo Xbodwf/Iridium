@@ -80,10 +80,14 @@ Choose between IL Transpiler (performance-oriented) and Prefix/Postfix (compatib
 ## Build from Source
 
 1. Ensure the .NET SDK is installed.
-2. Clone this repository:
+2. Clone this repository (including submodules):
    ```bash
-   git clone https://github.com/Xbodwf/Iridium.git
+   git clone --recursive https://github.com/Xbodwf/Iridium.git
    cd Iridium
+   ```
+   If you already cloned without `--recursive`, run:
+   ```bash
+   git submodule update --init --recursive
    ```
 3. Set your game directory path in `Iridium.csproj`.
 4. Build and deploy:
