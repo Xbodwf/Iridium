@@ -38,13 +38,13 @@
 
                 <HBox align="center">
                     <Text text={localize('LobbyDefaultMusicPath')} style="label" />
-                    <TextField value={defaultMusicPath} on-text-submit="OnDefaultMusicPathChanged" />
+                    <TextField value={settings.lobbyMusic.defaultMusicPath} on-text-submit="OnDefaultMusicPathChanged" />
                     <Button text={localize('Apply')} on-click="OnApplyDefaultMusic" />
                 </HBox>
 
                 <HBox align="center">
                     <Text text={localize('LobbyFastMusicPath')} style="label" />
-                    <TextField value={fastMusicPath} on-text-submit="OnFastMusicPathChanged" />
+                    <TextField value={settings.lobbyMusic.fastMusicPath} on-text-submit="OnFastMusicPathChanged" />
                     <Button text={localize('Apply')} on-click="OnApplyFastMusic" />
                 </HBox>
 

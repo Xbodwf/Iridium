@@ -893,25 +893,102 @@ public static class IridiumLayout
 
         private const double IconBorder = 2;
 
-        private static readonly ColorGroup Background0Colors = new(RGB(0x151617));
+        // ══════════════════════════════════════════════════════════════
+        // COLOR LOADING FROM Colors.iml — overrides hardcoded fallbacks
+        // ══════════════════════════════════════════════════════════════
 
-        private static readonly ColorGroup Background1Colors = new(RGB(0x0D0E0F));
+        private static Dictionary<string, Color>? _loadedColors;
 
-        private static readonly ColorGroup SeparatorColors = new(ARGB(0x20FFFFFF));
+        private static void LoadColors()
+        {
+            _loadedColors = new Dictionary<string, Color>();
+            try
+            {
+                var modPath = Main.Handler?.ModPath;
+                if (modPath == null) return;
+                var path = System.IO.Path.Combine(modPath, "Resources", "ui", "Colors.iml");
+                if (!System.IO.File.Exists(path)) return;
+                var text = System.IO.File.ReadAllText(path);
+                var styleRegex = new System.Text.RegularExpressions.Regex(
+                    @"<Style\s+name=""([^""]*)""[^>]*>(.*?)</Style>",
+                    System.Text.RegularExpressions.RegexOptions.Singleline
+                );
+                var setterRegex = new System.Text.RegularExpressions.Regex(
+                    @"<Setter\s+property=""([^""]*)""\s+value=""#?([0-9A-Fa-f]{6,8})""",
+                    System.Text.RegularExpressions.RegexOptions.Singleline
+                );
+                foreach (System.Text.RegularExpressions.Match styleMatch in styleRegex.Matches(text))
+                {
+                    var styleName = styleMatch.Groups[1].Value;
+                    var block = styleMatch.Groups[2].Value;
+                    foreach (System.Text.RegularExpressions.Match setterMatch in setterRegex.Matches(block))
+                    {
+                        var prop = setterMatch.Groups[1].Value;
+                        var hex = setterMatch.Groups[2].Value;
+                        var key = $"{styleName}.{prop}";
+                        var val = Convert.ToInt64(hex, 16);
+                        _loadedColors[key] = hex.Length == 8 ? ARGB(val) : RGB(val);
+                    }
+                }
+                Main.Logger?.Log($"Loaded {_loadedColors.Count} colors from Colors.iml");
+            }
+            catch (Exception ex)
+            {
+                Main.Logger?.Log($"Failed to load Colors.iml: {ex.Message}");
+            }
+        }
 
-        private static readonly ColorGroup PrimaryColors = new(RGB(0xD973A5), RGB(0xC16693), RGB(0x9C5277));
+        private static Color GetColor(string key, Color fallback)
+        {
+            if (_loadedColors == null) LoadColors();
+            return _loadedColors.TryGetValue(key, out var c) ? c : fallback;
+        }
 
-        private static readonly ColorGroup ElementColors = new(RGB(0x313338), RGB(0x373B45), RGB(0x30333C));
+        private static Color Darken(Color c, double factor)
+        {
+            return new Color(
+                (float)Math.Max(0, Math.Min(1, c.r * factor)),
+                (float)Math.Max(0, Math.Min(1, c.g * factor)),
+                (float)Math.Max(0, Math.Min(1, c.b * factor)),
+                c.a
+            );
+        }
 
-        private static readonly ColorGroup ElementBorderColors = new(RGB(0x494F5C));
+        private static ColorGroup LoadGroup(string style, string prop, long fallback, double hf = 1.0, double af = 1.0)
+        {
+            var normal = GetColor($"{style}.{prop}", RGB(fallback));
+            return new ColorGroup(normal, Darken(normal, hf), Darken(normal, af));
+        }
 
-        private static readonly ColorGroup NormalTextColors = new(RGB(0xE9ECEF));
+        private static ColorGroup LoadFlatGroup(string style, string prop, long fallback)
+        {
+            var color = GetColor($"{style}.{prop}", RGB(fallback));
+            return new ColorGroup(color, color, color, color);
+        }
 
-        private static readonly ColorGroup SubtitleTextColors = new(RGB(0xF1F3F5));
+        // ══════════════════════════════════════════════════════════════
+        // COLOR PALETTE — loaded from Colors.iml at runtime, fallback to hardcoded
+        // ══════════════════════════════════════════════════════════════
 
-        private static readonly ColorGroup TitleTextColors = new(RGB(0xF8F9FA));
+        private static readonly ColorGroup Background0Colors = LoadFlatGroup("bg-default", "background", 0x151617);
 
-        private static readonly ColorGroup SecondaryTextColors = new(RGB(0x7D7E7F));
+        private static readonly ColorGroup Background1Colors = LoadFlatGroup("bg-alt", "background", 0x0D0E0F);
+
+        private static readonly ColorGroup SeparatorColors = new(GetColor("bg-separator.background", ARGB(0x20FFFFFF)));
+
+        private static readonly ColorGroup PrimaryColors = LoadGroup("primary", "background", 0xD973A5, 0.89, 0.72);
+
+        private static readonly ColorGroup ElementColors = LoadGroup("element", "background", 0x313338, 1.12, 1.0);
+
+        private static readonly ColorGroup ElementBorderColors = LoadFlatGroup("bg-element-border", "background", 0x494F5C);
+
+        private static readonly ColorGroup NormalTextColors = LoadFlatGroup("text-normal", "color", 0xE9ECEF);
+
+        private static readonly ColorGroup SubtitleTextColors = LoadFlatGroup("text-subtitle", "color", 0xF1F3F5);
+
+        private static readonly ColorGroup TitleTextColors = LoadFlatGroup("text-title", "color", 0xF8F9FA);
+
+        private static readonly ColorGroup SecondaryTextColors = LoadFlatGroup("text-secondary", "color", 0x7D7E7F);
 
         private static readonly ColorGroup CheckboxOffColors = ElementColors;
 
@@ -935,9 +1012,14 @@ public static class IridiumLayout
 
         private static readonly ColorGroup SwitchButtonColors = TitleTextColors;
 
-        private static readonly ColorGroup TextFieldColors = new(RGB(0x151719));
+        private static readonly ColorGroup TextFieldColors = LoadFlatGroup("bg-default", "background", 0x151719);
 
-        private static readonly ColorGroup TextFieldBorderColors = new(RGB(0x222326), RGB(0x222326), PrimaryColors.Normal, PrimaryColors.Normal);
+        private static readonly ColorGroup TextFieldBorderColors = new(
+            GetColor("bg-textfield-border.background", RGB(0x222326)),
+            GetColor("bg-textfield-border.background", RGB(0x222326)),
+            GetColor("primary.background", RGB(0xD973A5)),
+            GetColor("primary.background", RGB(0xD973A5))
+        );
 
         private static readonly ColorGroup IconInformationColors = ElementBorderColors;
 

@@ -1,26 +1,20 @@
 <Iris>
     <Resources>
+        <Reference path="@Colors.iml" />
+
         <Style name="panel" on=".panel">
-            <Setter property="background" value="#151617" />
             <Setter property="padding" value="12,12,12,12" />
             <Setter property="radius" value="8" />
         </Style>
         <Style name="text" on=".text">
-            <Setter property="color" value="#E9ECEF" />
             <Setter property="fontSize" value="14" />
-        </Style>
-        <Style name="stop" on=".stop">
-            <Setter property="background" value="#D973A5" />
-            <Setter property="color" value="#F8F9FA" />
-            <Setter property="fontSize" value="12" />
-            <Setter property="radius" value="8" />
         </Style>
     </Resources>
 
-    <HBox class="panel" gap="8">
+    <HBox class="panel bg-default" gap="8">
         <Icon type={iconType} />
-        <Text text={message} style="text" />
+        <Text text={message} class="text text-normal" />
         <Fill />
-        {showStop && <Button text={stopText} style="stop" on-click="OnStop" width="80" />}
+        {showStop && <Button text={stopText} class="primary" on-click="OnStop" width="80" />}
     </HBox>
 </Iris>

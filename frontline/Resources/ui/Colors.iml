@@ -1,0 +1,59 @@
+<Iris>
+    <Resources>
+        <!-- ════════════════════════════════════════════════════ -->
+        <!-- Iridium Theme Colors — Edit here to retheme the UI -->
+        <!-- ════════════════════════════════════════════════════ -->
+
+        <!-- ── Backgrounds ──────────────────────────────────── -->
+        <Style name="bg-default" on=".bg-default">
+            <Setter property="background" value="#151617" />
+        </Style>
+        <Style name="bg-alt" on=".bg-alt">
+            <Setter property="background" value="#0D0E0F" />
+        </Style>
+        <Style name="bg-input" on=".bg-input">
+            <Setter property="background" value="#151719" />
+        </Style>
+
+        <!-- ── Separator ───────────────────────────────────── -->
+        <Style name="bg-separator" on=".bg-separator">
+            <Setter property="background" value="#20FFFFFF" />
+        </Style>
+
+        <!-- ── Text Colors ─────────────────────────────────── -->
+        <Style name="text-title" on=".text-title">
+            <Setter property="color" value="#F8F9FA" />
+        </Style>
+        <Style name="text-subtitle" on=".text-subtitle">
+            <Setter property="color" value="#F1F3F5" />
+        </Style>
+        <Style name="text-normal" on=".text-normal">
+            <Setter property="color" value="#E9ECEF" />
+        </Style>
+        <Style name="text-secondary" on=".text-secondary">
+            <Setter property="color" value="#7D7E7F" />
+        </Style>
+
+        <!-- ── Interactive Elements ────────────────────────── -->
+        <!-- primary accent (currently rose/pink) -->
+        <Style name="primary" on=".primary">
+            <Setter property="background" value="#D973A5" />
+            <Setter property="color" value="#FFFFFF" />
+            <Setter property="radius" value="8" />
+        </Style>
+        <!-- default element (dark gray) -->
+        <Style name="element" on=".element">
+            <Setter property="background" value="#313338" />
+            <Setter property="color" value="#E9ECEF" />
+            <Setter property="radius" value="8" />
+        </Style>
+
+        <!-- ── Misc ────────────────────────────────────────── -->
+        <Style name="bg-element-border" on=".bg-element-border">
+            <Setter property="background" value="#494F5C" />
+        </Style>
+        <Style name="bg-textfield-border" on=".bg-textfield-border">
+            <Setter property="background" value="#222326" />
+        </Style>
+    </Resources>
+</Iris>

@@ -1,25 +1,6 @@
 <Iris>
     <Resources>
-        <Style name="title" on=".title">
-            <Setter property="color" value="#F8F9FA" />
-        </Style>
-        <Style name="subtitle" on=".subtitle">
-            <Setter property="color" value="#F1F3F5" />
-        </Style>
-        <Style name="label" on=".label">
-            <Setter property="color" value="#E9ECEF" />
-        </Style>
-        <Style name="secondary" on=".secondary">
-            <Setter property="color" value="#7D7E7F" />
-        </Style>
-        <Style name="primary" on=".primary">
-            <Setter property="background" value="#D973A5" />
-            <Setter property="color" value="#FFFFFF" />
-        </Style>
-        <Style name="element" on=".element">
-            <Setter property="background" value="#313338" />
-            <Setter property="color" value="#E9ECEF" />
-        </Style>
+        <Reference path="@Colors.iml" />
 
         <Template name="LangBtn">
             <Button text={item.displayName} class={settings.language == item.key ? 'primary' : 'element'} on-click="OnLanguageClick(item.key)" />
@@ -36,7 +17,7 @@
             <Button text={localize('HitSoundSettings')} class={settings.currentTab == 'hitSound' ? 'primary' : 'element'} on-click="OnTabClick('hitSound')" />
             <Button text={localize('AsyncInputSettings')} class={settings.currentTab == 'asyncInput' ? 'primary' : 'element'} on-click="OnTabClick('asyncInput')" />
             <Button text={localize('EditorShortcuts')} class={settings.currentTab == 'editorShortcuts' ? 'primary' : 'element'} on-click="OnTabClick('editorShortcuts')" />
-            <Text text={"Iridium " + getVersion()} style="secondary" />
+            <Text text={"Iridium " + getVersion()} style="text-secondary" />
         </HBox>
 
         <!-- Content area -->
@@ -53,12 +34,12 @@
         </View>
 
         <!-- Async processing status -->
-        <Text text={getAsyncStatus()} style="secondary" />
+        <Text text={getAsyncStatus()} style="text-secondary" />
 
         <!-- Language selector -->
         <HBox>
             <ForEach items={getLanguages()} template="LangBtn" />
         </HBox>
-        <Text text={localize('IridiumHint')} style="secondary" visible={localize('IridiumHint') != ''} />
+        <Text text={localize('IridiumHint')} style="text-secondary" visible={localize('IridiumHint') != ''} />
     </VBox>
 </Iris>
