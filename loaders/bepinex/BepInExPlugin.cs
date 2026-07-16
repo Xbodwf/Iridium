@@ -12,7 +12,8 @@ namespace Iridium
         private void Awake()
         {
             _handler = new BepInHandler(Logger);
-            Main.Initialize(_handler);
+            // This assembly targets the Mono BepInEx installation.
+            Main.Initialize(_handler, new Iridium.Runtime.MonoRuntimeHost());
             _handler.TriggerToggle(true);
         }
 

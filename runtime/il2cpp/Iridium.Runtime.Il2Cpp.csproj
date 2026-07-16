@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AssemblyName>Iridium.Runtime.Il2Cpp</AssemblyName>
+    <RootNamespace>Iridium.Runtime</RootNamespace>
+    <OutputPath>..\..\bin\runtime\il2cpp\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\abstractions\Iridium.Runtime.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

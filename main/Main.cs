@@ -2,6 +2,7 @@ using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
 using Iridium.UI;
+using Iridium.Runtime;
 
 namespace Iridium
 {
@@ -38,6 +39,13 @@ namespace Iridium
 
             Logger?.Log(Localization.Get("ModLoaded", Settings.language));
             return true;
+        }
+
+        // Shared Loader entry point. The legacy main runtime still owns its
+        // Harmony instance; frontline consumes the injected backend directly.
+        public static bool Initialize(IHandler handler, IRuntimeHost runtimeHost)
+        {
+            return Initialize(handler);
         }
 
         private static readonly System.Collections.Concurrent.ConcurrentQueue<System.Action> _actionQueue = new();

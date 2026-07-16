@@ -776,7 +776,9 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 patchMode.useILPatch = value;
-                Core.BasePatchMethod.SyncILModeFromSettings();
+                // Reapply adaptive Mono patches through the backend so their
+                // Prefix/Postfix and Transpiler implementations switch together.
+                Iridium.Patches.PatchManager.ReapplyAllPatches();
                 Save();
             });
         }

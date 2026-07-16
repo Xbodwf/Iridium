@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net481</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AssemblyName>Iridium.Runtime.Mono</AssemblyName>
+    <RootNamespace>Iridium.Runtime</RootNamespace>
+    <OutputPath>..\..\bin\runtime\mono\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\abstractions\Iridium.Runtime.Abstractions.csproj" />
+    <Reference Include="0Harmony">
+      <HintPath>..\..\lib\ModManager\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+</Project>

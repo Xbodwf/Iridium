@@ -23,6 +23,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\runtime\abstractions\Iridium.Runtime.Abstractions.csproj" />
 		<Reference Include="0Harmony">
 			<HintPath>..\lib\ModManager\0Harmony.dll</HintPath>
 		</Reference>

@@ -1,6 +1,6 @@
 using HarmonyLib;
 using Iridium.Config;
-using Iridium.Core;
+using Iridium.Runtime;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -10,20 +10,14 @@ namespace Iridium.Patches
 {
 	public static class PatchManager
 	{
-		private static Harmony _harmony => Main.Harmony!;
-
 		// Status
 		private static readonly Dictionary<Type, bool> _activePatches = new();
-		// Optimization: Cache exact patch bindings for each patch class to speed up and isolate unpatching
-		private static readonly Dictionary<Type, List<(MethodBase Original, MethodInfo PatchMethod)>> _patchedBindings = new();
-
-		// Instance-based patches (BasePatchMethod subclasses)
-		private static readonly List<BasePatchMethod> _methodPatches = new();
 
 		// Patch Declaration
 		private class PatchDef
 		{
 			public Type Type;
+			public object Definition;
 			public Func<bool> Condition;
 			public Type? Parent;
 			public string Name;
@@ -31,6 +25,7 @@ namespace Iridium.Patches
 			public PatchDef(Type type, Func<bool> condition, Type? parent = null)
 			{
 				Type = type;
+				Definition = type;
 				Condition = condition;
 				Parent = parent;
 				Name = type.Name;
@@ -45,26 +40,17 @@ namespace Iridium.Patches
 		}
 
 		/// <summary>
-		/// 注册一个实例化补丁（BasePatchMethod 子类）
+		/// Registers a backend-owned patch definition without exposing its concrete
+		/// runtime type to Core.
 		/// </summary>
-		public static void RegisterMethodPatch(BasePatchMethod patch)
+		public static void RegisterPatch(string id, object definition, Func<bool> condition)
 		{
-			lock (_methodPatches)
+			if (definition == null) throw new ArgumentNullException(nameof(definition));
+			_definitions.Add(new PatchDef(definition.GetType(), condition)
 			{
-				if (!_methodPatches.Contains(patch))
-					_methodPatches.Add(patch);
-			}
-		}
-
-		/// <summary>
-		/// 取消注册实例化补丁
-		/// </summary>
-		public static void UnregisterMethodPatch(BasePatchMethod patch)
-		{
-			lock (_methodPatches)
-			{
-				_methodPatches.Remove(patch);
-			}
+				Name = id,
+				Definition = definition
+			});
 		}
 
 		/// <summary>
@@ -235,15 +221,23 @@ namespace Iridium.Patches
 		/// </summary>
 		public static void UpdateAllPatches()
 		{
-			if (_harmony == null) return;
+			if (Main.RuntimeHost?.PatchBackend == null) return;
 
 			foreach (var def in _definitions)
 			{
 				UpdateSinglePatch(def);
 			}
 
-			// 同步实例化补丁的 IL 模式
-			BasePatchMethod.SyncILModeFromSettings();
+		}
+
+		public static void ReapplyAllPatches()
+		{
+			if (Main.RuntimeHost?.PatchBackend == null) return;
+
+			Main.RuntimeHost.PatchBackend.SetPerformanceMode(Main.Settings.patchMode.useILPatch);
+			Main.RuntimeHost.PatchBackend.RemoveAll();
+			_activePatches.Clear();
+			UpdateAllPatches();
 		}
 
 		/// <summary>
@@ -251,7 +245,7 @@ namespace Iridium.Patches
 		/// </summary>
 		public static void UpdatePatchByType(Type patchType)
 		{
-			if (_harmony == null) return;
+			if (Main.RuntimeHost?.PatchBackend == null) return;
 
 			var def = _definitions.Find(d => d.Type == patchType);
 			if (def != null)
@@ -265,7 +259,7 @@ namespace Iridium.Patches
 		/// </summary>
 		public static void UpdateOptimizerPatches()
 		{
-			if (_harmony == null) return;
+			if (Main.RuntimeHost?.PatchBackend == null) return;
 
 			// 优化器相关的 patch 类型
 			var optimizerParentTypes = new HashSet<Type>
@@ -296,7 +290,7 @@ namespace Iridium.Patches
 		/// </summary>
 		public static void UpdatePatchesByCondition(Func<Type, bool> predicate)
 		{
-			if (_harmony == null) return;
+			if (Main.RuntimeHost?.PatchBackend == null) return;
 
 			foreach (var def in _definitions)
 			{
@@ -318,10 +312,17 @@ namespace Iridium.Patches
 			if (trackedActive != shouldBeActive)
 			{
 				Main.Logger?.Log(Localization.Get("PatchManagerStatusChanged", def.Name, trackedActive.ToString(), shouldBeActive.ToString()));
-				if (shouldBeActive) ApplyPatch(def.Type);
-				else RemovePatch(def.Type);
-
-				_activePatches[def.Type] = shouldBeActive;
+				if (shouldBeActive)
+				{
+					// Do not record an active state when the backend failed to create
+					// any binding. This keeps failed patches retryable.
+					if (ApplyPatch(def))
+						_activePatches[def.Type] = true;
+				}
+				else if (RemovePatch(def))
+				{
+					_activePatches.Remove(def.Type);
+				}
 			}
 		}
 
@@ -342,167 +343,34 @@ namespace Iridium.Patches
 
 		// 移除不再使用的 IsActuallyPatched 辅助方法
 
-		private static void ApplyPatch(Type type)
+		private static bool ApplyPatch(PatchDef def)
 		{
-			try
-			{
-				Main.Logger?.Log(Localization.Get("PatchManagerAttemptApply", type.Name));
+			var backend = Main.RuntimeHost?.PatchBackend;
+			if (backend == null)
+				return false;
 
-				// CoopPauseLockFix: runtime detection for LockInput location (scrController vs scrPlayer)
-				if (type == typeof(CoopPauseLockFix))
-				{
-					var original = CoopPauseLockFix.Apply(_harmony);
-					if (original != null)
-					{
-						var prefix = SymbolExtensions.GetMethodInfo(() => CoopPauseLockFix.Prefix());
-						_patchedBindings[type] = new List<(MethodBase Original, MethodInfo PatchMethod)> { (original, prefix) };
-						_activePatches[type] = true;
-						Main.Logger?.Log(Localization.Get("PatchManagerSuccessApply", type.Name, "1"));
-					}
-					else
-					{
-						Main.Logger?.Log(Localization.Get("PatchManagerNoMethods", type.Name));
-					}
-					return;
-				}
-
-				var processor = _harmony.CreateClassProcessor(type);
-				var originals = processor.Patch();
-
-				if (originals != null && originals.Count > 0)
-				{
-					var bindings = new List<(MethodBase Original, MethodInfo PatchMethod)>();
-					foreach (var original in originals)
-					{
-						var info = Harmony.GetPatchInfo(original);
-						if (info == null) continue;
-
-						foreach (var p in info.Prefixes)
-						{
-							if (p.owner == _harmony.Id && p.PatchMethod.DeclaringType == type)
-								bindings.Add((original, p.PatchMethod));
-						}
-						foreach (var p in info.Postfixes)
-						{
-							if (p.owner == _harmony.Id && p.PatchMethod.DeclaringType == type)
-								bindings.Add((original, p.PatchMethod));
-						}
-						foreach (var p in info.Transpilers)
-						{
-							if (p.owner == _harmony.Id && p.PatchMethod.DeclaringType == type)
-								bindings.Add((original, p.PatchMethod));
-						}
-						foreach (var p in info.Finalizers)
-						{
-							if (p.owner == _harmony.Id && p.PatchMethod.DeclaringType == type)
-								bindings.Add((original, p.PatchMethod));
-						}
-					}
-
-					_patchedBindings[type] = bindings;
-					_activePatches[type] = true;
-					Main.Logger?.Log(Localization.Get("PatchManagerSuccessApply", type.Name, bindings.Count.ToString()));
-				}
-				else
-				{
-					Main.Logger?.Log(Localization.Get("PatchManagerNoMethods", type.Name));
-				}
-			}
-			catch (Exception e)
-			{
-				Main.Logger?.Error(Localization.Get("PatchManagerFailedApply", type.Name, e.ToString()));
-			}
+			var result = backend.Apply(def.Name, def.Definition);
+			if (!result.Succeeded)
+				Main.Logger?.Error($"[PatchManager] {def.Name}: {result.State} ({result.Message})");
+			return result.Succeeded;
 		}
 
-		private static void RemovePatch(Type type)
+		private static bool RemovePatch(PatchDef def)
 		{
-			try
-			{
-				Main.Logger?.Log(Localization.Get("PatchManagerAttemptRemove", type.Name));
+			var backend = Main.RuntimeHost?.PatchBackend;
+			if (backend == null)
+				return false;
 
-				// CoopPauseLockFix: use its own Unapply method
-				if (type == typeof(CoopPauseLockFix))
-				{
-					CoopPauseLockFix.Unapply(_harmony);
-					_patchedBindings.Remove(type);
-					_activePatches[type] = false;
-					Main.Logger?.Log(Localization.Get("PatchManagerSuccessRemove", type.Name));
-					return;
-				}
-
-				if (_patchedBindings.TryGetValue(type, out var bindings) && bindings.Count > 0)
-				{
-					Main.Logger?.Log(Localization.Get("PatchManagerUsingCache", type.Name, bindings.Count.ToString()));
-					foreach (var (original, patchMethod) in bindings)
-					{
-						_harmony.Unpatch(original, patchMethod);
-					}
-					_patchedBindings.Remove(type);
-				}
-				else
-				{
-					// Fallback to slow method if cache is missing or empty
-					Main.Logger?.Log(Localization.Get("PatchManagerUsingFallback", type.Name));
-					UnpatchMethod(type);
-					_patchedBindings.Remove(type);
-				}
-
-				_activePatches[type] = false;
-				Main.Logger?.Log(Localization.Get("PatchManagerSuccessRemove", type.Name));
-			}
-			catch (Exception e)
-			{
-				Main.Logger?.Error(Localization.Get("PatchManagerFailedRemove", type.Name, e.ToString()));
-			}
-		}
-
-		private static void UnpatchMethod(Type patchClass)
-		{
-			// Slow fallback: search all patched methods in the game
-			var allPatchedMethods = _harmony.GetPatchedMethods();
-			foreach (var original in allPatchedMethods)
-			{
-				var info = Harmony.GetPatchInfo(original);
-				if (info == null) continue;
-
-				foreach (var p in info.Prefixes)
-				{
-					if (p.owner == _harmony.Id && p.PatchMethod.DeclaringType == patchClass)
-						_harmony.Unpatch(original, p.PatchMethod);
-				}
-				foreach (var p in info.Postfixes)
-				{
-					if (p.owner == _harmony.Id && p.PatchMethod.DeclaringType == patchClass)
-						_harmony.Unpatch(original, p.PatchMethod);
-				}
-				foreach (var p in info.Transpilers)
-				{
-					if (p.owner == _harmony.Id && p.PatchMethod.DeclaringType == patchClass)
-						_harmony.Unpatch(original, p.PatchMethod);
-				}
-				foreach (var p in info.Finalizers)
-				{
-					if (p.owner == _harmony.Id && p.PatchMethod.DeclaringType == patchClass)
-						_harmony.Unpatch(original, p.PatchMethod);
-				}
-			}
+			var result = backend.Remove(def.Name, def.Definition);
+			if (!result.Succeeded)
+				Main.Logger?.Error($"[PatchManager] {def.Name}: {result.State} ({result.Message})");
+			return result.Succeeded;
 		}
 
 		public static void UnpatchAll()
 		{
-			_harmony?.UnpatchAll(_harmony.Id);
+			Main.RuntimeHost?.PatchBackend.RemoveAll();
 			_activePatches.Clear();
-			_patchedBindings.Clear();
-
-			// 停止所有实例化补丁
-			lock (_methodPatches)
-			{
-				foreach (var mp in _methodPatches)
-				{
-					if (mp.IsPatched)
-						mp.StopPatch();
-				}
-			}
 
 			Main.Logger?.Log(Localization.Get("PatchManagerUnpatchedAll"));
 		}

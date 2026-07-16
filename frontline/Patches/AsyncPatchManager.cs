@@ -18,6 +18,8 @@ namespace Iridium.Patches
 		private static readonly AutoResetEvent _taskEvent = new(false);
 		private static volatile bool _isRunning = false;
 		private static volatile bool _isProcessing = false;
+		private static bool _mainThreadTaskQueued = false;
+		private static int _runGeneration;
 		private static readonly Stopwatch _debounceTimer = Stopwatch.StartNew();
 		private static long _lastUpdateTimeMs = 0;
 		private const int DEBOUNCE_MS = 100; // 防抖延迟100毫秒
@@ -36,6 +38,10 @@ namespace Iridium.Patches
 
 			_isRunning = true;
 			_isProcessing = false;
+			lock (_queueLock)
+			{
+				++_runGeneration;
+			}
 			_workerThread = new Thread(WorkerLoop)
 			{
 				Name = "IridiumPatchWorker",
@@ -55,11 +61,23 @@ namespace Iridium.Patches
 			if (!_isRunning) return;
 
 			_isRunning = false;
+		lock (_queueLock)
+		{
+			++_runGeneration;
+		}
 			_taskEvent.Set(); // 唤醒线程以便退出
 
 			if (_workerThread != null && _workerThread.IsAlive)
 			{
 				_workerThread.Join(1000); // 等待最多1秒
+			}
+
+			lock (_queueLock)
+			{
+				_pendingPatchTypes.Clear();
+				_pendingOptimizerUpdate = false;
+				_pendingAllUpdate = false;
+				_mainThreadTaskQueued = false;
 			}
 
 			Main.Logger?.Log(Localization.Get("AsyncPatchWorkerStopped"));
@@ -105,6 +123,19 @@ namespace Iridium.Patches
 		}
 
 		/// <summary>
+		/// Rebuilds all patches when the backend mode changes.
+		/// </summary>
+		public static void ReapplyAllPatchesAsync()
+		{
+			lock (_queueLock)
+			{
+				_pendingAllUpdate = true;
+				_lastUpdateTimeMs = _debounceTimer.ElapsedMilliseconds;
+			}
+			_taskEvent.Set();
+		}
+
+		/// <summary>
 		/// 工作线程循环
 		/// </summary>
 		private static void WorkerLoop()
@@ -121,7 +152,8 @@ namespace Iridium.Patches
 				{
 					var elapsed = _debounceTimer.ElapsedMilliseconds - _lastUpdateTimeMs;
 					if (elapsed >= DEBOUNCE_MS &&
-						(_pendingAllUpdate || _pendingOptimizerUpdate || _pendingPatchTypes.Count > 0))
+						(_pendingAllUpdate || _pendingOptimizerUpdate || _pendingPatchTypes.Count > 0) &&
+						!_mainThreadTaskQueued)
 					{
 						shouldExecute = true;
 					}
@@ -147,44 +179,64 @@ namespace Iridium.Patches
 
 				// 标记为正在处理
 				_isProcessing = true;
+				int generation;
 
-				// 执行 Patch 操作
-				try
+				// The worker only coalesces requests. Harmony must run on Unity's
+				// main thread because target resolution and patch initialization may
+				// touch Unity or game state.
+				lock (_queueLock)
 				{
-					if (doAllUpdate)
+					generation = _runGeneration;
+					_mainThreadTaskQueued = true;
+				}
+
+				Main.RunOnMainThread(() =>
+				{
+					lock (_queueLock)
 					{
-						Main.Logger?.Log(Localization.Get("AsyncPatchProcessingAll"));
-						PatchManager.UpdateAllPatches();
+						_mainThreadTaskQueued = false;
 					}
-					else if (doOptimizerUpdate)
+
+					// Disable may happen while this action is waiting in the queue.
+					if (!_isRunning || generation != _runGeneration)
 					{
-						Main.Logger?.Log(Localization.Get("AsyncPatchProcessingOptimizer"));
-						PatchManager.UpdateOptimizerPatches();
+						_isProcessing = false;
+						return;
 					}
-					else if (patchTypes.Count > 0)
+
+					try
 					{
-						Main.Logger?.Log(Localization.Get("AsyncPatchProcessingCount", patchTypes.Count.ToString()));
-						foreach (var type in patchTypes)
+						if (doAllUpdate)
 						{
-							PatchManager.UpdatePatchByType(type);
+							Main.Logger?.Log(Localization.Get("AsyncPatchProcessingAll"));
+							PatchManager.UpdateAllPatches();
 						}
-					}
+						else if (doOptimizerUpdate)
+						{
+							Main.Logger?.Log(Localization.Get("AsyncPatchProcessingOptimizer"));
+							PatchManager.UpdateOptimizerPatches();
+						}
+						else if (patchTypes.Count > 0)
+						{
+							Main.Logger?.Log(Localization.Get("AsyncPatchProcessingCount", patchTypes.Count.ToString()));
+							foreach (var type in patchTypes)
+							{
+								PatchManager.UpdatePatchByType(type);
+							}
+						}
 
-					// 完成后通知主线程刷新 UI
-					// Main.RunOnMainThread(() =>
-					// {
-						// 这里可以触发 UI 刷新，但由于 OnGUI 会自动刷新，所以不需要额外操作
 						Main.Logger?.Log(Localization.Get("AsyncPatchCompleted"));
-					// });
-				}
-				catch (Exception ex)
-				{
-					Main.Logger?.Error(Localization.Get("AsyncPatchError", ex.ToString()));
-				}
-				finally
-				{
-					_isProcessing = false;
-				}
+					}
+					catch (Exception ex)
+					{
+						Main.Logger?.Error(Localization.Get("AsyncPatchError", ex.ToString()));
+					}
+					finally
+					{
+						_isProcessing = false;
+						_taskEvent.Set();
+					}
+				});
 			}
 		}
 

@@ -17,7 +17,8 @@ namespace Iridium
         public override void OnInitializeMelon()
         {
             _handler = new MelonHandler(this);
-            Iridium.Main.Initialize(_handler);
+            // The desktop MelonLoader target is Mono.
+            Iridium.Main.Initialize(_handler, new Iridium.Runtime.MonoRuntimeHost());
         }
 
         public override void OnUpdate()

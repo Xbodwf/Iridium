@@ -23,8 +23,14 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\runtime\abstractions\Iridium.Runtime.Abstractions.csproj">
+			<Private>false</Private>
+		</ProjectReference>
+		<ProjectReference Include="..\runtime\mono\Iridium.Runtime.Mono.csproj" ReferenceOutputAssembly="false" />
+		<ProjectReference Include="..\runtime\il2cpp\Iridium.Runtime.Il2Cpp.csproj" ReferenceOutputAssembly="false" />
 		<Reference Include="0Harmony">
 			<HintPath>..\lib\ModManager\0Harmony.dll</HintPath>
+			<Private>false</Private>
 		</Reference>
 		<ProjectReference Include="..\architectury\Iris.Iml\Iris.Iml.csproj" />
 		<Reference Include="Assembly-CSharp">
@@ -307,6 +313,9 @@
 		<MakeDir Directories="$(OutDir)Resources" />
 		<ItemGroup>
 			<FilesToCopy Include="$(OutputPath)$(AssemblyName).dll" />
+			<FilesToCopy Include="$(OutputPath)Iridium.Runtime.Abstractions.dll" Condition="Exists('$(OutputPath)Iridium.Runtime.Abstractions.dll')" />
+			<FilesToCopy Include="$(ProjectDir)..\bin\runtime\mono\Iridium.Runtime.Mono.dll" Condition="Exists('$(ProjectDir)..\bin\runtime\mono\Iridium.Runtime.Mono.dll')" />
+			<FilesToCopy Include="$(ProjectDir)..\bin\runtime\il2cpp\Iridium.Runtime.Il2Cpp.dll" Condition="Exists('$(ProjectDir)..\bin\runtime\il2cpp\Iridium.Runtime.Il2Cpp.dll')" />
 			<FilesToCopy Include="$(ProjectDir)..\bin\loaders\umm\net481\Iridium.Loader.UMM.dll" Condition="Exists('$(ProjectDir)..\bin\loaders\umm\net481\Iridium.Loader.UMM.dll')" />
 			<FilesToCopy Include="$(ProjectDir)..\bin\loaders\melon\net481\Iridium.Loader.Melon.dll" Condition="Exists('$(ProjectDir)..\bin\loaders\melon\net481\Iridium.Loader.Melon.dll')" />
 			<FilesToCopy Include="$(ProjectDir)..\bin\loaders\bepinex\net481\Iridium.Loader.BepInEx.dll" Condition="Exists('$(ProjectDir)..\bin\loaders\bepinex\net481\Iridium.Loader.BepInEx.dll')" />

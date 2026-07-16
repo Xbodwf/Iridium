@@ -1,5 +1,5 @@
 using System.Reflection;
-using HarmonyLib;
+using Iridium.Runtime;
 using UnityEngine;
 
 namespace Iridium
@@ -7,7 +7,7 @@ namespace Iridium
     public static class Main
     {
         public static IHandler? Handler { get; private set; }
-        public static Harmony? Harmony { get; private set; }
+        public static IRuntimeHost? RuntimeHost { get; private set; }
         public static Settings Settings { get; private set; } = null!;
         public static Logger? Logger;
         private static int _mainThreadId;
@@ -16,7 +16,7 @@ namespace Iridium
 
         private static string CurrentVersion => VersionManager.GetFullVersionString();
 
-        public static bool Initialize(IHandler handler)
+        public static bool Initialize(IHandler handler, IRuntimeHost runtimeHost)
         {
             _mainThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
             Handler = handler;
@@ -30,7 +30,9 @@ namespace Iridium
             handler.OnSaveGUI += () => handler.SaveSettings(Settings);
             handler.OnUpdate += OnUpdate;
 
-            Harmony = new Harmony(handler.ModId);
+            RuntimeHost = runtimeHost;
+            RuntimeHost.Initialize(handler.ModId);
+            RuntimeHost.PatchBackend.SetPerformanceMode(Settings.patchMode.useILPatch);
 
             // 预加载 UI 纹理资源，避免首次打开面板时卡顿
             Iridium.UI.IridiumLayout.EnsureTexturesAlive();
