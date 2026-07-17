@@ -76,12 +76,10 @@ namespace Iridium.Runtime
                         AddBinding(bindings, original, patch.owner, patch.PatchMethod, type);
                 }
 
-                if (bindings.Count == 0)
-                {
-                    UnpatchType(type);
-                    return PatchResult.NotFound(type.Name);
-                }
-
+                // Harmony may return patch methods whose declaring type is a
+                // generated wrapper, so binding discovery is not a reliable
+                // indication that the patch was applied. The original method
+                // list is the authoritative result from CreateClassProcessor.
                 _patchedBindings[patchId] = bindings;
                 return PatchResult.Applied(type.Name);
             }
