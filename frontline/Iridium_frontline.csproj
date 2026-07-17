@@ -24,7 +24,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\runtime\abstractions\Iridium.Runtime.Abstractions.csproj">
-			<Private>false</Private>
+			<Private>true</Private>
 		</ProjectReference>
 		<ProjectReference Include="..\runtime\mono\Iridium.Runtime.Mono.csproj" ReferenceOutputAssembly="false" />
 		<ProjectReference Include="..\runtime\il2cpp\Iridium.Runtime.Il2Cpp.csproj" ReferenceOutputAssembly="false" />
@@ -328,7 +328,7 @@
 		<Message Text="Files copied to: $(OutDir)" Importance="high" />
 	</Target>
 	<PropertyGroup>
-		<GameExePath>D:\Program Files (x86)\Steam\steamapps\common\A Dance of Fire and Ice\A Dance of Fire and Ice.exe</GameExePath>
+		<GameExePath>I:\SteamLibrary\steamapps\common\A Dance of Fire and Ice\A Dance of Fire and Ice.exe</GameExePath>
 		<AutoLaunchGame>true</AutoLaunchGame>
 		<Loader></Loader>
 	</PropertyGroup>
