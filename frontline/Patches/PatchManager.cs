@@ -99,7 +99,7 @@ namespace Iridium.Patches
 			// --- Optimizer ---
 			var optCond = () => Main.Settings.optimizer.enableOptimizer;
 			RegisterNestedPatches(typeof(OptimizerPatches), optCond);
-			_definitions.Add(new PatchDef(typeof(TrackOptimizationPatches), optCond));
+			RegisterNestedPatches(typeof(TrackOptimizationPatches), optCond);
 
 			// --- Ffx Optimization Patches ---
 			RegisterNestedPatches(typeof(FfxOptimizationPatches), optCond);
@@ -161,7 +161,10 @@ namespace Iridium.Patches
 			// Always-on: coop pause beat LockInput shouldn't block other players
 			_definitions.Add(new PatchDef(typeof(BugfixPatches.CoopPauseHandleLockFix), () => Main.Settings.compatibility.fixCoopPauseLock));
 			_definitions.Add(new PatchDef(typeof(BugfixPatches.CoopPlayerHitFix), () => Main.Settings.compatibility.fixCoopPauseLock));
-			_definitions.Add(new PatchDef(typeof(BugfixPatches.CoopPauseLockFix), () => Main.Settings.compatibility.fixCoopPauseLock));
+			_definitions.Add(new PatchDef(typeof(CoopPauseLockFixPlayerPatch),
+				() => Main.Settings.compatibility.fixCoopPauseLock && AccessTools.Method(typeof(scrPlayer), "LockInput") != null));
+			_definitions.Add(new PatchDef(typeof(CoopPauseLockFixControllerPatch),
+				() => Main.Settings.compatibility.fixCoopPauseLock && AccessTools.Method(typeof(scrController), "LockInput") != null));
 
 			// --- UI / Misc ---
 			_definitions.Add(new PatchDef(typeof(MiscPatches.RemoveNewsPatch), () => Main.Settings.ui.removeNews));

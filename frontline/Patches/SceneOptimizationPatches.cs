@@ -349,7 +349,6 @@ namespace Iridium.Patches
 		/// <summary>
 		/// 优化 scnEditor.Update 中的 ScrollRect 查找
 		/// </summary>
-		[HarmonyPatch(typeof(scnEditor), "Update")]
 		public static class EditorUpdateScrollRectCachePatch
 		{
 			private static readonly ConditionalWeakTable<GameObject, ScrollRect> _scrollRectCache = new();

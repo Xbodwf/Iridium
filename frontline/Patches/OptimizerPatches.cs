@@ -21,6 +21,7 @@ namespace Iridium.Patches
 		public static ConcurrentDictionary<string, Vector3> decorRatios = new();
 		// 纹理 -> 原始文件路径映射，解决 CustomSprite.GetSprite 创建新纹理时 name 丢失的问题
 		public static ConditionalWeakTable<Texture2D, string> textureNameMap = new();
+		private static ConcurrentDictionary<int, byte> _prefixCompletedTextures = new();
 		public static float savedVRAM_MB = 0f;
 		private static int processedTextureCount = 0;
 		private const int GC_INTERVAL = 50;
@@ -28,6 +29,7 @@ namespace Iridium.Patches
 		public static void ResetDecorOptimization(bool fullReset)
 		{
 			decorRatios.Clear();
+			_prefixCompletedTextures.Clear();
 			textureNameMap = new ConditionalWeakTable<Texture2D, string>();
 			savedVRAM_MB = 0f;
 			processedTextureCount = 0;
@@ -46,6 +48,7 @@ namespace Iridium.Patches
 		public static void ResetTextureOptimizationState()
 		{
 			decorRatios.Clear();
+			_prefixCompletedTextures.Clear();
 			textureNameMap = new ConditionalWeakTable<Texture2D, string>();
 			savedVRAM_MB = 0f;
 			processedTextureCount = 0;
@@ -535,6 +538,7 @@ namespace Iridium.Patches
 
 					// 将纹理添加到 nameMap，解决 CustomSprite.GetSprite 创建新纹理时 name 丢失的问题
 					try { textureNameMap.Add(tex, filePath); } catch { /* 已存在则忽略 */ }
+					_prefixCompletedTextures[tex.GetInstanceID()] = 1;
 
 					if (!Main.Settings.optimizer.dontShowSavedMemory)
 					{
@@ -590,7 +594,11 @@ namespace Iridium.Patches
 					oldSize = EstimateTextureSize(__result);
 				}
 
-				string texName = __result.name;
+			// PriorityPrefix 已处理过的纹理跳过，防止二次压缩
+			if (_prefixCompletedTextures.ContainsKey(__result.GetInstanceID()))
+				return;
+
+			string texName = __result.name;
 				try
 				{
 					double scaleFactor = Main.Settings.optimizer.divideBy;
@@ -727,47 +735,88 @@ namespace Iridium.Patches
 			}
 		}
 
+		private static Func<scrVisualDecoration, Vector2>? _getSpriteUnscaledSize;
+		private static Action<scrVisualDecoration, Vector2>? _setSpriteUnscaledSize;
+		private static bool _decorScaleInit;
+
+		private static void InitDecorScale()
+		{
+			var prop = AccessTools.Property(typeof(scrVisualDecoration), "spriteUnscaledSize");
+			if (prop != null)
+			{
+				if (prop.GetMethod != null)
+					_getSpriteUnscaledSize = AccessTools.MethodDelegate<Func<scrVisualDecoration, Vector2>>(prop.GetMethod);
+				if (prop.SetMethod != null)
+					_setSpriteUnscaledSize = AccessTools.MethodDelegate<Action<scrVisualDecoration, Vector2>>(prop.SetMethod);
+			}
+			_decorScaleInit = true;
+		}
+
+		private static void ApplyDecorRatioScaling(scrVisualDecoration __instance, Vector3 ratio)
+		{
+			if (__instance.spriteRenderer != null)
+				__instance.spriteRenderer.transform.localScale = ratio;
+
+			if (!Main.Settings.optimizer.dontResizeCollider)
+			{
+				__instance.editorCollider.size = Vector2.Scale(__instance.editorCollider.size, ratio);
+
+				if (!_decorScaleInit) InitDecorScale();
+				if (_getSpriteUnscaledSize != null && _setSpriteUnscaledSize != null && __instance.spriteRenderer.sprite != null)
+				{
+					var uncompressedSize = Vector2.Scale((Vector2)__instance.spriteRenderer.sprite.bounds.size, ratio);
+					_setSpriteUnscaledSize(__instance, uncompressedSize);
+				}
+			}
+		}
+
 		[HarmonyPatch(typeof(scrVisualDecoration), "SetSprite", typeof(TextureManager.CustomSprite), typeof(TextureManager.ImageOptions))]
 		public static class DecorationScalingPatch
 		{
-			private static Func<scrVisualDecoration, Vector2>? _getSpriteUnscaledSize;
-			private static Action<scrVisualDecoration, Vector2>? _setSpriteUnscaledSize;
-			private static bool _initialized;
-
-			private static void Initialize()
-			{
-				var prop = AccessTools.Property(typeof(scrVisualDecoration), "spriteUnscaledSize");
-				if (prop != null)
-				{
-					if (prop.GetMethod != null)
-						_getSpriteUnscaledSize = AccessTools.MethodDelegate<Func<scrVisualDecoration, Vector2>>(prop.GetMethod);
-					if (prop.SetMethod != null)
-						_setSpriteUnscaledSize = AccessTools.MethodDelegate<Action<scrVisualDecoration, Vector2>>(prop.SetMethod);
-				}
-				_initialized = true;
-			}
-
 			public static void Postfix(scrVisualDecoration __instance)
 			{
+				if (GCS.internalLevelName != null) return;
 				var sprite = __instance.spriteRenderer?.sprite;
 				if (sprite?.texture == null) return;
 
-				// 使用 TryGetDecorRatioForTexture 解决 CustomSprite.GetSprite 创建新纹理时 name 丢失的问题
 				if (TryGetDecorRatioForTexture(sprite.texture, out Vector3 ratio))
 				{
-					if (__instance.spriteRenderer != null) __instance.spriteRenderer.transform.localScale = ratio;
+					ApplyDecorRatioScaling(__instance, ratio);
+				}
+			}
+		}
 
-					if (!Main.Settings.optimizer.dontResizeCollider)
-					{
-						__instance.damageBox.size = Vector2.Scale(__instance.damageBox.size, ratio);
+		[HarmonyPatch(typeof(scrVisualDecoration), "SetSprite", typeof(Sprite), typeof(TextureManager.ImageOptions))]
+		public static class DecorationScalingPatchSprite
+		{
+			public static void Postfix(scrVisualDecoration __instance)
+			{
+				if (GCS.internalLevelName != null) return;
+				var sprite = __instance.spriteRenderer?.sprite;
+				if (sprite?.texture == null) return;
 
-						if (!_initialized) Initialize();
-						if (_getSpriteUnscaledSize != null && _setSpriteUnscaledSize != null)
-						{
-							var oldSize = _getSpriteUnscaledSize(__instance);
-							_setSpriteUnscaledSize(__instance, Vector2.Scale(oldSize, ratio));
-						}
-					}
+				if (TryGetDecorRatioForTexture(sprite.texture, out Vector3 ratio))
+				{
+					ApplyDecorRatioScaling(__instance, ratio);
+				}
+			}
+		}
+
+		[HarmonyPatch(typeof(scrVisualDecoration), "UpdateShader")]
+		public static class MeshRendererScalingPatch
+		{
+			public static void Postfix(scrVisualDecoration __instance)
+			{
+				if (GCS.internalLevelName != null) return;
+				if (!__instance.meshRendererObj.activeSelf) return;
+				var tex = __instance.spriteRenderer?.sprite?.texture;
+				if (tex != null && TryGetDecorRatioForTexture(tex, out Vector3 ratio))
+				{
+					var localScale = __instance.meshRenderer.transform.localScale;
+					__instance.meshRenderer.transform.localScale = new Vector3(
+						localScale.x * ratio.x,
+						localScale.y * ratio.y,
+						localScale.z);
 				}
 			}
 		}

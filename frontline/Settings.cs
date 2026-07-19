@@ -183,7 +183,7 @@ namespace Iridium
             {
                 if (obj is float f)
                 {
-                    optimizer.divideBy = f;
+                    optimizer.divideBy = Mathf.Clamp((int)f, 1, 4);
                     OptimizerPatches.ResetTextureOptimizationState();
                     Save();
                 }

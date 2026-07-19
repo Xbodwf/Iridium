@@ -84,49 +84,6 @@ namespace Iridium.Patches
 		{
 			internal static readonly Dictionary<int, float> _playerPauseEndTimes = new();
 
-			private static MethodBase? _patchedOriginal;
-			private static MethodInfo? _prefixMethod;
-
-			[HarmonyPrefix]
-			public static bool Prefix()
-			{
-				return !scrController.coopMode;
-			}
-
-			public static MethodBase? Apply(Harmony harmony)
-			{
-				_prefixMethod = SymbolExtensions.GetMethodInfo(() => Prefix());
-
-				var playerMethod = AccessTools.Method(typeof(scrPlayer), "LockInput");
-				if (playerMethod != null)
-				{
-					Main.Logger?.Log("CoopPauseLockFix: patching scrPlayer.LockInput (≥3.1.2)");
-					_patchedOriginal = harmony.Patch(playerMethod, prefix: new HarmonyMethod(_prefixMethod));
-					return _patchedOriginal;
-				}
-
-				var controllerMethod = AccessTools.Method(typeof(scrController), "LockInput");
-				if (controllerMethod != null)
-				{
-					Main.Logger?.Log("CoopPauseLockFix: patching scrController.LockInput (≤3.1.1)");
-					_patchedOriginal = harmony.Patch(controllerMethod, prefix: new HarmonyMethod(_prefixMethod));
-					return _patchedOriginal;
-				}
-
-				Main.Logger?.Warning("CoopPauseLockFix: LockInput not found on scrPlayer or scrController, skipping");
-				return null;
-			}
-
-			public static void Unapply(Harmony harmony)
-			{
-				if (_patchedOriginal != null && _prefixMethod != null)
-				{
-					harmony.Unpatch(_patchedOriginal, _prefixMethod);
-					_patchedOriginal = null;
-					_prefixMethod = null;
-				}
-			}
-
 			public static void SetPause(scrPlayer player, float lockTime)
 			{
 				if (player == null || lockTime <= 0f) return;
@@ -148,6 +105,20 @@ namespace Iridium.Patches
 				}
 				return false;
 			}
+		}
+
+		[HarmonyPatch(typeof(scrPlayer), "LockInput")]
+		public static class CoopPauseLockFixPlayerPatch
+		{
+			[HarmonyPrefix]
+			public static bool Prefix() => !scrController.coopMode;
+		}
+
+		[HarmonyPatch(typeof(scrController), "LockInput")]
+		public static class CoopPauseLockFixControllerPatch
+		{
+			[HarmonyPrefix]
+			public static bool Prefix() => !scrController.coopMode;
 		}
 
 		[HarmonyPatch(typeof(scrPlanet), nameof(scrPlanet.HandlePause))]

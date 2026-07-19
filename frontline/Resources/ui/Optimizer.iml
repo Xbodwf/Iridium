@@ -53,7 +53,7 @@
                 <HBox align="center">
                     <Text text={localize('DivideImageBy')} style="label" />
                     <Fill />
-                            <Slider value={settings.optimizer.divideBy} min="1" max="4" step="0.1" showValue="true" on-changed="OnDivideByChanged" />
+                            <Slider value={settings.optimizer.divideBy} min="1" max="4" showValue="true" on-changed="OnDivideByChanged" />
                 </HBox>
 
                 <HBox align="center">

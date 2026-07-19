@@ -10,7 +10,7 @@ namespace Iridium.Config
         public bool optimizeRecolorTrack = false;
         public bool optimizeFilters = false;
         public bool optimizeCLSAsyncScan = false;
-        public double divideBy = 1.0;
+		public int divideBy = 1;
         public bool dontShowSavedMemory = false;
         public bool dontCompress = false;
         public bool dontResizeMultipleOf4 = false;

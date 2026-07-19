@@ -89,7 +89,7 @@ namespace Iridium.Patches
             // --- Optimizer ---
             var optCond = () => Main.Settings.optimizer.enableOptimizer;
             RegisterNestedPatches(typeof(OptimizerPatches), optCond);
-            _definitions.Add(new PatchDef(typeof(TrackOptimizationPatches), optCond));
+            RegisterNestedPatches(typeof(TrackOptimizationPatches), optCond);
 
             // --- Ffx Optimization Patches ---
             RegisterNestedPatches(typeof(FfxOptimizationPatches), optCond);
