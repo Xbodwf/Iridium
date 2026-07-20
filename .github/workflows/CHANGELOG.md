@@ -7,10 +7,14 @@
 
 ### 变更 / Changes / 변경 사항
 
-1. **修复了因浮点数赋给整数变量导致的滑块无法拖动问题。(v3)**
-1. **Fixed slider being undraggable due to assigning a float value to an integer field. (v3)**
-1. **부동 소수점 값을 정수 필드에 할당하여 슬라이더를 드래그할 수 없던 문제를 수정했습니다. (v3)**
+1. **重构了 IMGUI 滑条渲染器，修复了错误嵌套布局导致的滑条无法交互问题，并对齐了 UGUI 滑条布局结构。**
+1. **Refactored the IMGUI slider renderer to fix an incorrect nested layout that prevented slider interaction, and aligned the UGUI slider layout structure.**
+1. **IMGUI 슬라이더 렌더러를 재구성하여 잘못된 중첩 레이아웃으로 인해 슬라이더를 조작할 수 없던 문제를 수정하고, UGUI 슬라이더 레이아웃 구조를 정렬했습니다.**
 
-2. **修复了压缩装饰导致的装饰物大小不正确与装饰错位问题。**
-2. **Fixed incorrect decoration size and misalignment caused by compressed decorations.**
-2. **압축된 장식으로 인한 장식 크기 오류 및 위치 어긋남 문제를 수정했습니다.**
+2. **修复了因浮点数赋给整数变量导致的滑块无法拖动问题。**
+2. **Fixed slider being undraggable due to assigning a float value to an integer field.**
+2. **부동 소수점 값을 정수 필드에 할당하여 슬라이더를 드래그할 수 없던 문제를 수정했습니다.**
+
+3. **修复了压缩装饰导致的装饰物大小不正确与装饰错位问题。**
+3. **Fixed incorrect decoration size and misalignment caused by compressed decorations.**
+3. **압축된 장식으로 인한 장식 크기 오류 및 위치 어긋남 문제를 수정했습니다.**
