@@ -18,3 +18,7 @@
 3. **修复了压缩装饰导致的装饰物大小不正确与装饰错位问题。**
 3. **Fixed incorrect decoration size and misalignment caused by compressed decorations.**
 3. **압축된 장식으로 인한 장식 크기 오류 및 위치 어긋남 문제를 수정했습니다.**
+
+4. **补齐了 main 构建对 v2 Runtime 系列程序集的依赖，现在 `dotnet build` 会自动打包 Iridium.Runtime.Abstractions/Mono/Il2Cpp。**
+4. **Added missing v2 Runtime assembly dependencies to the main build; `dotnet build` now automatically packages Iridium.Runtime.Abstractions/Mono/Il2Cpp.**
+4. **main 빌드에 v2 Runtime 어셈블리 종속성을 추가했습니다. 이제 `dotnet build`가 Iridium.Runtime.Abstractions/Mono/Il2Cpp를 자동으로 패키징합니다.**
