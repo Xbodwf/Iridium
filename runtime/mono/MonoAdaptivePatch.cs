@@ -9,10 +9,13 @@ namespace Iridium.Runtime
     /// IL implementation. The backend chooses one mode without changing the
     /// patch registration or its lifetime.
     /// </summary>
-    public abstract class MonoAdaptivePatch
+    public abstract class MonoAdaptivePatch : IPatchDefinition
     {
         private MethodBase? _target;
         private readonly List<MethodInfo> _appliedMethods = new();
+
+        public abstract string Id { get; }
+        public virtual RuntimeKind[] SupportedRuntimes => new[] { RuntimeKind.Mono };
 
         protected abstract MethodBase? GetTargetMethod();
         protected virtual MethodInfo? Prefix => null;

@@ -1,3 +1,4 @@
+using ADOFAI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -5,7 +6,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 using UnityEngine;
-using ADOFAI;
 
 namespace Iridium.Patches
 {
@@ -42,6 +42,22 @@ namespace Iridium.Patches
 
 		#region Helpers
 
+		private static float FloorCharToAngle(char floorType)
+		{
+			var method = AccessTools.Method(typeof(scrLevelMaker), "GetAngleFromFloorCharDirection");
+			if (method != null)
+				return (float)method.Invoke(null, new object[] { floorType })!;
+
+			var partial = AccessTools.Method(typeof(FloorHelper), "PathIdToRadiansPartial");
+			if (partial != null)
+			{
+				double? result = (double?)partial.Invoke(null, new object[] { floorType });
+				return result.HasValue ? (float)result.Value : 999f;
+			}
+
+			return 999f;
+		}
+
 		private static bool AnyFloorsHaveHolds(List<scrFloor> floors)
 		{
 			for (int i = 0; i < floors.Count; i++)
@@ -76,7 +92,7 @@ namespace Iridium.Patches
 				try
 				{
 					// Convert char to angle — midspin fallback to original
-					float floorAngle = scrLevelMaker.GetAngleFromFloorCharDirection(floorType);
+					float floorAngle = FloorCharToAngle(floorType);
 					if (floorAngle == 999f) return true;
 
 					// Inject data before RemakePath runs

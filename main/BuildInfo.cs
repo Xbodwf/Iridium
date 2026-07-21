@@ -6,8 +6,8 @@ public static class BuildInfo
     /// Hardcoded ADOFAI version this build targets.
     /// Set by the build script / CI for each variant.
     /// </summary>
-    public const string AdofaiVersion = "2.9.8";
-    public const string ModVersion = "1.4.0";
+    public const string AdofaiVersion = "v2";
+    public const string ModVersion = "2.0.0";
     public const string ModName = "Iridium";
     public const string ModAuthor = "Xbodwf";
 }

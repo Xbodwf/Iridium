@@ -67,7 +67,7 @@ namespace Iridium.Patches
 		/// <summary>
 		/// 通过纹理获取 ratio，先尝试 texture.name，再尝试 textureNameMap
 		/// </summary>
-		private static bool TryGetDecorRatioForTexture(Texture2D tex, out Vector3 scale)
+		internal static bool TryGetDecorRatioForTexture(Texture2D tex, out Vector3 scale)
 		{
 			if (tex == null)
 			{
@@ -723,18 +723,6 @@ namespace Iridium.Patches
 			}
 		}
 
-		[HarmonyPatch(typeof(TextureManager), "ApplyOptionsToTexture")]
-		public static class TextureNameCleanupPatch
-		{
-			public static void Postfix(Texture2D texture)
-			{
-				if (texture.name.EndsWith("(Clone)"))
-				{
-					texture.name = texture.name.Substring(0, texture.name.Length - 7);
-				}
-			}
-		}
-
 		private static Func<scrVisualDecoration, Vector2>? _getSpriteUnscaledSize;
 		private static Action<scrVisualDecoration, Vector2>? _setSpriteUnscaledSize;
 		private static bool _decorScaleInit;
@@ -752,7 +740,7 @@ namespace Iridium.Patches
 			_decorScaleInit = true;
 		}
 
-		private static void ApplyDecorRatioScaling(scrVisualDecoration __instance, Vector3 ratio)
+		internal static void ApplyDecorRatioScaling(scrVisualDecoration __instance, Vector3 ratio)
 		{
 			if (__instance.spriteRenderer != null)
 				__instance.spriteRenderer.transform.localScale = ratio;
@@ -770,36 +758,21 @@ namespace Iridium.Patches
 			}
 		}
 
-		[HarmonyPatch(typeof(scrVisualDecoration), "SetSprite", typeof(TextureManager.CustomSprite), typeof(TextureManager.ImageOptions))]
-		public static class DecorationScalingPatch
+		private static void RuntimeSetSprite(scrVisualDecoration dec, TextureManager.CustomSprite customSprite)
 		{
-			public static void Postfix(scrVisualDecoration __instance)
+			if (customSprite == null) return;
+
+			var method2 = AccessTools.Method(typeof(scrVisualDecoration), "SetSprite",
+				new Type[] { typeof(TextureManager.CustomSprite), typeof(bool) });
+			if (method2 != null)
 			{
-				if (GCS.internalLevelName != null) return;
-				var sprite = __instance.spriteRenderer?.sprite;
-				if (sprite?.texture == null) return;
-
-				if (TryGetDecorRatioForTexture(sprite.texture, out Vector3 ratio))
-				{
-					ApplyDecorRatioScaling(__instance, ratio);
-				}
+				method2.Invoke(dec, new object[] { customSprite, false });
+				return;
 			}
-		}
 
-		[HarmonyPatch(typeof(scrVisualDecoration), "SetSprite", typeof(Sprite), typeof(TextureManager.ImageOptions))]
-		public static class DecorationScalingPatchSprite
-		{
-			public static void Postfix(scrVisualDecoration __instance)
-			{
-				if (GCS.internalLevelName != null) return;
-				var sprite = __instance.spriteRenderer?.sprite;
-				if (sprite?.texture == null) return;
-
-				if (TryGetDecorRatioForTexture(sprite.texture, out Vector3 ratio))
-				{
-					ApplyDecorRatioScaling(__instance, ratio);
-				}
-			}
+			var method1 = AccessTools.Method(typeof(scrVisualDecoration), "SetSprite",
+				new Type[] { typeof(Sprite) });
+			method1?.Invoke(dec, new object[] { customSprite.sprite });
 		}
 
 		[HarmonyPatch(typeof(scrVisualDecoration), "UpdateShader")]
@@ -1330,7 +1303,7 @@ namespace Iridium.Patches
 							{
 								var customSprites = scrDecorationManager.instance.imageHolder.customSprites;
 								customSprites.TryGetValue(__instance.targetImageFilename ?? string.Empty, out var s);
-								visualDec.SetSprite(s, TextureManager.ImageOptions.None);
+								RuntimeSetSprite(visualDec, s);
 							}
 
 							if (__instance.maskingTypeUsed)

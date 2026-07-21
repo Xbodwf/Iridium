@@ -1,24 +1,16 @@
-> [!WARNING]
-> Iridium 从 1.3.0_beta1 开始支持 MelonLoader，从 1.4.0_beta5 开始支持 BepInEx。有关在使用它们的 ADOFAI 上安装 Iridium，请查看对应的使用文档。
+> [!NOTE]
+> Iridium 支持多个模组加载器，查看 README.md 可了解对应平台的安装方式。
 >
-> Iridium has supported MelonLoader since 1.3.0_beta1, and BepInEx since 1.4.0_beta5. Please refer to the corresponding documentation for installing Iridium on ADOFAI using these loaders.
+> Iridium supports multiple mod loaders — see README.md for platform-specific installation instructions.
 >
-> Iridium은 1.3.0_beta1부터 MelonLoader를, 1.4.0_beta5부터 BepInEx를 지원합니다. 해당 로더를 사용하는 ADOFAI에 Iridium을 설치하는 방법은 각각의 사용 문서를 참고하세요.
+> Iridium은 여러 모드 로더를 지원합니다. 플랫폼별 설치 방법은 README.md를 참고하세요.
 
 ### 变更 / Changes / 변경 사항
 
-1. **重构了 IMGUI 滑条渲染器，修复了错误嵌套布局导致的滑条无法交互问题，并对齐了 UGUI 滑条布局结构。**
-1. **Refactored the IMGUI slider renderer to fix an incorrect nested layout that prevented slider interaction, and aligned the UGUI slider layout structure.**
-1. **IMGUI 슬라이더 렌더러를 재구성하여 잘못된 중첩 레이아웃으로 인해 슬라이더를 조작할 수 없던 문제를 수정하고, UGUI 슬라이더 레이아웃 구조를 정렬했습니다.**
+1. **新增支持 ADOFAI Beta 3.3.0 (v3)，同时保持对 3.2.0 的兼容。**
+1. **Added support for ADOFAI Beta 3.3.0 (v3), while maintaining compatibility with 3.2.0.**
+1. **ADOFAI Beta 3.3.0 (v3) 지원을 추가했으며, 3.2.0과의 호환성을 유지합니다.**
 
-2. **修复了因浮点数赋给整数变量导致的滑块无法拖动问题。**
-2. **Fixed slider being undraggable due to assigning a float value to an integer field.**
-2. **부동 소수점 값을 정수 필드에 할당하여 슬라이더를 드래그할 수 없던 문제를 수정했습니다.**
-
-3. **修复了压缩装饰导致的装饰物大小不正确与装饰错位问题。**
-3. **Fixed incorrect decoration size and misalignment caused by compressed decorations.**
-3. **압축된 장식으로 인한 장식 크기 오류 및 위치 어긋남 문제를 수정했습니다.**
-
-4. **补齐了 main 构建对 v2 Runtime 系列程序集的依赖，现在 `dotnet build` 会自动打包 Iridium.Runtime.Abstractions/Mono/Il2Cpp。**
-4. **Added missing v2 Runtime assembly dependencies to the main build; `dotnet build` now automatically packages Iridium.Runtime.Abstractions/Mono/Il2Cpp.**
-4. **main 빌드에 v2 Runtime 어셈블리 종속성을 추가했습니다. 이제 `dotnet build`가 Iridium.Runtime.Abstractions/Mono/Il2Cpp를 자동으로 패키징합니다.**
+2. **简化了 Patch 日志输出：初始加载时显示批量汇总 (成功/失败/跳过)，详细错误写入日志文件。**
+2. **Simplified patch logging: batch summary (ok/failed/skipped) shown on load, detailed errors written to the log file.**
+2. **패치 로그 출력을 간소화했습니다: 초기 로딩 시 일괄 요약(성공/실패/건너뜀)을 표시하고, 자세한 오류는 로그 파일에 기록합니다.**

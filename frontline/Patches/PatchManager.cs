@@ -21,6 +21,7 @@ namespace Iridium.Patches
 			public Func<bool> Condition;
 			public Type? Parent;
 			public string Name;
+			public RuntimeKind[] SupportedRuntimes;
 
 			public PatchDef(Type type, Func<bool> condition, Type? parent = null)
 			{
@@ -29,6 +30,7 @@ namespace Iridium.Patches
 				Condition = condition;
 				Parent = parent;
 				Name = type.Name;
+				SupportedRuntimes = new[] { RuntimeKind.Mono };
 			}
 		}
 
@@ -46,11 +48,14 @@ namespace Iridium.Patches
 		public static void RegisterPatch(string id, object definition, Func<bool> condition)
 		{
 			if (definition == null) throw new ArgumentNullException(nameof(definition));
-			_definitions.Add(new PatchDef(definition.GetType(), condition)
+			var def = new PatchDef(definition.GetType(), condition)
 			{
 				Name = id,
 				Definition = definition
-			});
+			};
+			if (definition is IPatchDefinition patchDef)
+				def.SupportedRuntimes = patchDef.SupportedRuntimes;
+			_definitions.Add(def);
 		}
 
 		/// <summary>
@@ -60,7 +65,18 @@ namespace Iridium.Patches
 		{
 			foreach (var type in parentType.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
 			{
-				if (type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
+				bool isPatch;
+				try
+				{
+					isPatch = type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0;
+				}
+				catch (Exception error)
+				{
+					Main.Logger?.Error($"[PatchManager] Skipping {type.FullName}: cannot read Harmony metadata ({error.Message})");
+					continue;
+				}
+
+				if (isPatch)
 				{
 					if (exclude != null && exclude.Contains(type))
 						continue;
@@ -100,6 +116,11 @@ namespace Iridium.Patches
 			var optCond = () => Main.Settings.optimizer.enableOptimizer;
 			RegisterNestedPatches(typeof(OptimizerPatches), optCond);
 			RegisterNestedPatches(typeof(TrackOptimizationPatches), optCond);
+
+			// Adaptive patches — resolve Harmony targets at runtime for cross-version compat
+			RegisterPatch("TextureNameCleanup", new AdaptivePatches.TextureNameCleanup(), optCond);
+			RegisterPatch("DecorationScalingCustomSprite", new AdaptivePatches.DecorationScalingCustomSprite(), optCond);
+			RegisterPatch("DecorationScalingSprite", new AdaptivePatches.DecorationScalingSprite(), optCond);
 
 			// --- Ffx Optimization Patches ---
 			RegisterNestedPatches(typeof(FfxOptimizationPatches), optCond);
@@ -219,6 +240,13 @@ namespace Iridium.Patches
             }
 		}
 
+		private sealed class FailureDetail
+		{
+			public string Name = null!;
+			public string State = null!;
+			public string Message = null!;
+		}
+
 		/// <summary>
 		/// 更新所有patch（仅用于初始化或全量更新）
 		/// </summary>
@@ -226,11 +254,46 @@ namespace Iridium.Patches
 		{
 			if (Main.RuntimeHost?.PatchBackend == null) return;
 
+			int total = _definitions.Count;
+			int succeeded = 0;
+			var failures = new List<FailureDetail>();
+			var skipNames = new List<string>();
+
 			foreach (var def in _definitions)
 			{
-				UpdateSinglePatch(def);
+				if (!IsRuntimeSupported(def))
+				{
+					skipNames.Add(def.Name);
+					continue;
+				}
+
+				var result = UpdateSinglePatch(def);
+				if (result == null)
+				{
+					succeeded++;
+				}
+				else
+				{
+					failures.Add(result);
+				}
 			}
 
+			int applied = succeeded + failures.Count;
+			Main.Logger?.Log($"[PatchManager] {succeeded}/{applied} ok, {failures.Count} failed, {skipNames.Count} skipped — open the log file to see detailed errors");
+
+			if (failures.Count > 0)
+			{
+				Main.Logger?.Log("[PatchManager] --- FAILURES ---");
+				foreach (var f in failures)
+					Main.Logger?.Log($"[PatchManager]   {f.Name}: {f.State} ({f.Message})");
+			}
+
+			if (skipNames.Count > 0)
+			{
+				Main.Logger?.Log("[PatchManager] --- SKIPPED (unsupported runtime) ---");
+				foreach (var name in skipNames)
+					Main.Logger?.Log($"[PatchManager]   {name}");
+			}
 		}
 
 		public static void ReapplyAllPatches()
@@ -304,29 +367,50 @@ namespace Iridium.Patches
 			}
 		}
 
+		private static bool IsRuntimeSupported(PatchDef def)
+		{
+			var runtime = Main.RuntimeHost?.Runtime;
+			if (runtime == null || def.SupportedRuntimes == null)
+				return true;
+
+			foreach (var kind in def.SupportedRuntimes)
+				if (kind == runtime.Value)
+					return true;
+			return false;
+		}
+
 		/// <summary>
-		/// 更新单个patch定义
+		/// 更新单个patch定义。返回 null 表示成功，返回 FailureDetail 表示失败。
 		/// </summary>
-		private static void UpdateSinglePatch(PatchDef def)
+		private static FailureDetail? UpdateSinglePatch(PatchDef def)
 		{
 			bool shouldBeActive = CalculateEffectiveStatus(def);
 			bool trackedActive = _activePatches.TryGetValue(def.Type, out bool currentActive) && currentActive;
 
 			if (trackedActive != shouldBeActive)
 			{
-				Main.Logger?.Log(Localization.Get("PatchManagerStatusChanged", def.Name, trackedActive.ToString(), shouldBeActive.ToString()));
 				if (shouldBeActive)
 				{
-					// Do not record an active state when the backend failed to create
-					// any binding. This keeps failed patches retryable.
-					if (ApplyPatch(def))
+					var result = ApplyPatch(def);
+					if (result != null)
+					{
 						_activePatches[def.Type] = true;
+						return null;
+					}
+					return result;
 				}
-				else if (RemovePatch(def))
+				else
 				{
-					_activePatches.Remove(def.Type);
+					var result = RemovePatch(def);
+					if (result != null)
+					{
+						_activePatches.Remove(def.Type);
+						return null;
+					}
+					return result;
 				}
 			}
+			return null; // no-op is success
 		}
 
 		private static bool CalculateEffectiveStatus(PatchDef def)
@@ -346,28 +430,28 @@ namespace Iridium.Patches
 
 		// 移除不再使用的 IsActuallyPatched 辅助方法
 
-		private static bool ApplyPatch(PatchDef def)
+		private static FailureDetail? ApplyPatch(PatchDef def)
 		{
 			var backend = Main.RuntimeHost?.PatchBackend;
 			if (backend == null)
-				return false;
+				return new FailureDetail { Name = def.Name, State = "NoBackend", Message = "Patch backend is null" };
 
 			var result = backend.Apply(def.Name, def.Definition);
 			if (!result.Succeeded)
-				Main.Logger?.Error($"[PatchManager] {def.Name}: {result.State} ({result.Message})");
-			return result.Succeeded;
+				return new FailureDetail { Name = def.Name, State = result.State.ToString(), Message = result.Message };
+			return null;
 		}
 
-		private static bool RemovePatch(PatchDef def)
+		private static FailureDetail? RemovePatch(PatchDef def)
 		{
 			var backend = Main.RuntimeHost?.PatchBackend;
 			if (backend == null)
-				return false;
+				return new FailureDetail { Name = def.Name, State = "NoBackend", Message = "Patch backend is null" };
 
 			var result = backend.Remove(def.Name, def.Definition);
 			if (!result.Succeeded)
-				Main.Logger?.Error($"[PatchManager] {def.Name}: {result.State} ({result.Message})");
-			return result.Succeeded;
+				return new FailureDetail { Name = def.Name, State = result.State.ToString(), Message = result.Message };
+			return null;
 		}
 
 		public static void UnpatchAll()

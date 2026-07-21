@@ -13,6 +13,17 @@ namespace Iridium.Patches
 	{
 		private static readonly MethodInfo _deserializePartially = typeof(Json).GetMethod(nameof(Json.DeserializePartially), new[] { typeof(string), typeof(string) });
 
+		private static float PathIdToRadiansSafe(char c)
+		{
+			var partial = AccessTools.Method(typeof(FloorHelper), "PathIdToRadiansPartial");
+			if (partial != null)
+			{
+				double? result = (double?)partial.Invoke(null, new object[] { c });
+				return result.HasValue ? (float)result.Value : 999f;
+			}
+			return 999f;
+		}
+
 		/// <summary>
 		/// 安全替换：将 Json.Deserialize(str) 替换为 Json.DeserializePartially(str, "actions")。
 		/// 如果 _deserializePartially 为 null（方法未找到），则跳过替换，使用原始 Deserialize。
@@ -128,7 +139,15 @@ namespace Iridium.Patches
 				if (!Main.Settings.compatibility.forceAngleData) return;
 				if (!dict.TryGetValue("pathData", out object val) || val is not string pathData) return;
 
-				dict["angleData"] = scrLevelMaker.StringToAngleArray(pathData).Cast<object>().ToList();
+				var convertMethod = AccessTools.Method(typeof(scrLevelMaker), "StringToAngleArray");
+				if (convertMethod != null)
+				{
+					dict["angleData"] = ((float[])convertMethod.Invoke(null, new object[] { pathData })).Cast<object>().ToList();
+				}
+				else
+				{
+					dict["angleData"] = pathData.Select(c => (object)(float)PathIdToRadiansSafe(c)).ToList();
+				}
 				dict.Remove("pathData");
 			}
 		}

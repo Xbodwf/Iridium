@@ -354,7 +354,7 @@ namespace Iridium.Patches
 						try
 						{
 							LoadResult status;
-							instance.imgHolder.AddSprite(name, path, out status);
+							instance.imgHolder.GetOrAddSprite(name, path, out status);
 							if (ADOBase.editor != null)
 								ADOBase.editor.UpdateImageLoadResult(name, status);
 						}

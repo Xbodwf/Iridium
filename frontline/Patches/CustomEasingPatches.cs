@@ -400,7 +400,7 @@ namespace Iridium.Patches
 						bool hasImg = !string.IsNullOrEmpty(__instance.targetImageFilename);
 						var sprites = scrDecorationManager.instance.imageHolder.customSprites;
 						var cs = hasImg ? sprites[__instance.targetImageFilename] : null;
-						((scrVisualDecoration)dec).SetSprite(cs?.GetSprite(TextureManager.ImageOptions.None), TextureManager.ImageOptions.None);
+						((scrVisualDecoration)dec).SetSprite(cs?.sprite);
 					}
 					// --- Masking 属性 (仅 scrVisualDecoration) ---
 					if (isVisual)
