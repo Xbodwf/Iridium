@@ -290,17 +290,28 @@ namespace Iridium.Patches
 		[HarmonyPatch(typeof(scnEditor), "Update")]
 		public static class AutoplayHintUIPatch
 		{
+			private static System.Reflection.FieldInfo _controlsTipField;
+
+			[HarmonyPrepare]
+			public static void Prepare()
+			{
+				_controlsTipField = typeof(scnEditor).GetField("controlsTip");
+			}
+
 			[HarmonyPostfix]
 			public static void Postfix(scnEditor __instance)
 			{
+				if (_controlsTipField == null) return;
+				var controlsTip = _controlsTipField.GetValue(__instance) as UnityEngine.UI.Text;
+				if (controlsTip == null) return;
 				if (!RDC.auto || !__instance.playMode) return;
 				if (!Main.Settings.ui.showAutoplayHintUI)
 				{
-					__instance.controlsTip.text = "";
+					controlsTip.text = "";
 				}
 				else if (Main.Settings.ui.customAutoplayHint)
 				{
-					__instance.controlsTip.text = string.IsNullOrEmpty(Main.Settings.ui.autoplayHintTemplate)
+					controlsTip.text = string.IsNullOrEmpty(Main.Settings.ui.autoplayHintTemplate)
 						? ""
 						: ProcessAutoplayHintTemplate(Main.Settings.ui.autoplayHintTemplate, __instance.pausedInPlayMode);
 				}
