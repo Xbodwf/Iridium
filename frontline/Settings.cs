@@ -584,6 +584,30 @@ namespace Iridium
                 }
             });
 
+            _renderer.RegisterHandler("OnShowAutoplayHintUIToggled", (obj) =>
+            {
+                bool value = obj is bool b ? b : false;
+                ui.showAutoplayHintUI = value;
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.AutoplayHintUIPatch));
+                Save();
+            });
+
+            _renderer.RegisterHandler("OnCustomAutoplayHintToggled", (obj) =>
+            {
+                bool value = obj is bool b ? b : false;
+                ui.customAutoplayHint = value;
+                Save();
+            });
+
+            _renderer.RegisterHandler("OnAutoplayHintTemplateChanged", (obj) =>
+            {
+                if (obj is string s)
+                {
+                    ui.autoplayHintTemplate = s;
+                    Save();
+                }
+            });
+
             _renderer.RegisterHandler("OnEnableCircleArcToggled", (obj) =>
             {
                 bool value = obj is bool b ? b : false;

@@ -7,10 +7,14 @@
 
 ### 变更 / Changes / 변경 사항
 
-1. **新增支持 ADOFAI Beta 3.3.0 (v3)，同时保持对 3.2.0 的兼容。**
-1. **Added support for ADOFAI Beta 3.3.0 (v3), while maintaining compatibility with 3.2.0.**
-1. **ADOFAI Beta 3.3.0 (v3) 지원을 추가했으며, 3.2.0과의 호환성을 유지합니다.**
+1. **修复了滚动条因为前置渲染器的问题无法滚动的问题，并且允许玩家自由输入数值。**
+1. **Fixed an issue where sliders could not be dragged due to the renderer, and allowed players to freely input values.**
+1. **슬라이더가 렌더러 문제로 드래그되지 않던 문제를 수정하고, 플레이어가 자유롭게 값을 입력할 수 있도록 했습니다.**
 
-2. **简化了 Patch 日志输出：初始加载时显示批量汇总 (成功/失败/跳过)，详细错误写入日志文件。**
-2. **Simplified patch logging: batch summary (ok/failed/skipped) shown on load, detailed errors written to the log file.**
-2. **패치 로그 출력을 간소화했습니다: 초기 로딩 시 일괄 요약(성공/실패/건너뜀)을 표시하고, 자세한 오류는 로그 파일에 기록합니다.**
+2. **移动了快捷键相关的选项到原"编辑器快捷键"(现在叫做快捷键)选项卡。**
+2. **Moved shortcut-related options to the former "Editor Shortcuts" tab (now called "Shortcuts").**
+2. **단축키 관련 옵션을 기존 "편집기 단축키"(현재 "단축키"로 이름 변경) 탭으로 이동했습니다.**
+
+3. **现在允许玩家禁用自动播放时出现的 HUD，或者修改为你想显示的内容。**
+3. **Players can now disable or customize the auto-play HUD that appears during editing.**
+3. **이제 편집 중 자동 재생 시 나타나는 HUD를 비활성화하거나 원하는 내용으로 수정할 수 있습니다.**

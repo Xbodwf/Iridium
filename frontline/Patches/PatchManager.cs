@@ -194,6 +194,7 @@ namespace Iridium.Patches
 			_definitions.Add(new PatchDef(typeof(MiscPatches.CircleArcPatch), () => Main.Settings.ui.enableCircleArc));
 			_definitions.Add(new PatchDef(typeof(MiscPatches.AutoplayTextPositionPatch), () => Main.Settings.ui.moveAutoplayText));
 			_definitions.Add(new PatchDef(typeof(MiscPatches.AlwaysCountdownPatch), () => Main.Settings.ui.alwaysCountdown));
+			_definitions.Add(new PatchDef(typeof(MiscPatches.AutoplayHintUIPatch), () => true));
 			_definitions.Add(new PatchDef(typeof(PausePlanetTrailPatch), () => Main.Settings.ui.enablePausePlanetTrail));
 
 			// Lobby music

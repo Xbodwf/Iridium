@@ -102,7 +102,7 @@
   "JudgeText_Multipress": "Multipress",
   "JudgeText_FailMiss": "Fail (Miss)",
   "JudgeText_FailOverload": "Fail (Overload)",
-  "SceneOptimizations": "Scene Optimizations (scnGame/scnEditor)",
+  "SceneOptimizations": "Scene Optimizations",
   "CacheGameObjectReferences": "Cache GameObject References",
   "OptimizeEventProcessing": "Optimize Event Processing (Pre-classify events)",
   "OptimizeEditorMouseDetection": "Optimize Editor Mouse Detection",
@@ -202,7 +202,8 @@
   "OptimizeOffsetFloorEvents": "Optimize Floor ID Offset in Events",
   "EditorFloorOptimizationWarning": "These optimizations alter the editor's floor rebuild logic. If you encounter visual glitches, disable them.",
 
-  "EditorShortcuts": "Editor Shortcuts",
+  "EditorShortcuts": "Shortcuts",
+  "EditorAutoplayShortcuts": "Auto-Play Shortcuts",
   "EnableEditorShortcuts": "Enable Editor Keyboard Shortcuts",
   "EditorShortcutsSettings": "Shortcut Keys",
   "EditorShortcutsDecoration": "Decoration",
@@ -226,5 +227,9 @@
   "EnableAsyncInput": "Enable Async Input Optimization",
   "AsyncInputHint": "Improves audio timing accuracy and reduces input lag by using high-precision system timers. Recommended for high BPM / dense levels.",
   "AsyncInputWarning": "Warning: Levels played with this feature enabled must be clearly marked. The Iridium development team assumes no responsibility for any consequences arising from unmarked levels.",
-  "IridiumHint": ""
+  "IridiumHint": "",
+  "ShowAutoplayHintUI": "Show Auto-Play Hint UI",
+  "CustomAutoplayHint": "Custom Hint Content",
+  "AutoplayHintTemplate": "Hint template. Supports {autoplay} {status} {key}",
+  "AutoplayStatusEnabled": "enabled"
 }

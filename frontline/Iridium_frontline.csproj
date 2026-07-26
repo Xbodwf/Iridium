@@ -34,10 +34,13 @@
 		</Reference>
 		<ProjectReference Include="..\architectury\Iris.Iml\Iris.Iml.csproj" />
 		<Reference Include="Assembly-CSharp">
-			<HintPath>..\lib\v2.10.0\Assembly-CSharp.dll</HintPath>
+			<HintPath>..\lib\v3.3.0\Assembly-CSharp.dll</HintPath>
 		</Reference>
 		<Reference Include="Assembly-CSharp-firstpass">
-			<HintPath>..\lib\v2.10.0\Assembly-CSharp-firstpass.dll</HintPath>
+			<HintPath>..\lib\v3.3.0\Assembly-CSharp-firstpass.dll</HintPath>
+		</Reference>
+		<Reference Include="SkyHook.Unity">
+			<HintPath>..\lib\v3.3.0\SkyHook.Unity.dll</HintPath>
 		</Reference>
 		<Reference Include="DOTween">
 			<HintPath>..\lib\v2.9.8\DOTween.dll</HintPath>
@@ -221,7 +224,7 @@
 			<HintPath>..\lib\v2.9.8\UnityEngine.TextRenderingModule.dll</HintPath>
 		</Reference>
 		<Reference Include="Unity.TextMeshPro">
-			<HintPath>..\lib\v2.10.0\Unity.TextMeshPro.dll</HintPath>
+			<HintPath>..\lib\v3.3.0\Unity.TextMeshPro.dll</HintPath>
 		</Reference>
 		<Reference Include="UnityEngine.TilemapModule">
 			<HintPath>..\lib\v2.9.8\UnityEngine.TilemapModule.dll</HintPath>
@@ -303,7 +306,7 @@
 		</None>
 	</ItemGroup>
 	<Target Name="PrintVersion" BeforeTargets="BeforeBuild">
-		<Message Text="=== Building Iridium for ADOFAI v2.10.0 ===" Importance="high" />
+		<Message Text="=== Building Iridium for ADOFAI v3.3.0 ===" Importance="high" />
 	</Target>
 	<Target Name="CopyToOut" AfterTargets="Build">
 		<PropertyGroup>
@@ -328,7 +331,7 @@
 		<Message Text="Files copied to: $(OutDir)" Importance="high" />
 	</Target>
 	<PropertyGroup>
-		<GameExePath>/home/xbouo/.local/share/Steam/steamapps/common/A Dance of Fire and Ice/ADanceofFireandIce.exe</GameExePath>
+		<GameExePath>I:\SteamLibrary\steamapps\common\A Dance of Fire and Ice\A Dance of Fire and Ice.exe</GameExePath>
 		<AutoLaunchGame>true</AutoLaunchGame>
 		<Loader></Loader>
 	</PropertyGroup>

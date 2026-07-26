@@ -85,6 +85,9 @@ namespace Iridium.Config
         public bool enableCircleArc = false;
         public bool alwaysCountdown = false;
         public bool enablePausePlanetTrail = false;
+        public bool showAutoplayHintUI = true;
+        public bool customAutoplayHint = false;
+        public string autoplayHintTemplate = "{autoplay}: {status}, press {key} to toggle";
     }
 
     public class LobbyMusicSettings
@@ -114,8 +117,8 @@ namespace Iridium.Config
         public bool portalTravelFix = false;
         public bool fixEditorPlayResetMistakes = true;
         public bool fixTurnaroundCondition = true;
-        public bool editorPauseEnabled = true;
-        public bool editorPauseAllowed = false; // Master switch: allow pause in editor auto-play
+        public bool editorPauseEnabled = false;
+        public bool editorPauseAllowed = true; // Master switch: allow pause in editor auto-play
         public int editorPauseKey = 32; // KeyCode.Space
         public int editorPauseModifiers = 0; // bit: 1=Ctrl 2=Alt 4=Shift 8=Win
         public bool fixCoopPauseLock = true;

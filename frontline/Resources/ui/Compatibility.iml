@@ -22,26 +22,6 @@
         </HBox>
 
         <HBox align="center">
-            <Text text={localize('EditorPauseAllowed')} style="label" />
-            <Switch value={settings.compatibility.editorPauseAllowed} on-changed="OnEditorPauseAllowedToggled" />
-        </HBox>
-
-        {settings.compatibility.editorPauseAllowed && <>
-            <HBox align="center">
-                <Text text={localize('EditorPauseEnabled')} style="label" />
-                <Fill />
-                <Switch value={settings.compatibility.editorPauseEnabled} on-changed="OnEditorPauseEnabledToggled" />
-            </HBox>
-            {settings.compatibility.editorPauseEnabled && <>
-                <HBox align="center">
-                    <Text text={localize('EditorPauseKey')} style="label" />
-                    <Fill />
-                    <Button text={getShortcutDisplay(settings.compatibility.editorPauseKey, settings.compatibility.editorPauseModifiers)} on-click="OnBindEditorPauseKey" />
-                </HBox>
-            </>}
-        </>}
-
-        <HBox align="center">
             <Text text={localize('FixCameraRelativeDrag')} style="label" />
             <Switch value={settings.compatibility.fixCameraRelativeDrag} on-changed="OnFixCameraRelativeDragToggled" />
         </HBox>

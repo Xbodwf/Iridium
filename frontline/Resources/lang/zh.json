@@ -102,7 +102,7 @@
   "JudgeText_Multipress": "多重输入",
   "JudgeText_FailMiss": "失败(错过)",
   "JudgeText_FailOverload": "失败(过载)",
-  "SceneOptimizations": "场景优化 (scnGame/scnEditor)",
+  "SceneOptimizations": "场景优化",
   "CacheGameObjectReferences": "缓存 GameObject 引用",
   "OptimizeEventProcessing": "优化事件处理 (预分类事件)",
   "OptimizeEditorMouseDetection": "优化编辑器鼠标检测",
@@ -202,7 +202,8 @@
   "OptimizeOffsetFloorEvents": "优化事件中的砖块 ID 偏移",
   "EditorFloorOptimizationWarning": "这些优化会改变编辑器的砖块重建逻辑。如果遇到显示异常，请尝试关闭它们。",
 
-  "EditorShortcuts": "编辑器快捷键",
+  "EditorShortcuts": "快捷键",
+  "EditorAutoplayShortcuts": "自动播放快捷键",
   "EnableEditorShortcuts": "启用编辑器快捷键",
   "EditorShortcutsSettings": "快捷键设置",
   "EditorShortcutsDecoration": "装饰物",
@@ -226,5 +227,9 @@
   "EnableAsyncInput": "启用异步输入优化",
   "AsyncInputHint": "通过高精度系统计时器提高音频时间精度、降低输入延迟，建议高 BPM / 高密度谱面时开启。",
   "AsyncInputWarning": "警告：启用此功能游玩的谱面必须进行额外标注。未进行标注而导致的后果，Iridium 开发团队不予承担。",
-  "IridiumHint": ""
+  "IridiumHint": "",
+  "ShowAutoplayHintUI": "显示自动播放提示UI",
+  "CustomAutoplayHint": "自定义提示内容",
+  "AutoplayHintTemplate": "提示模板。支持 {autoplay} {status} {key}",
+  "AutoplayStatusEnabled": "已启用"
 }

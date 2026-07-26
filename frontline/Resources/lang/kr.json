@@ -102,7 +102,7 @@
   "JudgeText_Multipress": "다중 입력",
   "JudgeText_FailMiss": "실패 (놓침)",
   "JudgeText_FailOverload": "실패 (과부하)",
-  "SceneOptimizations": "장면 최적화 (scnGame/scnEditor)",
+  "SceneOptimizations": "장면 최적화",
   "CacheGameObjectReferences": "GameObject 참조 캐시",
   "OptimizeEventProcessing": "이벤트 처리 최적화 (이벤트 사전 분류)",
   "OptimizeEditorMouseDetection": "편집기 마우스 감지 최적화",
@@ -202,7 +202,8 @@
   "OptimizeOffsetFloorEvents": "이벤트의 바닥 ID 오프셋 최적화",
   "EditorFloorOptimizationWarning": "이 최적화는 편집기의 바닥 재구성 로직을 변경합니다. 시각적 결함이 발생하면 비활성화하세요.",
 
-  "EditorShortcuts": "편집기 단축키",
+  "EditorShortcuts": "단축키",
+  "EditorAutoplayShortcuts": "자동 재생 단축키",
   "EnableEditorShortcuts": "편집기 키보드 단축키 활성화",
   "EditorShortcutsSettings": "단축키 설정",
   "EditorShortcutsDecoration": "장식",
@@ -226,5 +227,9 @@
   "EnableAsyncInput": "비동기 입력 최적화 활성화",
   "AsyncInputHint": "고정밀 시스템 타이머를 사용하여 오디오 시간 정확도를 향상시키고 입력 지연을 줄입니다. 높은 BPM/고밀도 레벨에 권장됩니다.",
   "AsyncInputWarning": "경고: 이 기능을 활성화한 상태에서 플레이한 레벨은 반드시 별도로 표시해야 합니다. 표시되지 않은 레벨로 인해 발생하는 모든 결과에 대해 Iridium 개발팀은 책임을 지지 않습니다.",
-  "IridiumHint": "작성자는 영어와 중국어만 구사할 수 있습니다. 한국어 번역은 AI를 사용했으며 부정확할 수 있습니다. 번역에 기여하려면 https://github.com/adofaiex/Iridium를 방문해 주세요."
+  "IridiumHint": "작성자는 영어와 중국어만 구사할 수 있습니다. 한국어 번역은 AI를 사용했으며 부정확할 수 있습니다. 번역에 기여하려면 https://github.com/adofaiex/Iridium를 방문해 주세요.",
+  "ShowAutoplayHintUI": "자동 재생 힌트 UI 표시",
+  "CustomAutoplayHint": "사용자 정의 힌트 내용",
+  "AutoplayHintTemplate": "힌트 템플릿. {autoplay} {status} {key} 지원",
+  "AutoplayStatusEnabled": "활성화됨"
 }

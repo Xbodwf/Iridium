@@ -66,5 +66,53 @@
                 <Button text={getShortcutDisplay(settings.editorShortcuts.popupDiscardKey, settings.editorShortcuts.popupDiscardModifiers)} on-click="OnBindPopupDiscardKey" />
             </HBox>
         </>}
+
+        <Separator />
+        <Text text={localize('EditorAutoplayShortcuts')} style="subtitle" />
+        <Separator />
+
+        <HBox align="center">
+            <Text text={localize('EditorPauseAllowed')} style="label" />
+            <Switch value={settings.compatibility.editorPauseAllowed} on-changed="OnEditorPauseAllowedToggled" />
+        </HBox>
+
+        {settings.compatibility.editorPauseAllowed && <>
+            <VBox class="padding">
+                <HBox align="center">
+                    <Text text={localize('EditorPauseEnabled')} style="label" />
+                    <Fill />
+                    <Checkbox value={settings.compatibility.editorPauseEnabled} on-changed="OnEditorPauseEnabledToggled" />
+                </HBox>
+                {settings.compatibility.editorPauseEnabled && <>
+                    <VBox class="padding">
+                        <HBox align="center">
+                            <Text text={localize('EditorPauseKey')} style="label" />
+                            <Fill />
+                            <Button text={getShortcutDisplay(settings.compatibility.editorPauseKey, settings.compatibility.editorPauseModifiers)} on-click="OnBindEditorPauseKey" />
+                        </HBox>
+                    </VBox>
+                </>}
+            </VBox>
+        </>}
+
+        <HBox align="center">
+            <Text text={localize('ShowAutoplayHintUI')} style="label" />
+            <Switch value={settings.ui.showAutoplayHintUI} on-changed="OnShowAutoplayHintUIToggled" />
+        </HBox>
+
+        {settings.ui.showAutoplayHintUI && <>
+            <VBox class="padding">
+                <HBox align="center">
+                    <Text text={localize('CustomAutoplayHint')} style="label" />
+                    <Checkbox value={settings.ui.customAutoplayHint} on-changed="OnCustomAutoplayHintToggled" />
+                </HBox>
+                {settings.ui.customAutoplayHint && <>
+                    <VBox class="padding">
+                        <Text text={localize('AutoplayHintTemplate')} style="secondary" />
+                        <TextField value={settings.ui.autoplayHintTemplate} on-changed="OnAutoplayHintTemplateChanged" />
+                    </VBox>
+                </>}
+            </VBox>
+        </>}
     </VBox>
 </Iris>

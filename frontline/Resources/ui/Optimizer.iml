@@ -27,7 +27,7 @@
                 <HBox align="center">
                     <Text text={localize('ShowSavedMemory')} style="label" />
                     <Fill />
-                <Switch value={!settings.optimizer.dontShowSavedMemory} on-changed="OnShowSavedMemoryToggled" />
+                <Checkbox value={!settings.optimizer.dontShowSavedMemory} on-changed="OnShowSavedMemoryToggled" />
                 </HBox>
 
                 <HBox align="center">
