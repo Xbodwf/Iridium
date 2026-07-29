@@ -146,7 +146,15 @@ namespace Iridium.Patches
 				}
 				else
 				{
-					dict["angleData"] = pathData.Select(c => (object)(float)PathIdToRadiansSafe(c)).ToList();
+					var migrateMethod = AccessTools.Method(typeof(FloorHelper), "MigratePathData");
+					if (migrateMethod != null)
+					{
+						dict["angleData"] = ((float[])migrateMethod.Invoke(null, new object[] { pathData })).Cast<object>().ToList();
+					}
+					else
+					{
+						dict["angleData"] = pathData.Select(c => (object)(float)PathIdToRadiansSafe(c)).ToList();
+					}
 				}
 				dict.Remove("pathData");
 			}
