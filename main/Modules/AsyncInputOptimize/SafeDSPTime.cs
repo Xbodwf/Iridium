@@ -13,12 +13,21 @@ namespace Iridium.Modules.AsyncInputOptimize
         /// <summary>Stopwatch ticks per second — replaces the hardcoded 10_000_000 (FILETIME ticks/s).</summary>
         private static readonly double TickToSec = 1.0 / Stopwatch.Frequency;
 
+
+        private static bool m_awakedLoopPatch = false;
         private static SafeDSPTime? m_instane;
         internal static void Init()
         {
+            GameObject obj;
             if (m_instane != null)
-                return;
-            GameObject obj = new("[AsyncInputOptimize.dll]InterpolationTime");
+            {
+                obj = m_instane.gameObject;
+                Destroy(m_instane);
+            }
+            else
+            {
+                obj = new("[AsyncInputOptimize.dll]InterpolationTime");
+            }
             DontDestroyOnLoad(obj);
             m_instane = obj.AddComponent(typeof(SafeDSPTime)) as SafeDSPTime;
         }
@@ -30,19 +39,11 @@ namespace Iridium.Modules.AsyncInputOptimize
             m_instane = null;
             Object.Destroy(obj);
         }
-        private void Start()
-        {
-            var source = GetComponent<AudioSource>();
-
-            source.clip = AudioClip.Create("Runner", 1, 1, 48000, false); ;
-            source.loop = true;
-            source.volume = 0;
-            source.Play();
-        }
         private void Awake()
         {
+            if (m_awakedLoopPatch) return;
+            m_awakedLoopPatch = true;
             PlayerLoopSystem loop = PlayerLoop.GetCurrentPlayerLoop();
-            // 找到 PreUpdate 阶段
             for (int i = 0; i < loop.subSystemList.Length; i++)
             {
                 PlayerLoopSystem preUpdate = loop.subSystemList[i];
@@ -50,14 +51,12 @@ namespace Iridium.Modules.AsyncInputOptimize
                 {
                     var subSystems = new System.Collections.Generic.List<PlayerLoopSystem>(preUpdate.subSystemList);
 
-                    // 创建你的自定义系统
                     PlayerLoopSystem myEarlySystem = new PlayerLoopSystem
                     {
                         type = typeof(SafeDSPTime),
                         updateDelegate = SafeDSPTime.UnityUpdate
                     };
 
-                    // 插入在 UpdateTime 之后（UpdateTime 通常是 PreUpdate 的第一个子系统）
                     subSystems.Insert(1, myEarlySystem);
                     preUpdate.subSystemList = subSystems.ToArray();
                     loop.subSystemList[i] = preUpdate;

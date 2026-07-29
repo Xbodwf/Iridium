@@ -1,10 +1,12 @@
-﻿namespace Iridium.Modules.AsyncInputOptimize
+﻿using UnityEngine;
+
+namespace Iridium.Modules.AsyncInputOptimize
 {
     public static class Main
     {
         public static void Enable()
         {
-            SafeDSPTime.Init();
+            AudioSettings.Reset(AudioSettings.GetConfiguration());
         }
         public static void Disable()
         {
