@@ -10,12 +10,20 @@ namespace Iridium.Modules.AsyncInputOptimize
     [RequireComponent(typeof(AudioSource))]
     public sealed class SafeDSPTime : MonoBehaviour
     {
+        private static bool m_awakedLoopPatch = false;
         private static SafeDSPTime? m_instane;
         internal static void Init()
         {
+            GameObject obj;
             if (m_instane != null)
-                return;
-            GameObject obj = new("[AsyncInputOptimize.dll]InterpolationTime");
+            {
+                obj = m_instane.gameObject;
+                Destroy(m_instane);
+            }
+            else
+            {
+                obj = new("[AsyncInputOptimize.dll]InterpolationTime");
+            }
             DontDestroyOnLoad(obj);
             m_instane = obj.AddComponent(typeof(SafeDSPTime)) as SafeDSPTime;
         }
@@ -27,17 +35,10 @@ namespace Iridium.Modules.AsyncInputOptimize
             m_instane = null;
             Object.Destroy(obj);
         }
-        private void Start()
-        {
-            var source = GetComponent<AudioSource>();
-
-            source.clip = AudioClip.Create("Runner", 1, 1, 48000, false); ;
-            source.loop = true;
-            source.volume = 0;
-            source.Play();
-        }
         private void Awake()
         {
+            if (m_awakedLoopPatch) return;
+            m_awakedLoopPatch = true;
             PlayerLoopSystem loop = PlayerLoop.GetCurrentPlayerLoop();
             for (int i = 0; i < loop.subSystemList.Length; i++)
             {
