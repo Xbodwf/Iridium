@@ -24,6 +24,7 @@ namespace Iridium.Modules.AsyncInputOptimize
         }
         public static void ConductorUpdate(scrConductor @this)
         {
+            int counter = 0;
         JMP_RELOAD:
             double dspTime = SafeDSPTime.InterpolationDSPTime;
             double time = Time.unscaledTimeAsDouble;
@@ -45,12 +46,14 @@ namespace Iridium.Modules.AsyncInputOptimize
                 AsyncInputData.offsetTicks[AsyncInputData.offsetTicksIndex++] = AsyncInputData.offsetTick_REAL;
                 long delta = (long)AsyncInputData.offsetTick_REAL - (long)AsyncInputData.offsetTick;
 
-                if (System.Math.Abs(delta) > audio_precise * (10000000 << 2))
+                if (System.Math.Abs(delta) > audio_precise * (10000000 << 2) && audio_precise != 0)
                 {
                     AsyncInputData.offsetTicksIndex = 0;
                     AsyncInputData.offsetTick += (ulong)delta;
                     Iridium.Main.Logger?.Warning("[AsyncInputOptimize] DSPTime XRUN Error");
-                    goto JMP_RELOAD;
+                    counter++;
+                    if (counter < 128)
+                        goto JMP_RELOAD;
                 }
                 if (AsyncInputData.offsetTicksIndex == 30)
                 {
