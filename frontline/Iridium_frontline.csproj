@@ -331,7 +331,7 @@
 		<Message Text="Files copied to: $(OutDir)" Importance="high" />
 	</Target>
 	<PropertyGroup>
-		<GameExePath>I:\SteamLibrary\steamapps\common\A Dance of Fire and Ice\A Dance of Fire and Ice.exe</GameExePath>
+		<GameExePath>/home/xbouo/.local/share/Steam/steamapps/common/A Dance of Fire and Ice/ADanceOfFireAndIce</GameExePath>
 		<AutoLaunchGame>true</AutoLaunchGame>
 		<Loader></Loader>
 	</PropertyGroup>
@@ -354,7 +354,8 @@
 		<Copy SourceFiles="@(ModFiles)" DestinationFolder="$(ModsDir)" SkipUnchangedFiles="true" />
 		<Copy SourceFiles="@(ModResourceFiles)" DestinationFolder="$(ModsDir)Resources\%(RecursiveDir)" SkipUnchangedFiles="true" />
 		<Message Text="Mod deployed to: $(ModsDir)" Importance="high" />
-		<Exec Command="start &quot;&quot; &quot;$(GameExePath)&quot;" IgnoreExitCode="true" Condition="'$(AutoLaunchGame)' == 'true'" />
+		<Exec Command="&quot;$(GameExePath)&quot; &amp;" WorkingDirectory="$(GameDir)" IgnoreExitCode="true" Condition="'$(AutoLaunchGame)' == 'true' And $([MSBuild]::IsOSPlatform('Linux'))" />
+		<Exec Command="start &quot;&quot; &quot;$(GameExePath)&quot;" IgnoreExitCode="true" Condition="'$(AutoLaunchGame)' == 'true' And $([MSBuild]::IsOSPlatform('Windows'))" />
 		<Message Text="Game launched: $(GameExePath)" Importance="high" Condition="'$(AutoLaunchGame)' == 'true'" />
 		<Message Text="Auto-launch disabled. Game not started." Importance="high" Condition="'$(AutoLaunchGame)' != 'true'" />
 	</Target>

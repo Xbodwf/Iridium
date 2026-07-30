@@ -6,7 +6,7 @@ namespace Iridium.Modules.AsyncInputOptimize
     {
         public static void Enable()
         {
-            AudioSettings.Reset(AudioSettings.GetConfiguration());
+            SafeDSPTime.Init();
         }
         public static void Disable()
         {

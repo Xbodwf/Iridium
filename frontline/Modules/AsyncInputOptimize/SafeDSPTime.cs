@@ -14,6 +14,14 @@ namespace Iridium.Modules.AsyncInputOptimize
         private static SafeDSPTime? m_instane;
         internal static void Init()
         {
+            Volatile.Write(ref _ready, false);
+            Volatile.Write(ref at_time, 0);
+            Volatile.Write(ref ut_time, 0);
+            Volatile.Write(ref at_dsptime, 0);
+            Volatile.Write(ref ut_precise, 0);
+            Volatile.Write(ref ut_multiply, 1);
+            Volatile.Write(ref ut_lastmultiply, 1);
+
             GameObject obj;
             if (m_instane != null)
             {
@@ -66,6 +74,7 @@ namespace Iridium.Modules.AsyncInputOptimize
             double dsp_time = AudioSettings.dspTime;
             Volatile.Write(ref at_dsptime, dsp_time);
             Volatile.Write(ref at_time, AsyncInputTime.GetQPCAsFileTime());
+            Volatile.Write(ref _ready, true);
         }
 
         private static void UnityUpdate()
@@ -80,6 +89,7 @@ namespace Iridium.Modules.AsyncInputOptimize
         }
         private static double at_dsptime;
         private static ulong at_time;
+        private static bool _ready;
         private static double ut_precise;
         private static double ut_multiply;
         private static double ut_lastmultiply;
@@ -123,6 +133,8 @@ namespace Iridium.Modules.AsyncInputOptimize
         {
             get
             {
+                if (!Volatile.Read(ref _ready))
+                    return AudioSettings.dspTime;
                 // 其实就是dowhile 但是我不喜欢 所以用goto
             RepeatType:
                 ulong at_time = Volatile.Read(ref SafeDSPTime.at_time);
@@ -163,6 +175,8 @@ namespace Iridium.Modules.AsyncInputOptimize
         {
             get
             {
+                if (!Volatile.Read(ref _ready))
+                    return (long)(AudioSettings.dspTime * 10000000.0);
             // 其实就是dowhile 但是我不喜欢 所以用goto
             RepeatType:
                 ulong at_time = Volatile.Read(ref SafeDSPTime.at_time);
