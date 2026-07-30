@@ -1,5 +1,4 @@
 ﻿using HarmonyLib;
-using System.Diagnostics;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.LowLevel;
@@ -12,15 +11,19 @@ namespace Iridium.Modules.AsyncInputOptimize
     {
         private static bool m_awakedLoopPatch = false;
         private static SafeDSPTime? m_instane;
+        internal static void Init(bool _) => Init();
         internal static void Init()
         {
-            Volatile.Write(ref _ready, false);
-            Volatile.Write(ref at_time, 0);
-            Volatile.Write(ref ut_time, 0);
-            Volatile.Write(ref at_dsptime, 0);
-            Volatile.Write(ref ut_precise, 0);
-            Volatile.Write(ref ut_multiply, 1);
-            Volatile.Write(ref ut_lastmultiply, 1);
+            // 其实这里是初始化 可以保证顺序的 不需要Volatile.Write
+            _ready = false;
+            at_time = 0;
+            ut_time = 0;
+            at_dsptime = 0;
+            ut_precise = 0;
+            ut_multiply = 1;
+            ut_lastmultiply = 1;
+            // 只需要最后Thread.MemoryBarrier就好了喵
+            Thread.MemoryBarrier();
 
             GameObject obj;
             if (m_instane != null)
@@ -30,7 +33,7 @@ namespace Iridium.Modules.AsyncInputOptimize
             }
             else
             {
-                obj = new("[AsyncInputOptimize.dll]InterpolationTime");
+                obj = new("[Iridium.dll]InterpolationTime");
             }
             DontDestroyOnLoad(obj);
             m_instane = obj.AddComponent(typeof(SafeDSPTime)) as SafeDSPTime;
@@ -43,6 +46,8 @@ namespace Iridium.Modules.AsyncInputOptimize
             m_instane = null;
             Object.Destroy(obj);
         }
+
+        private AudioSource? m_source;
         private void Awake()
         {
             if (m_awakedLoopPatch) return;
@@ -75,6 +80,18 @@ namespace Iridium.Modules.AsyncInputOptimize
             Volatile.Write(ref at_dsptime, dsp_time);
             Volatile.Write(ref at_time, AsyncInputTime.GetQPCAsFileTime());
             Volatile.Write(ref _ready, true);
+        }
+        private void Update()
+        {
+            if (m_source == null || m_source.clip == null)
+            {
+                m_source = GetComponent<AudioSource>();
+
+                m_source.clip = AudioClip.Create("Runner", 1, 1, 48000, false);
+                m_source.loop = true;
+                m_source.volume = 0;
+                m_source.Play();
+            }
         }
 
         private static void UnityUpdate()
