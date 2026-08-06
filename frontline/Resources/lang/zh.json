@@ -201,7 +201,6 @@
   "SkipRedundantRemakePath": "跳过冗余的 RemakePath 调用",
   "OptimizeOffsetFloorEvents": "优化事件中的砖块 ID 偏移",
   "EditorFloorOptimizationWarning": "这些优化会改变编辑器的砖块重建逻辑。如果遇到显示异常，请尝试关闭它们。",
-
   "EditorShortcuts": "快捷键",
   "EditorAutoplayShortcuts": "自动播放快捷键",
   "EnableEditorShortcuts": "启用编辑器快捷键",
@@ -237,5 +236,12 @@
   "IgnoreRequiredModsWarning": "将忽略缺失的第三方Mod，谱面可能无法正常游玩。",
   "MissingModsNotice": "有{0} 等{1}个Mod缺失",
   "MissingModsNoticeSingle": "有{0} Mod缺失",
-  "CustomEventReadOnlyNotice": "这些事件仅在安装了第三方Mod的情况下才能生效，你只能禁用和移除，不能修改它们。"
+  "CustomEventReadOnlyNotice": "这些事件仅在安装了第三方Mod的情况下才能生效，你只能禁用和移除，不能修改它们。",
+  "GeneralSettings": "通用",
+  "EditorSettings": "编辑器",
+  "AudioSettings": "音频",
+  "UIBehavior": "界面行为",
+  "AutoplayDisplay": "自动播放显示",
+  "EnableLobbyMusicPatch": "启用大厅音乐修改",
+  "EnableJudgeTextCustomization": "启用判定文本"
 }

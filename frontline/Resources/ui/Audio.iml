@@ -1,54 +1,84 @@
 <Iris>
     <VBox gap="4">
-        <Text text={localize('LevelSelectSettings')} style="title" />
+        <Text text={localize('AudioSettings')} style="title" />
+        <Separator />
+
+        <Text text={localize('HitSoundSettings')} style="subtitle" />
         <Separator />
 
         <HBox align="center">
-            <Text text={localize('LevelSelectSettings')} style="label" />
+            <Text text={localize('EnableHitSoundPitch')} style="label" />
+            <Fill />
+            <Switch value={settings.hitSound.enableHitSoundPitch} on-changed="OnEnableHitSoundPitchToggled" />
+        </HBox>
+
+        <Separator />
+        <Text text={localize('AsyncInputSettings')} style="subtitle" />
+        <Separator />
+
+        <HBox align="center">
+            <Text text={localize('EnableAsyncInput')} style="label" />
+            <Fill />
+            <Switch value={settings.asyncInput.enableAIO} on-changed="OnAsyncInputToggled" />
+        </HBox>
+        <Text text={localize('AsyncInputHint')} style="secondary" />
+        <Text text={localize('AsyncInputWarning')} style="secondary" />
+
+        <Separator />
+        <Text text={localize('LevelSelectSettings')} style="subtitle" />
+        <Separator />
+
+        <HBox align="center">
+            <Text text={localize('EnableLobbyMusicPatch')} style="label" />
+            <Fill />
             <Switch value={settings.lobbyMusic.enableLobbyMusicPatch} on-changed="OnLobbyMusicPatchToggled" />
         </HBox>
 
         {settings.lobbyMusic.enableLobbyMusicPatch && <>
-            <Separator />
-
             <HBox align="center">
                 <Text text={localize('EnableCustomBpm')} style="label" />
+                <Fill />
                 <Switch value={settings.lobbyMusic.enableCustomBpm} on-changed="OnEnableCustomBpmToggled" />
             </HBox>
 
             {settings.lobbyMusic.enableCustomBpm && <>
                 <HBox align="center">
                     <Text text={localize('CustomBpm')} style="label" />
+                    <Fill />
                     <Slider value={settings.lobbyMusic.customBpm} min="60" max="240" step="1" showValue="true" on-changed="OnCustomBpmChanged" />
                 </HBox>
             </>}
 
             <HBox align="center">
                 <Text text={localize('LobbyFastMusic')} style="label" />
+                <Fill />
                 <Switch value={settings.lobbyMusic.fastMusic} on-changed="OnLobbyFastMusicToggled" />
             </HBox>
 
             <HBox align="center">
                 <Text text={localize('LobbyCustomMusic')} style="label" />
+                <Fill />
                 <Switch value={settings.lobbyMusic.customMusic} on-changed="OnLobbyCustomMusicToggled" />
             </HBox>
 
             {settings.lobbyMusic.customMusic && <>
-                <Separator />
-
                 <HBox align="center">
                     <Text text={localize('LobbyDefaultMusicPath')} style="label" />
+                    <Fill />
                     <TextField value={settings.lobbyMusic.defaultMusicPath} on-text-submit="OnDefaultMusicPathChanged" />
                     <Button text={localize('Apply')} on-click="OnApplyDefaultMusic" />
                 </HBox>
 
                 <HBox align="center">
                     <Text text={localize('LobbyFastMusicPath')} style="label" />
+                    <Fill />
                     <TextField value={settings.lobbyMusic.fastMusicPath} on-text-submit="OnFastMusicPathChanged" />
                     <Button text={localize('Apply')} on-click="OnApplyFastMusic" />
                 </HBox>
 
-                <Button text={localize('LobbyReloadMusic')} on-click="OnLobbyReloadMusic" />
+                <HBox align="center">
+                    <Button text={localize('LobbyReloadMusic')} on-click="OnLobbyReloadMusic" />
+                </HBox>
             </>}
         </>}
     </VBox>

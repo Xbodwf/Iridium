@@ -5,6 +5,7 @@
 
         <HBox align="center">
             <Text text={localize('EnableEditorShortcuts')} style="label" />
+            <Fill />
             <Switch value={settings.editorShortcuts.enableEditorShortcuts} on-changed="OnEnableEditorShortcutsToggled" />
         </HBox>
 
@@ -15,21 +16,25 @@
 
             <HBox align="center">
                 <Text text={localize('ShortcutSelectAll')} style="label" />
+                <Fill />
                 <Button text={getShortcutDisplay(settings.editorShortcuts.selectAllKey, settings.editorShortcuts.selectAllModifiers)} on-click="OnBindSelectAllKey" />
             </HBox>
 
             <HBox align="center">
                 <Text text={localize('ShortcutDeselectAll')} style="label" />
+                <Fill />
                 <Button text={getShortcutDisplay(settings.editorShortcuts.deselectAllKey, settings.editorShortcuts.deselectAllModifiers)} on-click="OnBindDeselectAllKey" />
             </HBox>
 
             <HBox align="center">
                 <Text text={localize('ShortcutToggleVisibility')} style="label" />
+                <Fill />
                 <Button text={getShortcutDisplay(settings.editorShortcuts.toggleVisibilityKey, settings.editorShortcuts.toggleVisibilityModifiers)} on-click="OnBindToggleVisibilityKey" />
             </HBox>
 
             <HBox align="center">
                 <Text text={localize('ShortcutFocusDecoration')} style="label" />
+                <Fill />
                 <Button text={getShortcutDisplay(settings.editorShortcuts.focusDecorationKey, settings.editorShortcuts.focusDecorationModifiers)} on-click="OnBindFocusDecorationKey" />
             </HBox>
 
@@ -39,17 +44,20 @@
 
             <HBox align="center">
                 <Text text={localize('ShortcutGoToFloor')} style="label" />
+                <Fill />
                 <Button text={getShortcutDisplay(settings.editorShortcuts.goToFloorKey, settings.editorShortcuts.goToFloorModifiers)} on-click="OnBindGoToFloorKey" />
             </HBox>
 
             <HBox align="center">
-                <Text text={localize('CameraFollowOnFloorSelect')} style="label" />
-                <Switch value={settings.editorShortcuts.cameraFollowOnFloorSelect} on-changed="OnCameraFollowOnFloorSelectToggled" />
+                <Text text={localize('ShortcutSelectAllFloors')} style="label" />
+                <Fill />
+                <Button text={getShortcutDisplay(settings.editorShortcuts.selectAllFloorsKey, settings.editorShortcuts.selectAllFloorsModifiers)} on-click="OnBindSelectAllFloorsKey" />
             </HBox>
 
             <HBox align="center">
-                <Text text={localize('ShortcutSelectAllFloors')} style="label" />
-                <Button text={getShortcutDisplay(settings.editorShortcuts.selectAllFloorsKey, settings.editorShortcuts.selectAllFloorsModifiers)} on-click="OnBindSelectAllFloorsKey" />
+                <Text text={localize('CameraFollowOnFloorSelect')} style="label" />
+                <Fill />
+                <Checkbox value={settings.editorShortcuts.cameraFollowOnFloorSelect} on-changed="OnCameraFollowOnFloorSelectToggled" />
             </HBox>
 
             <Separator />
@@ -58,11 +66,13 @@
 
             <HBox align="center">
                 <Text text={localize('ShortcutPopupSave')} style="label" />
+                <Fill />
                 <Button text={getShortcutDisplay(settings.editorShortcuts.popupSaveKey, settings.editorShortcuts.popupSaveModifiers)} on-click="OnBindPopupSaveKey" />
             </HBox>
 
             <HBox align="center">
                 <Text text={localize('ShortcutPopupDiscard')} style="label" />
+                <Fill />
                 <Button text={getShortcutDisplay(settings.editorShortcuts.popupDiscardKey, settings.editorShortcuts.popupDiscardModifiers)} on-click="OnBindPopupDiscardKey" />
             </HBox>
         </>}
@@ -73,46 +83,61 @@
 
         <HBox align="center">
             <Text text={localize('EditorPauseAllowed')} style="label" />
+            <Fill />
             <Switch value={settings.compatibility.editorPauseAllowed} on-changed="OnEditorPauseAllowedToggled" />
         </HBox>
 
         {settings.compatibility.editorPauseAllowed && <>
-            <VBox class="padding">
+            <HBox align="center">
+                <Text text={localize('EditorPauseEnabled')} style="label" />
+                <Fill />
+                <Checkbox value={settings.compatibility.editorPauseEnabled} on-changed="OnEditorPauseEnabledToggled" />
+            </HBox>
+            {settings.compatibility.editorPauseEnabled && <>
                 <HBox align="center">
-                    <Text text={localize('EditorPauseEnabled')} style="label" />
+                    <Text text={localize('EditorPauseKey')} style="label" />
                     <Fill />
-                    <Checkbox value={settings.compatibility.editorPauseEnabled} on-changed="OnEditorPauseEnabledToggled" />
+                    <Button text={getShortcutDisplay(settings.compatibility.editorPauseKey, settings.compatibility.editorPauseModifiers)} on-click="OnBindEditorPauseKey" />
                 </HBox>
-                {settings.compatibility.editorPauseEnabled && <>
-                    <VBox class="padding">
-                        <HBox align="center">
-                            <Text text={localize('EditorPauseKey')} style="label" />
-                            <Fill />
-                            <Button text={getShortcutDisplay(settings.compatibility.editorPauseKey, settings.compatibility.editorPauseModifiers)} on-click="OnBindEditorPauseKey" />
-                        </HBox>
-                    </VBox>
-                </>}
-            </VBox>
+            </>}
         </>}
 
+        <Separator />
+        <Text text={localize('EditorFloorOptimizations')} style="subtitle" />
+        <Separator />
+
         <HBox align="center">
-            <Text text={localize('ShowAutoplayHintUI')} style="label" />
-            <Switch value={settings.ui.showAutoplayHintUI} on-changed="OnShowAutoplayHintUIToggled" />
+            <Text text={localize('EnableEditorFloorOptimization')} style="label" />
+            <Fill />
+            <Switch value={settings.optimizer.enableEditorFloorOptimization} on-changed="OnEditorFloorOptimizationToggled" />
         </HBox>
 
-        {settings.ui.showAutoplayHintUI && <>
-            <VBox class="padding">
+        {settings.optimizer.enableEditorFloorOptimization && <>
+            <HBox align="center">
+                <Text text={localize('IncrementalFloorInsert')} style="label" />
+                <Fill />
+                <Switch value={settings.optimizer.incrementalFloorInsert} on-changed="OnIncrementalFloorInsertToggled" />
+            </HBox>
+
+            {settings.optimizer.incrementalFloorInsert && <>
                 <HBox align="center">
-                    <Text text={localize('CustomAutoplayHint')} style="label" />
-                    <Checkbox value={settings.ui.customAutoplayHint} on-changed="OnCustomAutoplayHintToggled" />
+                    <Text text={localize('RangeBasedRedraw')} style="label" />
+                    <Fill />
+                    <Checkbox value={settings.optimizer.rangeBasedRedraw} on-changed="OnRangeBasedRedrawToggled" />
                 </HBox>
-                {settings.ui.customAutoplayHint && <>
-                    <VBox class="padding">
-                        <Text text={localize('AutoplayHintTemplate')} style="secondary" />
-                        <TextField value={settings.ui.autoplayHintTemplate} on-changed="OnAutoplayHintTemplateChanged" />
-                    </VBox>
-                </>}
-            </VBox>
+
+                <HBox align="center">
+                    <Text text={localize('SkipRedundantRemakePath')} style="label" />
+                    <Fill />
+                    <Checkbox value={settings.optimizer.skipRedundantRemakePath} on-changed="OnSkipRedundantRemakePathToggled" />
+                </HBox>
+
+                <HBox align="center">
+                    <Text text={localize('OptimizeOffsetFloorEvents')} style="label" />
+                    <Fill />
+                    <Checkbox value={settings.optimizer.optimizeOffsetFloorEvents} on-changed="OnOptimizeOffsetFloorEventsToggled" />
+                </HBox>
+            </>}
         </>}
     </VBox>
 </Iris>

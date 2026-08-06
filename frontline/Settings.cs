@@ -33,7 +33,7 @@ namespace Iridium
         private string? _defaultLobbyMusicPathCache;
         private string? _fastLobbyMusicPathCache;
 
-        private string _currentTab = "optimizer";
+        private string _currentTab = "general";
         public string currentTab => _currentTab;
         private Vector2 _contentScrollPosition = Vector2.zero;
         private SizesGroup.Holder _sizesHolder = new();

@@ -1,0 +1,172 @@
+<Iris>
+    <VBox gap="4">
+        <Text text={localize('GeneralSettings')} style="title" />
+        <Separator />
+
+        <Text text={localize('Language')} style="subtitle" />
+        <Separator />
+        <HBox>
+            <ForEach items={getLanguages()} template="LangBtn" />
+        </HBox>
+        <Text text={localize('IridiumHint')} style="text-secondary" visible={localize('IridiumHint') != ''} />
+
+        <Separator />
+        <Text text={localize('UIBehavior')} style="subtitle" />
+        <Separator />
+
+        <HBox align="center">
+            <Text text={localize('RemoveNews')} style="label" />
+            <Fill />
+            <Switch value={settings.ui.removeNews} on-changed="OnRemoveNewsToggled" />
+        </HBox>
+
+        <HBox align="center">
+            <Text text={localize('HideBetaWatermark')} style="label" />
+            <Fill />
+            <Switch value={settings.ui.hideBetaWatermark} on-changed="OnHideBetaWatermarkToggled" />
+        </HBox>
+
+        <HBox align="center">
+            <Text text={localize('ForceDifficultyUI')} style="label" />
+            <Fill />
+            <Checkbox value={settings.ui.forceDifficultyUI} on-changed="OnForceDifficultyUIToggled" />
+        </HBox>
+
+        <HBox align="center">
+            <Text text={localize('AlwaysCountdown')} style="label" />
+            <Fill />
+            <Switch value={settings.ui.alwaysCountdown} on-changed="OnAlwaysCountdownToggled" />
+        </HBox>
+
+        <HBox align="center">
+            <Text text={localize('EnablePausePlanetTrail')} style="label" />
+            <Fill />
+            <Switch value={settings.ui.enablePausePlanetTrail} on-changed="OnEnablePausePlanetTrailToggled" />
+        </HBox>
+
+        <HBox align="center">
+            <Text text={localize('EnableCircleArc')} style="label" />
+            <Fill />
+            <Switch value={settings.ui.enableCircleArc} on-changed="OnEnableCircleArcToggled" />
+        </HBox>
+
+        <Separator />
+        <Text text={localize('AutoplayDisplay')} style="subtitle" />
+        <Separator />
+
+        <HBox align="center">
+            <Text text={localize('ShowAutoplayHintUI')} style="label" />
+            <Fill />
+            <Switch value={settings.ui.showAutoplayHintUI} on-changed="OnShowAutoplayHintUIToggled" />
+        </HBox>
+
+        {settings.ui.showAutoplayHintUI && <>
+            <HBox align="center">
+                <Text text={localize('CustomAutoplayHint')} style="label" />
+                <Fill />
+                <Checkbox value={settings.ui.customAutoplayHint} on-changed="OnCustomAutoplayHintToggled" />
+            </HBox>
+            {settings.ui.customAutoplayHint && <>
+                <Text text={localize('AutoplayHintTemplate')} style="secondary" />
+                <TextField value={settings.ui.autoplayHintTemplate} on-changed="OnAutoplayHintTemplateChanged" />
+            </>}
+        </>}
+
+        <HBox align="center">
+            <Text text={localize('MoveAutoplayText')} style="label" />
+            <Fill />
+            <Switch value={settings.ui.moveAutoplayText} on-changed="OnMoveAutoplayTextToggled" />
+        </HBox>
+
+        {settings.ui.moveAutoplayText && <>
+            <HBox align="center">
+                <Text text="X:" style="label" />
+                <Slider value={settings.ui.autoplayTextX} min="-500" max="500" showValue="true" on-changed="OnAutoplayTextXChanged" />
+            </HBox>
+            <HBox align="center">
+                <Text text="Y:" style="label" />
+                <Slider value={settings.ui.autoplayTextY} min="-300" max="300" showValue="true" on-changed="OnAutoplayTextYChanged" />
+            </HBox>
+        </>}
+
+        <Separator />
+        <Text text={localize('JudgeTextSettings')} style="subtitle" />
+        <Separator />
+
+        <HBox align="center">
+            <Text text={localize('EnableJudgeTextCustomization')} style="label" />
+            <Fill />
+            <Switch value={settings.judgeText.enableJudgeTextCustomization} on-changed="OnJudgeTextCustomizationToggled" />
+        </HBox>
+
+        {settings.judgeText.enableJudgeTextCustomization && <>
+            <Text text={localize('CustomJudgeText')} style="label" />
+            <Text text={localize('JudgeTextOffsetHint')} style="hint" />
+
+            <HBox align="center">
+                <Text text={localize('JudgeText_TooEarly')} style="label" />
+                <Fill />
+                <TextField value={settings.judgeText.tooEarly} on-text-submit="OnJudgeTextChanged" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text={localize('JudgeText_VeryEarly')} style="label" />
+                <Fill />
+                <TextField value={settings.judgeText.veryEarly} on-text-submit="OnJudgeTextChanged" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text={localize('JudgeText_EarlyPerfect')} style="label" />
+                <Fill />
+                <TextField value={settings.judgeText.earlyPerfect} on-text-submit="OnJudgeTextChanged" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text={localize('JudgeText_Perfect')} style="label" />
+                <Fill />
+                <TextField value={settings.judgeText.perfect} on-text-submit="OnJudgeTextChanged" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text={localize('JudgeText_LatePerfect')} style="label" />
+                <Fill />
+                <TextField value={settings.judgeText.latePerfect} on-text-submit="OnJudgeTextChanged" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text={localize('JudgeText_VeryLate')} style="label" />
+                <Fill />
+                <TextField value={settings.judgeText.veryLate} on-text-submit="OnJudgeTextChanged" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text={localize('JudgeText_TooLate')} style="label" />
+                <Fill />
+                <TextField value={settings.judgeText.tooLate} on-text-submit="OnJudgeTextChanged" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text={localize('JudgeText_Multipress')} style="label" />
+                <Fill />
+                <TextField value={settings.judgeText.multipress} on-text-submit="OnJudgeTextChanged" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text={localize('JudgeText_FailMiss')} style="label" />
+                <Fill />
+                <TextField value={settings.judgeText.failMiss} on-text-submit="OnJudgeTextChanged" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text={localize('JudgeText_FailOverload')} style="label" />
+                <Fill />
+                <TextField value={settings.judgeText.failOverload} on-text-submit="OnJudgeTextChanged" />
+            </HBox>
+
+            <HBox gap="4">
+                <Button text={localize('ResetJudgeText')} on-click="OnResetJudgeText" />
+                <Button text={localize('ConvertJudgeTextToOffset')} on-click="OnConvertJudgeTextToOffset" />
+            </HBox>
+        </>}
+    </VBox>
+</Iris>

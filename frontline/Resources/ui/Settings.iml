@@ -10,36 +10,27 @@
     <VBox class="padding">
         <!-- Tab bar -->
         <HBox>
-            <Button text={localize('EnableOptimizer')} class={settings.currentTab == 'optimizer' ? 'primary' : 'element'} on-click="OnTabClick('optimizer')" />
-            <Button text={localize('UISettings')} class={settings.currentTab == 'ui' ? 'primary' : 'element'} on-click="OnTabClick('ui')" />
-            <Button text={localize('LevelSelectSettings')} class={settings.currentTab == 'levelSelect' ? 'primary' : 'element'} on-click="OnTabClick('levelSelect')" />
+            <Button text={localize('GeneralSettings')} class={settings.currentTab == 'general' ? 'primary' : 'element'} on-click="OnTabClick('general')" />
+            <Button text={localize('OptimizerSettings')} class={settings.currentTab == 'optimizer' ? 'primary' : 'element'} on-click="OnTabClick('optimizer')" />
+            <Button text={localize('EditorSettings')} class={settings.currentTab == 'editor' ? 'primary' : 'element'} on-click="OnTabClick('editor')" />
             <Button text={localize('CompatibilitySettings')} class={settings.currentTab == 'compatibility' ? 'primary' : 'element'} on-click="OnTabClick('compatibility')" />
-            <Button text={localize('HitSoundSettings')} class={settings.currentTab == 'hitSound' ? 'primary' : 'element'} on-click="OnTabClick('hitSound')" />
-            <Button text={localize('AsyncInputSettings')} class={settings.currentTab == 'asyncInput' ? 'primary' : 'element'} on-click="OnTabClick('asyncInput')" />
-            <Button text={localize('EditorShortcuts')} class={settings.currentTab == 'editorShortcuts' ? 'primary' : 'element'} on-click="OnTabClick('editorShortcuts')" />
+            <Button text={localize('AudioSettings')} class={settings.currentTab == 'audio' ? 'primary' : 'element'} on-click="OnTabClick('audio')" />
+            <Fill />
             <Text text={"Iridium " + getVersion()} style="text-secondary" />
         </HBox>
 
         <!-- Content area -->
         <View class="background">
             <ScrollView scrollPosition="contentScroll" height="500">
+                {settings.currentTab == 'general' && <Reference path="@General.iml" />}
                 {settings.currentTab == 'optimizer' && <Reference path="@Optimizer.iml" />}
-                {settings.currentTab == 'ui' && <Reference path="@UISettings.iml" />}
-                {settings.currentTab == 'levelSelect' && <Reference path="@LevelSelect.iml" />}
+                {settings.currentTab == 'editor' && <Reference path="@Editor.iml" />}
                 {settings.currentTab == 'compatibility' && <Reference path="@Compatibility.iml" />}
-                {settings.currentTab == 'hitSound' && <Reference path="@HitSound.iml" />}
-                {settings.currentTab == 'editorShortcuts' && <Reference path="@EditorShortcuts.iml" />}
-                {settings.currentTab == 'asyncInput' && <Reference path="@AsyncInput.iml" />}
+                {settings.currentTab == 'audio' && <Reference path="@Audio.iml" />}
             </ScrollView>
         </View>
 
         <!-- Async processing status -->
         <Text text={getAsyncStatus()} style="text-secondary" />
-
-        <!-- Language selector -->
-        <HBox>
-            <ForEach items={getLanguages()} template="LangBtn" />
-        </HBox>
-        <Text text={localize('IridiumHint')} style="text-secondary" visible={localize('IridiumHint') != ''} />
     </VBox>
 </Iris>

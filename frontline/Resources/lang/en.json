@@ -201,7 +201,6 @@
   "SkipRedundantRemakePath": "Skip Redundant RemakePath Calls",
   "OptimizeOffsetFloorEvents": "Optimize Floor ID Offset in Events",
   "EditorFloorOptimizationWarning": "These optimizations alter the editor's floor rebuild logic. If you encounter visual glitches, disable them.",
-
   "EditorShortcuts": "Shortcuts",
   "EditorAutoplayShortcuts": "Auto-Play Shortcuts",
   "EnableEditorShortcuts": "Enable Editor Keyboard Shortcuts",
@@ -237,5 +236,12 @@
   "IgnoreRequiredModsWarning": "Required third-party mods will be ignored. The level may not play correctly.",
   "MissingModsNotice": "Missing mods: {0} and {1} more",
   "MissingModsNoticeSingle": "Missing mod: {0}",
-  "CustomEventReadOnlyNotice": "These events only work when the third-party mod is installed. You can only disable or remove them."
+  "CustomEventReadOnlyNotice": "These events only work when the third-party mod is installed. You can only disable or remove them.",
+  "GeneralSettings": "General",
+  "EditorSettings": "Editor",
+  "AudioSettings": "Audio",
+  "UIBehavior": "UI Behavior",
+  "AutoplayDisplay": "Autoplay Display",
+  "EnableLobbyMusicPatch": "Enable lobby music patch",
+  "EnableJudgeTextCustomization": "Enable judge text customization"
 }

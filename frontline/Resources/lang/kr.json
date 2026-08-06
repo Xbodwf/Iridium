@@ -201,7 +201,6 @@
   "SkipRedundantRemakePath": "중복 RemakePath 호출 건너뛰기",
   "OptimizeOffsetFloorEvents": "이벤트의 바닥 ID 오프셋 최적화",
   "EditorFloorOptimizationWarning": "이 최적화는 편집기의 바닥 재구성 로직을 변경합니다. 시각적 결함이 발생하면 비활성화하세요.",
-
   "EditorShortcuts": "단축키",
   "EditorAutoplayShortcuts": "자동 재생 단축키",
   "EnableEditorShortcuts": "편집기 키보드 단축키 활성화",
@@ -237,5 +236,12 @@
   "IgnoreRequiredModsWarning": "필요한 서드파티 모드를 무시합니다. 레벨이 제대로 재생되지 않을 수 있습니다.",
   "MissingModsNotice": "누락된 모드: {0} 외 {1}개",
   "MissingModsNoticeSingle": "누락된 모드: {0}",
-  "CustomEventReadOnlyNotice": "이 이벤트는 서드파티 모드가 설치된 경우에만 작동합니다. 비활성화하거나 제거만 할 수 있습니다."
+  "CustomEventReadOnlyNotice": "이 이벤트는 서드파티 모드가 설치된 경우에만 작동합니다. 비활성화하거나 제거만 할 수 있습니다.",
+  "GeneralSettings": "일반",
+  "EditorSettings": "편집기",
+  "AudioSettings": "오디오",
+  "UIBehavior": "UI 동작",
+  "AutoplayDisplay": "오토플레이 표시",
+  "EnableLobbyMusicPatch": "로비 음악 패치 활성화",
+  "EnableJudgeTextCustomization": "판정 텍스트 커스터마이징 활성화"
 }

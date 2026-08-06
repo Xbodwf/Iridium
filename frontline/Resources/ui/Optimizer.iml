@@ -1,17 +1,15 @@
 <Iris>
     <VBox gap="4">
-        <Text text={localize('EnableOptimizer')} style="title" />
+        <Text text={localize('OptimizerSettings')} style="title" />
         <Separator />
         <HBox align="center">
             <Text text={localize('EnableOptimizer')} style="label" />
             <Fill />
-            <Fill />
-                <Switch value={settings.optimizer.enableOptimizer} on-changed="OnOptimizerToggled" />
+            <Switch value={settings.optimizer.enableOptimizer} on-changed="OnOptimizerToggled" />
         </HBox>
 
         {settings.optimizer.enableOptimizer && <>
             <Separator />
-
             <Text text={localize('ImageOptimizations')} style="subtitle" />
             <Separator />
             <View class="background">
@@ -19,47 +17,46 @@
             <HBox align="center">
                 <Text text={localize('CompressImage')} style="label" />
                 <Fill />
-                <Fill />
-                <Fill />
                 <Switch value={!settings.optimizer.dontCompress} on-changed="OnCompressToggled" />
             </HBox>
+
             {!settings.optimizer.dontCompress && <>
                 <HBox align="center">
                     <Text text={localize('ShowSavedMemory')} style="label" />
                     <Fill />
-                <Checkbox value={!settings.optimizer.dontShowSavedMemory} on-changed="OnShowSavedMemoryToggled" />
+                    <Checkbox value={!settings.optimizer.dontShowSavedMemory} on-changed="OnShowSavedMemoryToggled" />
                 </HBox>
 
                 <HBox align="center">
                     <Text text={localize('UseLossyCompression')} style="label" />
                     <Fill />
-                <Switch value={settings.optimizer.useLossyCompression} on-changed="OnLossyCompressionToggled" />
+                    <Switch value={settings.optimizer.useLossyCompression} on-changed="OnLossyCompressionToggled" />
                 </HBox>
 
                 {settings.optimizer.useLossyCompression && <>
                     <HBox align="center">
                         <Text text={localize('LossyQuality')} style="label" />
                         <Fill />
-                            <Slider value={settings.optimizer.lossyQuality} min="10" max="100" showValue="true" on-changed="OnLossyQualityChanged" />
+                        <Slider value={settings.optimizer.lossyQuality} min="10" max="100" showValue="true" on-changed="OnLossyQualityChanged" />
                     </HBox>
                 </>}
 
                 <HBox align="center">
                     <Text text={localize('MultipleOf4')} style="label" />
                     <Fill />
-                <Switch value={!settings.optimizer.dontResizeMultipleOf4} on-changed="OnMultipleOf4Toggled" />
+                    <Checkbox value={!settings.optimizer.dontResizeMultipleOf4} on-changed="OnMultipleOf4Toggled" />
                 </HBox>
 
                 <HBox align="center">
                     <Text text={localize('DivideImageBy')} style="label" />
                     <Fill />
-                            <Slider value={settings.optimizer.divideBy} min="1" max="4" showValue="true" on-changed="OnDivideByChanged" />
+                    <Slider value={settings.optimizer.divideBy} min="1" max="4" showValue="true" on-changed="OnDivideByChanged" />
                 </HBox>
 
                 <HBox align="center">
                     <Text text={localize('DontResizeCollider')} style="label" />
                     <Fill />
-                <Switch value={settings.optimizer.dontResizeCollider} on-changed="OnDontResizeColliderToggled" />
+                    <Checkbox value={settings.optimizer.dontResizeCollider} on-changed="OnDontResizeColliderToggled" />
                 </HBox>
             </>}
             </View>
@@ -152,7 +149,6 @@
             <Text text={localize('CustomEasingEngine')} style="subtitle" />
             <Separator />
             <View class="background">
-
             <HBox align="center">
                 <Text text={localize('EnableCustomEasingEngine')} style="label" />
                 <Fill />
@@ -175,19 +171,19 @@
                 <HBox align="center">
                     <Text text={localize('OptimizeParticleInactive')} style="label" />
                     <Fill />
-                <Switch value={settings.optimizer.optimizeParticleInactive} on-changed="OnOptimizeParticleInactiveToggled" />
+                    <Checkbox value={settings.optimizer.optimizeParticleInactive} on-changed="OnOptimizeParticleInactiveToggled" />
                 </HBox>
 
                 <HBox align="center">
                     <Text text={localize('OptimizeParticleCulling')} style="label" />
                     <Fill />
-                <Switch value={settings.optimizer.optimizeParticleCulling} on-changed="OnOptimizeParticleCullingToggled" />
+                    <Checkbox value={settings.optimizer.optimizeParticleCulling} on-changed="OnOptimizeParticleCullingToggled" />
                 </HBox>
 
                 <HBox align="center">
                     <Text text={localize('OptimizeParticleLod')} style="label" />
                     <Fill />
-                <Switch value={settings.optimizer.optimizeParticleLod} on-changed="OnOptimizeParticleLodToggled" />
+                    <Checkbox value={settings.optimizer.optimizeParticleLod} on-changed="OnOptimizeParticleLodToggled" />
                 </HBox>
             </>}
             </View>
@@ -261,7 +257,7 @@
                 <HBox align="center">
                     <Text text={localize('DecorationsPerFrame')} style="label" />
                     <Fill />
-                            <Slider value={settings.optimizer.decorationsPerFrame} min="10" max="500" showValue="true" on-changed="OnDecorationsPerFrameChanged" />
+                    <Slider value={settings.optimizer.decorationsPerFrame} min="10" max="500" showValue="true" on-changed="OnDecorationsPerFrameChanged" />
                 </HBox>
             </>}
             </View>
@@ -281,25 +277,25 @@
                 <HBox align="center">
                     <Text text={localize('TweenerCapacity')} style="label" />
                     <Fill />
-                            <Slider value={settings.optimizer.dotweenTweenerCapacity} min="200" max="2000" showValue="true" on-changed="OnTweenerCapacityChanged" />
+                    <Slider value={settings.optimizer.dotweenTweenerCapacity} min="200" max="2000" showValue="true" on-changed="OnTweenerCapacityChanged" />
                 </HBox>
 
                 <HBox align="center">
                     <Text text={localize('SequenceCapacity')} style="label" />
                     <Fill />
-                            <Slider value={settings.optimizer.dotweenSequenceCapacity} min="50" max="500" showValue="true" on-changed="OnSequenceCapacityChanged" />
+                    <Slider value={settings.optimizer.dotweenSequenceCapacity} min="50" max="500" showValue="true" on-changed="OnSequenceCapacityChanged" />
                 </HBox>
 
                 <HBox align="center">
                     <Text text={localize('DOTweenDefaultRecyclable')} style="label" />
                     <Fill />
-                <Switch value={settings.optimizer.dotweenDefaultRecyclable} on-changed="OnDOTweenDefaultRecyclableToggled" />
+                    <Checkbox value={settings.optimizer.dotweenDefaultRecyclable} on-changed="OnDOTweenDefaultRecyclableToggled" />
                 </HBox>
 
                 <HBox align="center">
                     <Text text={localize('DOTweenDisableSafeMode')} style="label" />
                     <Fill />
-                <Switch value={settings.optimizer.dotweenDisableSafeMode} on-changed="OnDOTweenDisableSafeModeToggled" />
+                    <Checkbox value={settings.optimizer.dotweenDisableSafeMode} on-changed="OnDOTweenDisableSafeModeToggled" />
                 </HBox>
             </>}
             </View>
@@ -319,7 +315,7 @@
                 <HBox align="center">
                     <Text text={localize('MaxTweensPerFrame')} style="label" />
                     <Fill />
-                            <Slider value={settings.optimizer.maxTweensPerFrame} min="50" max="500" showValue="true" on-changed="OnMaxTweensPerFrameChanged" />
+                    <Slider value={settings.optimizer.maxTweensPerFrame} min="50" max="500" showValue="true" on-changed="OnMaxTweensPerFrameChanged" />
                 </HBox>
             </>}
             </View>
@@ -334,47 +330,6 @@
                 <Fill />
                 <Switch value={settings.memory.enableMemoryOptimization} on-changed="OnMemoryOptimizationToggled" />
             </HBox>
-
-            </View>
-
-            <Separator />
-            <Text text={localize('EditorFloorOptimizations')} style="subtitle" />
-            <Separator />
-            <View class="background">
-
-            <HBox align="center">
-                <Text text={localize('EnableEditorFloorOptimization')} style="label" />
-                <Fill />
-                <Switch value={settings.optimizer.enableEditorFloorOptimization} on-changed="OnEditorFloorOptimizationToggled" />
-            </HBox>
-
-            {settings.optimizer.enableEditorFloorOptimization && <>
-                <HBox align="center">
-                    <Text text={localize('IncrementalFloorInsert')} style="label" />
-                    <Fill />
-                <Switch value={settings.optimizer.incrementalFloorInsert} on-changed="OnIncrementalFloorInsertToggled" />
-                </HBox>
-
-                {settings.optimizer.incrementalFloorInsert && <>
-                    <HBox align="center">
-                        <Text text={localize('RangeBasedRedraw')} style="label" />
-                        <Fill />
-                <Switch value={settings.optimizer.rangeBasedRedraw} on-changed="OnRangeBasedRedrawToggled" />
-                    </HBox>
-
-                    <HBox align="center">
-                        <Text text={localize('SkipRedundantRemakePath')} style="label" />
-                        <Fill />
-                <Switch value={settings.optimizer.skipRedundantRemakePath} on-changed="OnSkipRedundantRemakePathToggled" />
-                    </HBox>
-
-                    <HBox align="center">
-                        <Text text={localize('OptimizeOffsetFloorEvents')} style="label" />
-                        <Fill />
-                <Switch value={settings.optimizer.optimizeOffsetFloorEvents} on-changed="OnOptimizeOffsetFloorEventsToggled" />
-                    </HBox>
-                </>}
-            </>}
             </View>
         </>}
     </VBox>
