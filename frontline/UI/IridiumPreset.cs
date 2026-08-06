@@ -1,261 +1,307 @@
+using System;
 using static Iridium.UI.IridiumLayout;
 
 namespace Iridium.UI;
 
 public static class IridiumPreset
 {
-    public static void OptionNameDescription(
+    public static Element OptionNameDescription(
         string name,
         bool description
     )
     {
         if (description)
         {
-            Begin(ContainerDirection.Vertical, options: WidthMin);
-            {
-                Text(Localization.Get(name), options: WidthMin);
-                Text(Localization.Get($"{name}.Description"), TextStyle.Secondary, WidthMin);
-            }
-            End();
+            return VBox(
+                ContainerStyle.None,
+                null,
+                Text(Localization.Get(name), TextStyle.Normal, WidthMin),
+                Text(Localization.Get($"{name}.Description"), TextStyle.Secondary, WidthMin)
+            );
         }
         else
         {
-            Text(Localization.Get(name), options: WidthMin);
+            return Text(Localization.Get(name), TextStyle.Normal, WidthMin);
         }
     }
 
-    public static void SwitchOption(
+    public static Element SwitchOption(
         Sizes sizes,
-        ref bool option,
+        bool option,
+        Action<bool> onChanged,
         string name,
         bool description = false
     )
     {
-        Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-        PushAlign(0.5);
-        {
-            OptionNameDescription(name, description);
-            Fill();
-            Switch(ref option);
-        }
-        PopAlign();
-        End();
+        return HBox(
+            ContainerStyle.None,
+            sizes,
+            WidthMax,
+            Align(
+                0.5,
+                0,
+                OptionNameDescription(name, description),
+                Fill(),
+                Switch(option, onChanged, WidthMin)
+            )
+        );
     }
 
-    public static void DoubleOption(
+    public static Element DoubleOption(
         Sizes sizes,
-        ref double option,
+        double option,
+        Action<double> onChanged,
         string name,
         IStructFormat<double>? format = null,
         bool description = false
     )
     {
-        Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-        PushAlign(0.5);
-        {
-            OptionNameDescription(name, description);
-            Fill();
-            StructField(ref option, format ?? DoubleFormat(), WidthMin);
-        }
-        PopAlign();
-        End();
+        return HBox(
+            ContainerStyle.None,
+            sizes,
+            WidthMax,
+            Align(
+                0.5,
+                0,
+                OptionNameDescription(name, description),
+                Fill(),
+                StructField(option, format ?? DoubleFormat(), onChanged, WidthMin)
+            )
+        );
     }
 
-    public static void IntOption(
+    public static Element IntOption(
         Sizes sizes,
-        ref int option,
+        int option,
+        Action<int> onChanged,
         string name,
         IStructFormat<int>? format = null,
         bool description = false
     )
     {
-        Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-        PushAlign(0.5);
-        {
-            OptionNameDescription(name, description);
-            Fill();
-            StructField(ref option, format ?? IntFormat(), WidthMin);
-        }
-        PopAlign();
-        End();
+        return HBox(
+            ContainerStyle.None,
+            sizes,
+            WidthMax,
+            Align(
+                0.5,
+                0,
+                OptionNameDescription(name, description),
+                Fill(),
+                StructField(option, format ?? IntFormat(), onChanged, WidthMin)
+            )
+        );
     }
 
-    public static void TextOption(
+    public static Element TextOption(
         Sizes sizes,
-		ref string? option,
-		string name,
-		bool description = false
-	)
-	{
-		Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-		PushAlign(0.5);
-		{
-			OptionNameDescription(name, description);
-			Fill();
-			TextField(ref option, options: WidthMin);
-		}
-		PopAlign();
-		End();
-	}
-
-	public static void CheckboxTextOption(
-		Sizes sizes,
-		ref bool enabled,
-		ref string? option,
+        string? option,
+        Action<string?> onChanged,
         string name,
         bool description = false
     )
     {
-        Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-        PushAlign(0.5);
-        {
-            Checkbox(ref enabled);
-            OptionNameDescription(name, description);
-            Fill();
-            TextField(ref option, options: WidthMin);
-        }
-        PopAlign();
-        End();
+        return HBox(
+            ContainerStyle.None,
+            sizes,
+            WidthMax,
+            Align(
+                0.5,
+                0,
+                OptionNameDescription(name, description),
+                Fill(),
+                TextField(option ?? string.Empty, onChanged, null, WidthMin)
+            )
+        );
     }
 
-    public static void CheckboxSwitchOption(
+    public static Element CheckboxTextOption(
         Sizes sizes,
-        ref bool enabled,
-        ref bool option,
+        bool enabled,
+        Action<bool> onEnabledChanged,
+        string? option,
+        Action<string?> onOptionChanged,
         string name,
         bool description = false
     )
     {
-        Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-        PushAlign(0.5);
-        {
-            Checkbox(ref enabled);
-            OptionNameDescription(name, description);
-            Fill();
-            Switch(ref option, WidthMin);
-        }
-        PopAlign();
-        End();
+        return HBox(
+            ContainerStyle.None,
+            sizes,
+            WidthMax,
+            Align(
+                0.5,
+                0,
+                Checkbox(enabled, onEnabledChanged),
+                OptionNameDescription(name, description),
+                Fill(),
+                TextField(option ?? string.Empty, onOptionChanged, null, WidthMin)
+            )
+        );
     }
 
-    public static void CheckboxDoubleOption(
+    public static Element CheckboxSwitchOption(
         Sizes sizes,
-        ref bool enabled,
-        ref double option,
+        bool enabled,
+        Action<bool> onEnabledChanged,
+        bool option,
+        Action<bool> onOptionChanged,
+        string name,
+        bool description = false
+    )
+    {
+        return HBox(
+            ContainerStyle.None,
+            sizes,
+            WidthMax,
+            Align(
+                0.5,
+                0,
+                Checkbox(enabled, onEnabledChanged),
+                OptionNameDescription(name, description),
+                Fill(),
+                Switch(option, onOptionChanged, WidthMin)
+            )
+        );
+    }
+
+    public static Element CheckboxDoubleOption(
+        Sizes sizes,
+        bool enabled,
+        Action<bool> onEnabledChanged,
+        double option,
+        Action<double> onOptionChanged,
         string name,
         bool description = false,
         IStructFormat<double>? format = null
     )
     {
-        Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-        PushAlign(0.5);
-        {
-            Checkbox(ref enabled);
-            OptionNameDescription(name, description);
-            Fill();
-            StructField(ref option, format ?? DoubleFormat(), WidthMin);
-        }
-        PopAlign();
-        End();
+        return HBox(
+            ContainerStyle.None,
+            sizes,
+            WidthMax,
+            Align(
+                0.5,
+                0,
+                Checkbox(enabled, onEnabledChanged),
+                OptionNameDescription(name, description),
+                Fill(),
+                StructField(option, format ?? DoubleFormat(), onOptionChanged, WidthMin)
+            )
+        );
     }
 
-    public static void CheckboxIntOption(
+    public static Element CheckboxIntOption(
         Sizes sizes,
-        ref bool enabled,
-        ref int option,
+        bool enabled,
+        Action<bool> onEnabledChanged,
+        int option,
+        Action<int> onOptionChanged,
         string name,
         bool description = false,
         IStructFormat<int>? format = null
     )
     {
-        Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-        PushAlign(0.5);
-        {
-            Checkbox(ref enabled);
-            OptionNameDescription(name, description);
-            Fill();
-            StructField(ref option, format ?? IntFormat(), WidthMin);
-        }
-        PopAlign();
-        End();
+        return HBox(
+            ContainerStyle.None,
+            sizes,
+            WidthMax,
+            Align(
+                0.5,
+                0,
+                Checkbox(enabled, onEnabledChanged),
+                OptionNameDescription(name, description),
+                Fill(),
+                StructField(option, format ?? IntFormat(), onOptionChanged, WidthMin)
+            )
+        );
     }
 
-    public static bool IconText(
+    public static Element IconText(
         Sizes sizes,
         IconStyle icon,
-        string text
+        string text,
+        Action? onClick = null
     )
     {
-        var result = false;
-
-        Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-        PushAlign(0.5);
-        {
-            result |= Icon(icon);
-            result |= Text(Localization.Get(text), options: WidthMax);
-        }
-        PopAlign();
-        End();
-
-        return result;
+        return HBox(
+            ContainerStyle.None,
+            sizes,
+            WidthMax,
+            Align(
+                0.5,
+                0,
+                Icon(icon, onClick, WidthMin),
+                Text(Localization.Get(text), TextStyle.Normal, WidthMax)
+            )
+        );
     }
 
-    public static bool IconTextFormatted(
+    public static Element IconTextFormatted(
         Sizes sizes,
         IconStyle icon,
         string text,
         params object[] args
     )
     {
-        var result = false;
-
-        Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-        PushAlign(0.5);
-        {
-            result |= Icon(icon);
-            result |= Text(string.Format(Localization.Get(text), args), options: WidthMax);
-        }
-        PopAlign();
-        End();
-
-        return result;
+        return HBox(
+            ContainerStyle.None,
+            sizes,
+            WidthMax,
+            Align(
+                0.5,
+                0,
+                Icon(icon, null, WidthMin),
+                Text(string.Format(Localization.Get(text), args), TextStyle.Normal, WidthMax)
+            )
+        );
     }
 
-    public static bool Collapse(
+    public static Element Collapse(
         Sizes sizes,
-        ref bool expanded,
+        bool expanded,
+        Action<bool> onExpandedChanged,
         string text,
         TextStyle style = TextStyle.Normal
     )
     {
-        Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-        PushAlign(0.5);
-        {
-            if (ArrowButton(expanded ? ArrowStyle.Down : ArrowStyle.Right)) expanded = !expanded;
-            Text(Localization.Get(text), style, WidthMax);
-        }
-        PopAlign();
-        End();
-
-        return expanded;
+        return HBox(
+            ContainerStyle.None,
+            sizes,
+            WidthMax,
+            Align(
+                0.5,
+                0,
+                ArrowButton(
+                    expanded ? ArrowStyle.Down : ArrowStyle.Right,
+                    () => onExpandedChanged(!expanded),
+                    WidthMin
+                ),
+                Text(Localization.Get(text), style, WidthMax)
+            )
+        );
     }
 
-    public static void SelectorOption(
+    public static Element SelectorOption(
         Sizes sizes,
-        ref int selected,
+        int selected,
+        Action<int> onSelected,
         string[] selections,
         string name,
         bool description = false
     )
     {
-        Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-        PushAlign(0.5);
-        {
-            OptionNameDescription(name, description);
-            Fill();
-            Selector(ref selected, selections, options: WidthMin);
-        }
-        PopAlign();
-        End();
+        return HBox(
+            ContainerStyle.None,
+            sizes,
+            WidthMax,
+            Align(
+                0.5,
+                0,
+                OptionNameDescription(name, description),
+                Fill(),
+                Selector(selected, selections, onSelected, ButtonStyle.Element, ButtonStyle.Primary, WidthMin)
+            )
+        );
     }
 }

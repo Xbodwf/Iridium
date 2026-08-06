@@ -140,30 +140,25 @@ namespace Iridium
             EnsureTexturesAlive();
             HandleWindowDrag();
 
-            GUILayout.BeginArea(_rect);
-            {
-                Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
-                {
-                    // Title bar: 拖拽区域 + 关闭按钮
-                    Begin(ContainerDirection.Horizontal, options: WidthMax);
-                    {
-                        Text("Iridium", TextStyle.Title);
-                        Fill();
-                        if (Button("\u00d7", ButtonStyle.Element, GUILayout.Width(28), GUILayout.Height(28)))
-                            _uiVisible = false;
-                    }
-                    End();
-
-                    Space(8);
-
-                    // Content area with scroll
-                    _scrollPos = GUILayout.BeginScrollView(_scrollPos);
-                    OnGUI?.Invoke();
-                    GUILayout.EndScrollView();
-                }
-                End();
-            }
-            GUILayout.EndArea();
+            Render(
+                Area(_rect,
+                    VBox(
+                        ContainerStyle.Background,
+                        null,
+                        WidthMax,
+                        HBox(
+                            ContainerStyle.None,
+                            null,
+                            WidthMax,
+                            Text("Iridium", TextStyle.Title),
+                            Fill(),
+                            Button("\u00d7", ButtonStyle.Element, () => _uiVisible = false, GUILayout.Width(28), GUILayout.Height(28))
+                        ),
+                        Space(8),
+                        ScrollView(_scrollPos, p => _scrollPos = p, WidthMax, () => OnGUI?.Invoke())
+                    )
+                )
+            );
 
             _rect.x = (int)_rect.x;
             _rect.y = (int)_rect.y;

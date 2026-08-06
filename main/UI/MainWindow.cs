@@ -94,48 +94,43 @@ namespace Iridium.UI
         private void DrawWindow()
         {
             var sizes = _sizesHolder.Begin();
-            GUILayout.BeginArea(_windowRect);
+
+            var header = new List<Element>();
+            if (_config.Icon.HasValue)
             {
-                Begin(ContainerDirection.Vertical, ContainerStyle.Background, sizes: sizes, options: WidthMax);
-                {
-                    Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-                    {
-                        if (_config.Icon.HasValue)
-                        {
-                            Icon(_config.Icon.Value);
-                            Space(8);
-                        }
-                        Text(_config.Title, TextStyle.Title, WidthMax);
-                    }
-                    End();
-
-                    Space(10);
-
-                    Text(_config.Message, TextStyle.Normal, WidthMax);
-
-                    FlexibleSpace();
-
-                    if (_config.Buttons.Length > 0)
-                    {
-                        Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-                        {
-                            Fill();
-                            foreach (var btn in _config.Buttons)
-                            {
-                                if (Button(btn.Text, btn.Style, Width(120)))
-                                {
-                                    btn.OnClick?.Invoke();
-                                    if (btn.CloseOnClick)
-                                        Close(this);
-                                }
-                            }
-                        }
-                        End();
-                    }
-                }
-                End();
+                header.Add(Icon(_config.Icon.Value));
+                header.Add(Space(8));
             }
-            GUILayout.EndArea();
+            header.Add(Text(_config.Title, TextStyle.Title, WidthMax));
+
+            var content = new List<Element>
+            {
+                HBox(ContainerStyle.None, sizes, header.ToArray()),
+                Space(10),
+                Text(_config.Message, TextStyle.Normal, WidthMax),
+                FlexibleSpace()
+            };
+
+            if (_config.Buttons.Length > 0)
+            {
+                var buttons = new List<Element> { Fill() };
+                foreach (var btn in _config.Buttons)
+                {
+                    buttons.Add(Button(btn.Text, btn.Style, () =>
+                    {
+                        btn.OnClick?.Invoke();
+                        if (btn.CloseOnClick)
+                            Close(this);
+                    }, Width(120)));
+                }
+                content.Add(HBox(ContainerStyle.None, sizes, buttons.ToArray()));
+            }
+
+            IridiumLayout.Render(
+                Area(_windowRect,
+                    VBox(ContainerStyle.Background, sizes, WidthMax, content.ToArray())
+                )
+            );
 
             HandleWindowDrag();
         }
@@ -164,11 +159,6 @@ namespace Iridium.UI
                     }
                     break;
             }
-        }
-
-        private static void FlexibleSpace()
-        {
-            GUILayout.FlexibleSpace();
         }
     }
 

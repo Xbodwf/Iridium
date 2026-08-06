@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using static Iridium.UI.IridiumLayout;
 using Iridium.Patches;
@@ -73,23 +74,23 @@ namespace Iridium.UI
             GUI.color = new Color(1f, 1f, 1f, alpha);
 
             var sizes = _sizesHolder.Begin();
-            GUILayout.BeginArea(new Rect(20, 20, 420, 50));
+
+            var elements = new List<Element>
             {
-                Begin(ContainerDirection.Horizontal, ContainerStyle.Background, sizes: sizes, options: WidthMax);
-                {
-                    Icon(_isPersistent ? IconStyle.Information : IconStyle.Success);
-                    Text(_message, TextStyle.Normal, WidthMax);
-                    if (_isPersistent && LoadingOptimizationPatches.FrameSpreadDecorationLoadingPatch.IsLoading)
-                    {
-                        if (Icon(IconStyle.Stop, MinWidth(24)))
-                        {
-                            LoadingOptimizationPatches.FrameSpreadDecorationLoadingPatch.Cancel();
-                        }
-                    }
-                }
-                End();
+                Icon(_isPersistent ? IconStyle.Information : IconStyle.Success),
+                Text(_message, TextStyle.Normal, WidthMax)
+            };
+
+            if (_isPersistent && LoadingOptimizationPatches.FrameSpreadDecorationLoadingPatch.IsLoading)
+            {
+                elements.Add(Icon(IconStyle.Stop, LoadingOptimizationPatches.FrameSpreadDecorationLoadingPatch.Cancel, MinWidth(24)));
             }
-            GUILayout.EndArea();
+
+            IridiumLayout.Render(
+                Area(new Rect(20, 20, 420, 50),
+                    HBox(ContainerStyle.Background, sizes, WidthMax, elements.ToArray())
+                )
+            );
 
             GUI.color = Color.white;
         }

@@ -14,6 +14,22 @@ using Iridium.Polyfill;
 
 namespace Iridium.UI;
 
+// Declarative, JSX-like element tree. Build a tree of elements with the static
+// factory methods (VBox, HBox, Text, Button, ...) and render it once per frame
+// from OnGUI with Render(...). Interaction is expressed via callbacks
+// (onClick / onChanged) instead of return values.
+//
+//   IridiumLayout.Render(
+//       IridiumLayout.VBox(ContainerStyle.Padding,
+//           IridiumLayout.HBox(
+//               IridiumLayout.Button("Save", onClick: Save),
+//               IridiumLayout.Text("Hello")
+//           )
+//       )
+//   );
+//
+// The imperative engine is kept internally (IridiumLayout.Engine) and is used as
+// the bridge for Iris.Iml's IIrrLayout adapter (IridiumLayoutAdapter in Settings.cs).
 public static class IridiumLayout
 {
     public enum ArrowStyle
@@ -67,27 +83,596 @@ public static class IridiumLayout
         scaleTimes1M => new ResolutionResources(scaleTimes1M)
     );
 
-    internal static List<ContainerDirection> ContainerStack { get; } = [ContainerDirection.Vertical];
+    // ══════════════════════════════════════════════════════════════
+    // Element tree (JSX-like declarative UI)
+    // ══════════════════════════════════════════════════════════════
 
-    private static List<int> ElementCountStack { get; } = [0];
+    public abstract class Element
+    {
+        internal abstract void Render();
+    }
 
-    private static List<bool> IsBackgroundStack { get; } = [false];
+    private sealed class ContainerElement : Element
+    {
+        private readonly ContainerDirection _direction;
+        private readonly ContainerStyle _style;
+        private readonly Sizes? _sizes;
+        private readonly GUILayoutOption[] _options;
+        private readonly Element[] _children;
 
-    private static List<bool> ApplyPreMarginHorizontalStack { get; } = [false];
+        public ContainerElement(
+            ContainerDirection direction,
+            ContainerStyle style,
+            Sizes? sizes,
+            params object[] content
+        )
+        {
+            _direction = direction;
+            _style = style;
+            _sizes = sizes;
+            var options = new List<GUILayoutOption>();
+            var children = new List<Element>();
+            foreach (var item in content)
+            {
+                if (item is Element child) children.Add(child);
+                else if (item is GUILayoutOption option) options.Add(option);
+            }
+            _options = options.ToArray();
+            _children = children.ToArray();
+        }
 
-    private static List<bool> ApplyPreMarginVerticalStack { get; } = [false];
+        internal override void Render()
+        {
+            Engine.Begin(_direction, _style, _sizes, _options);
+            try
+            {
+                foreach (var child in _children)
+                    child.Render();
+            }
+            finally
+            {
+                Engine.End();
+            }
+        }
+    }
 
-    private static List<(double?, Sizes)?> SizesStack { get; } = [null];
+    private sealed class TextElement : Element
+    {
+        private readonly string _text;
+        private readonly TextStyle _style;
+        private readonly GUILayoutOption[] _options;
 
-    private static List<(double, double)?> AlignmentStack { get; } = [null];
+        public TextElement(string text, TextStyle style, params object[] options)
+        {
+            _text = text;
+            _style = style;
+            _options = options.OfType<GUILayoutOption>().ToArray();
+        }
 
-    private static double LastMargin { get; set; }
+        internal override void Render()
+        {
+            Engine.Text(_text, _style, _options);
+        }
+    }
 
-    private static bool IsBackground1 { get; set; }
+    private sealed class ButtonElement : Element
+    {
+        private readonly string _text;
+        private readonly ButtonStyle _style;
+        private readonly Action? _onClick;
+        private readonly GUILayoutOption[] _options;
 
-    public static GUILayoutOption WidthMin => GUILayout.ExpandWidth(false);
+        public ButtonElement(string text, ButtonStyle style, Action? onClick, params object[] options)
+        {
+            _text = text;
+            _style = style;
+            _onClick = onClick;
+            _options = options.OfType<GUILayoutOption>().ToArray();
+        }
 
-    public static GUILayoutOption WidthMax => GUILayout.ExpandWidth(true);
+        internal override void Render()
+        {
+            if (Engine.Button(_text, _style, _options) && _onClick != null)
+                _onClick();
+        }
+    }
+
+    private sealed class SwitchElement : Element
+    {
+        private readonly bool _on;
+        private readonly Action<bool>? _onChanged;
+        private readonly GUILayoutOption[] _options;
+
+        public SwitchElement(bool on, Action<bool>? onChanged, params object[] options)
+        {
+            _on = on;
+            _onChanged = onChanged;
+            _options = options.OfType<GUILayoutOption>().ToArray();
+        }
+
+        internal override void Render()
+        {
+            var result = Engine.Switch(_on, _options);
+            if (result.HasValue && _onChanged != null)
+                _onChanged(result.Value);
+        }
+    }
+
+    private sealed class CheckboxElement : Element
+    {
+        private readonly bool _on;
+        private readonly Action<bool>? _onChanged;
+        private readonly GUILayoutOption[] _options;
+
+        public CheckboxElement(bool on, Action<bool>? onChanged, params object[] options)
+        {
+            _on = on;
+            _onChanged = onChanged;
+            _options = options.OfType<GUILayoutOption>().ToArray();
+        }
+
+        internal override void Render()
+        {
+            var result = Engine.Checkbox(_on, _options);
+            if (result.HasValue && _onChanged != null)
+                _onChanged(result.Value);
+        }
+    }
+
+    private sealed class SelectorElement : Element
+    {
+        private readonly int _selected;
+        private readonly IReadOnlyList<string> _selections;
+        private readonly Action<int>? _onSelected;
+        private readonly ButtonStyle _style;
+        private readonly ButtonStyle _styleSelected;
+        private readonly GUILayoutOption[] _options;
+
+        public SelectorElement(
+            int selected,
+            IReadOnlyList<string> selections,
+            Action<int>? onSelected,
+            ButtonStyle style,
+            ButtonStyle styleSelected,
+            params object[] options
+        )
+        {
+            _selected = selected;
+            _selections = selections;
+            _onSelected = onSelected;
+            _style = style;
+            _styleSelected = styleSelected;
+            _options = options.OfType<GUILayoutOption>().ToArray();
+        }
+
+        internal override void Render()
+        {
+            for (var i = 0; i < _selections.Count; i++)
+            {
+                if (Engine.Button(_selections[i], i == _selected ? _styleSelected : _style, _options) && _onSelected != null)
+                    _onSelected(i);
+            }
+        }
+    }
+
+    private sealed class SelectorStringElement : Element
+    {
+        private readonly string _selected;
+        private readonly IReadOnlyList<(string, string)> _selections;
+        private readonly Action<string>? _onSelected;
+        private readonly ButtonStyle _style;
+        private readonly ButtonStyle _styleSelected;
+        private readonly GUILayoutOption[] _options;
+
+        public SelectorStringElement(
+            string selected,
+            IReadOnlyList<(string, string)> selections,
+            Action<string>? onSelected,
+            ButtonStyle style,
+            ButtonStyle styleSelected,
+            params object[] options
+        )
+        {
+            _selected = selected;
+            _selections = selections;
+            _onSelected = onSelected;
+            _style = style;
+            _styleSelected = styleSelected;
+            _options = options.OfType<GUILayoutOption>().ToArray();
+        }
+
+        internal override void Render()
+        {
+            foreach (var (key, name) in _selections)
+            {
+                if (Engine.Button(name, key == _selected ? _styleSelected : _style, _options) && _onSelected != null)
+                    _onSelected(key);
+            }
+        }
+    }
+
+    private sealed class TextFieldElement : Element
+    {
+        private readonly string _content;
+        private readonly int? _maxLength;
+        private readonly Action<string>? _onChanged;
+        private readonly GUILayoutOption[] _options;
+
+        public TextFieldElement(string content, int? maxLength, Action<string>? onChanged, params object[] options)
+        {
+            _content = content;
+            _maxLength = maxLength;
+            _onChanged = onChanged;
+            _options = options.OfType<GUILayoutOption>().ToArray();
+        }
+
+        internal override void Render()
+        {
+            var result = Engine.TextField(_content, _maxLength, _options);
+            if (result != null && _onChanged != null)
+                _onChanged(result);
+        }
+    }
+
+    private sealed class ClassFieldElement<T> : Element where T : class
+    {
+        private readonly T _content;
+        private readonly IClassFormat<T> _format;
+        private readonly Action<T>? _onChanged;
+        private readonly GUILayoutOption[] _options;
+
+        public ClassFieldElement(T content, IClassFormat<T> format, Action<T>? onChanged, params object[] options)
+        {
+            _content = content;
+            _format = format;
+            _onChanged = onChanged;
+            _options = options.OfType<GUILayoutOption>().ToArray();
+        }
+
+        internal override void Render()
+        {
+            var newContent = Engine.TextField(_format.Format(_content), null, _options);
+            if (newContent is null) return;
+            var newValue = _format.Parse(newContent);
+            if (newValue is not null && _onChanged != null)
+                _onChanged(newValue);
+        }
+    }
+
+    private sealed class StructFieldElement<T> : Element where T : struct
+    {
+        private readonly T _content;
+        private readonly IStructFormat<T> _format;
+        private readonly Action<T>? _onChanged;
+        private readonly GUILayoutOption[] _options;
+
+        public StructFieldElement(T content, IStructFormat<T> format, Action<T>? onChanged, params object[] options)
+        {
+            _content = content;
+            _format = format;
+            _onChanged = onChanged;
+            _options = options.OfType<GUILayoutOption>().ToArray();
+        }
+
+        internal override void Render()
+        {
+            var newContent = Engine.TextField(_format.Format(_content), null, _options);
+            if (newContent is null) return;
+            var newValue = _format.Parse(newContent);
+            if (newValue is not null && _onChanged != null)
+                _onChanged(newValue.Value);
+        }
+    }
+
+    private sealed class IconElement : Element
+    {
+        private readonly IconStyle _style;
+        private readonly Action? _onClick;
+        private readonly GUILayoutOption[] _options;
+
+        public IconElement(IconStyle style, Action? onClick, params object[] options)
+        {
+            _style = style;
+            _onClick = onClick;
+            _options = options.OfType<GUILayoutOption>().ToArray();
+        }
+
+        internal override void Render()
+        {
+            if (Engine.Icon(_style, _options) && _onClick != null)
+                _onClick();
+        }
+    }
+
+    private sealed class ArrowButtonElement : Element
+    {
+        private readonly ArrowStyle _style;
+        private readonly Action? _onClick;
+        private readonly GUILayoutOption[] _options;
+
+        public ArrowButtonElement(ArrowStyle style, Action? onClick, params object[] options)
+        {
+            _style = style;
+            _onClick = onClick;
+            _options = options.OfType<GUILayoutOption>().ToArray();
+        }
+
+        internal override void Render()
+        {
+            if (Engine.ArrowButton(_style, _options) && _onClick != null)
+                _onClick();
+        }
+    }
+
+    private sealed class SeparatorElement : Element
+    {
+        private readonly GUILayoutOption[] _options;
+
+        public SeparatorElement(params object[] options)
+        {
+            _options = options.OfType<GUILayoutOption>().ToArray();
+        }
+
+        internal override void Render()
+        {
+            Engine.Separator(_options);
+        }
+    }
+
+    private sealed class SpaceElement : Element
+    {
+        private readonly double _size;
+
+        public SpaceElement(double size)
+        {
+            _size = size;
+        }
+
+        internal override void Render()
+        {
+            Engine.Space(_size);
+        }
+    }
+
+    private sealed class FillElement : Element
+    {
+        internal override void Render()
+        {
+            Engine.Fill();
+        }
+    }
+
+    private sealed class AlignElement : Element
+    {
+        private readonly double _ratio;
+        private readonly double _offset;
+        private readonly Element[] _children;
+
+        public AlignElement(double ratio, double offset, params Element[] children)
+        {
+            _ratio = ratio;
+            _offset = offset;
+            _children = children;
+        }
+
+        internal override void Render()
+        {
+            Engine.PushAlign(_ratio, _offset);
+            try
+            {
+                foreach (var child in _children)
+                    child.Render();
+            }
+            finally
+            {
+                Engine.PopAlign();
+            }
+        }
+    }
+
+    private sealed class SizesElement : Element
+    {
+        private readonly Sizes _sizes;
+        private readonly Element[] _children;
+
+        public SizesElement(Sizes sizes, params Element[] children)
+        {
+            _sizes = sizes;
+            _children = children;
+        }
+
+        internal override void Render()
+        {
+            Engine.PushSizes(_sizes);
+            try
+            {
+                foreach (var child in _children)
+                    child.Render();
+            }
+            finally
+            {
+                Engine.PopSizes();
+            }
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // Factory methods
+    // ══════════════════════════════════════════════════════════════
+
+    public static Element VBox(
+        ContainerStyle style = ContainerStyle.None,
+        Sizes? sizes = null,
+        params object[] content
+    )
+    {
+        return new ContainerElement(ContainerDirection.Vertical, style, sizes, content);
+    }
+
+    public static Element HBox(
+        ContainerStyle style = ContainerStyle.None,
+        Sizes? sizes = null,
+        params object[] content
+    )
+    {
+        return new ContainerElement(ContainerDirection.Horizontal, style, sizes, content);
+    }
+
+    public static Element Text(
+        string text,
+        TextStyle style = TextStyle.Normal,
+        params object[] options
+    )
+    {
+        return new TextElement(text, style, options);
+    }
+
+    public static Element Button(
+        string text,
+        ButtonStyle style = ButtonStyle.Primary,
+        Action? onClick = null,
+        params object[] options
+    )
+    {
+        return new ButtonElement(text, style, onClick, options);
+    }
+
+    public static Element Switch(
+        bool on,
+        Action<bool>? onChanged = null,
+        params object[] options
+    )
+    {
+        return new SwitchElement(on, onChanged, options);
+    }
+
+    public static Element Checkbox(
+        bool on,
+        Action<bool>? onChanged = null,
+        params object[] options
+    )
+    {
+        return new CheckboxElement(on, onChanged, options);
+    }
+
+    public static Element Selector(
+        int selected,
+        IReadOnlyList<string> selections,
+        Action<int>? onSelected = null,
+        ButtonStyle style = ButtonStyle.Element,
+        ButtonStyle styleSelected = ButtonStyle.Primary,
+        params object[] options
+    )
+    {
+        return new SelectorElement(selected, selections, onSelected, style, styleSelected, options);
+    }
+
+    public static Element Selector(
+        string selected,
+        IReadOnlyList<(string, string)> selections,
+        Action<string>? onSelected = null,
+        ButtonStyle style = ButtonStyle.Element,
+        ButtonStyle styleSelected = ButtonStyle.Primary,
+        params object[] options
+    )
+    {
+        return new SelectorStringElement(selected, selections, onSelected, style, styleSelected, options);
+    }
+
+    public static Element TextField(
+        string content,
+        Action<string>? onChanged = null,
+        int? maxLength = null,
+        params object[] options
+    )
+    {
+        return new TextFieldElement(content, maxLength, onChanged, options);
+    }
+
+    public static Element ClassField<T>(
+        T content,
+        IClassFormat<T> format,
+        Action<T>? onChanged = null,
+        params object[] options
+    ) where T : class
+    {
+        return new ClassFieldElement<T>(content, format, onChanged, options);
+    }
+
+    public static Element StructField<T>(
+        T content,
+        IStructFormat<T> format,
+        Action<T>? onChanged = null,
+        params object[] options
+    ) where T : struct
+    {
+        return new StructFieldElement<T>(content, format, onChanged, options);
+    }
+
+    public static Element Icon(
+        IconStyle style = IconStyle.Information,
+        Action? onClick = null,
+        params object[] options
+    )
+    {
+        return new IconElement(style, onClick, options);
+    }
+
+    public static Element ArrowButton(
+        ArrowStyle style,
+        Action? onClick = null,
+        params object[] options
+    )
+    {
+        return new ArrowButtonElement(style, onClick, options);
+    }
+
+    public static Element Separator(params object[] options)
+    {
+        return new SeparatorElement(options);
+    }
+
+    public static Element Space(double size)
+    {
+        return new SpaceElement(size);
+    }
+
+    public static Element Fill()
+    {
+        return new FillElement();
+    }
+
+    public static Element Align(double ratio, double offset, params Element[] children)
+    {
+        return new AlignElement(ratio, offset, children);
+    }
+
+    public static Element WithSizes(Sizes sizes, params Element[] children)
+    {
+        return new SizesElement(sizes, children);
+    }
+
+    /// <summary>
+    /// Render an element tree. Call this from OnGUI each frame. Containers are
+    /// automatically Begin/End paired and the stack is unwound on exceptions.
+    /// </summary>
+    public static void Render(params Element[] roots)
+    {
+        var initialDepth = Engine.ContainerStack.Count;
+        try
+        {
+            foreach (var root in roots)
+                root.Render();
+        }
+        finally
+        {
+            while (Engine.ContainerStack.Count > initialDepth)
+            {
+                try { Engine.End(); }
+                catch { break; }
+            }
+        }
+    }
 
     // Expose GUIStyles for external use (e.g. IrisRenderer style registry)
     public static GUIStyle PrimaryButton => Resolution.PrimaryButton;
@@ -116,546 +701,9 @@ public static class IridiumLayout
         }
     }
 
-    private static GUIStyle AdjustMargin(GUIStyle style)
-    {
-        var copied = new GUIStyle(style);
-        var elementCount = ElementCountStack[^1];
-        ElementCountStack[^1] = elementCount + 1;
-        var containerDirection = ContainerStack[^1];
-        var applyPreMargin = elementCount > 0 || (containerDirection == ContainerDirection.Horizontal
-            ? ApplyPreMarginHorizontalStack[^1]
-            : ApplyPreMarginVerticalStack[^1]);
+    public static GUILayoutOption WidthMin => GUILayout.ExpandWidth(false);
 
-        var margin = (int)((elementCount > 0 ? Resolution.Margin : 0) + LastMargin);
-
-        var addition = !applyPreMargin
-            ? new RectOffset(0, 0, 0, 0)
-            : containerDirection switch
-            {
-                ContainerDirection.Horizontal => new RectOffset(margin, 0, 0, 0),
-                ContainerDirection.Vertical => new RectOffset(0, 0, margin, 0),
-                _ => new RectOffset(0, 0, 0, 0)
-            };
-
-        copied.margin = new RectOffset(
-            copied.margin.left + addition.left,
-            copied.margin.right + addition.right,
-            copied.margin.top + addition.top,
-            copied.margin.bottom + addition.bottom
-        );
-
-        if (!applyPreMargin)
-        {
-            if (containerDirection == ContainerDirection.Horizontal) copied.margin.left = 0;
-            else if (containerDirection == ContainerDirection.Vertical) copied.margin.top = 0;
-        }
-
-        var sizesElement = SizesStack[^1];
-        var alignElement = AlignmentStack[^1];
-
-        if (sizesElement is not null)
-        {
-            var (maxSize, sizes) = sizesElement.Value;
-            var beginningMargin = Math.Max(
-                0,
-                containerDirection switch
-                {
-                    ContainerDirection.Horizontal => copied.margin.top,
-                    ContainerDirection.Vertical => copied.margin.left,
-                    _ => 0
-                }
-            );
-            sizes.NextMaxMargin = Math.Max(0, beginningMargin);
-
-            if (alignElement is not null)
-            {
-                var size = sizes.Next;
-                var (ratio, offset) = alignElement.Value;
-                if (maxSize is not null && size is not null)
-                {
-                    var space = Math.Max(0, maxSize.Value - size.Value);
-                    var marginAddition = (int)Math.Floor(Math.Max(0, space * ratio + offset + sizes.MaxMargin - beginningMargin));
-                    if (containerDirection == ContainerDirection.Horizontal) copied.margin.top += marginAddition;
-                    else if (containerDirection == ContainerDirection.Vertical) copied.margin.left += marginAddition;
-                }
-            }
-        }
-
-        LastMargin = containerDirection switch
-        {
-            ContainerDirection.Horizontal => copied.margin.right,
-            ContainerDirection.Vertical => copied.margin.bottom,
-            _ => 0
-        };
-
-        return copied;
-    }
-
-    private static GUILayoutOption[] Options(object[] options)
-    {
-        return options.OfType<GUILayoutOption>().Append(GUILayout.ExpandHeight(false)).ToArray();
-    }
-
-    public static void AddMargin(
-        double size
-    )
-    {
-        LastMargin += Resolution.Scaled(size);
-    }
-
-    public static void Space(
-        double size
-    )
-    {
-        GUILayout.Space((float)Resolution.Scaled(size));
-    }
-
-    public static void Fill()
-    {
-        var containerDirection = ContainerStack[^1];
-        if (containerDirection != ContainerDirection.Horizontal)
-            throw new InvalidOperationException("Fill can only be used in Horizontal containers");
-        GUILayout.FlexibleSpace();
-    }
-
-    public static void PushSizes(Sizes? sizes = null)
-    {
-        if (sizes is null)
-        {
-            SizesStack.Add(null);
-            return;
-        }
-
-        sizes.Begin();
-        SizesStack.Add((sizes.Max, sizes));
-    }
-
-    public static void UpdateMaxSize()
-    {
-        if (Event.current.type != EventType.Repaint) return;
-        var sizesElement = SizesStack[^1];
-        if (sizesElement is null) return;
-        var (_, sizes) = sizesElement.Value;
-        var rect = GUILayoutUtility.GetLastRect();
-        var containerDirection = ContainerStack[^1];
-        var size = containerDirection == ContainerDirection.Horizontal ? rect.height : rect.width;
-        sizes.Put(Math.Max(0, size));
-    }
-
-    public static void Begin(
-        ContainerDirection direction,
-        ContainerStyle style = ContainerStyle.None,
-        Sizes? sizes = null,
-        params object[] options
-    )
-    {
-        if (style == ContainerStyle.Background) IsBackground1 = !IsBackground1;
-
-        var guiStyle = AdjustMargin(style switch
-        {
-            ContainerStyle.None => Resolution.Container,
-            ContainerStyle.Padding => Resolution.PaddingContainer,
-            ContainerStyle.Background => IsBackground1
-                ? Resolution.Background1Container
-                : Resolution.Background0Container,
-            _ => Resolution.Container
-        });
-
-        if (direction == ContainerDirection.Horizontal) GUILayout.BeginHorizontal(guiStyle, Options(options));
-        else if (direction == ContainerDirection.Vertical) GUILayout.BeginVertical(guiStyle, Options(options));
-
-        LastMargin = 0;
-        ContainerStack.Add(direction);
-        ElementCountStack.Add(0);
-        IsBackgroundStack.Add(style == ContainerStyle.Background);
-        PushSizes(sizes);
-
-        if (style == ContainerStyle.None)
-        {
-            ApplyPreMarginHorizontalStack.Add(ApplyPreMarginHorizontalStack[^1]);
-            ApplyPreMarginVerticalStack.Add(ApplyPreMarginVerticalStack[^1]);
-        }
-        else
-        {
-            ApplyPreMarginHorizontalStack.Add(false);
-            ApplyPreMarginVerticalStack.Add(false);
-        }
-    }
-
-    public static void End()
-    {
-        var direction = ContainerStack[^1];
-        if (IsBackgroundStack[^1]) IsBackground1 = !IsBackground1;
-
-        LastMargin = 0;
-
-        if (direction == ContainerDirection.Horizontal)
-        {
-            GUILayout.EndHorizontal();
-            UpdateMaxSize();
-            // Remove current container entries after UpdateMaxSize
-            ContainerStack.RemoveAt(ContainerStack.Count - 1);
-            ElementCountStack.RemoveAt(ElementCountStack.Count - 1);
-            ApplyPreMarginHorizontalStack.RemoveAt(ApplyPreMarginHorizontalStack.Count - 1);
-            ApplyPreMarginVerticalStack.RemoveAt(ApplyPreMarginVerticalStack.Count - 1);
-            IsBackgroundStack.RemoveAt(IsBackgroundStack.Count - 1);
-            SizesStack.RemoveAt(SizesStack.Count - 1);
-            ApplyPreMarginHorizontalStack[^1] = true;
-        }
-        else if (direction == ContainerDirection.Vertical)
-        {
-            GUILayout.EndVertical();
-            UpdateMaxSize();
-            // Remove current container entries after UpdateMaxSize
-            ContainerStack.RemoveAt(ContainerStack.Count - 1);
-            ElementCountStack.RemoveAt(ElementCountStack.Count - 1);
-            ApplyPreMarginHorizontalStack.RemoveAt(ApplyPreMarginHorizontalStack.Count - 1);
-            ApplyPreMarginVerticalStack.RemoveAt(ApplyPreMarginVerticalStack.Count - 1);
-            IsBackgroundStack.RemoveAt(IsBackgroundStack.Count - 1);
-            SizesStack.RemoveAt(SizesStack.Count - 1);
-            ApplyPreMarginVerticalStack[^1] = true;
-        }
-    }
-
-    public static void PushAlign(double ratio = 0, double offset = 0)
-    {
-        AlignmentStack.Add((ratio, offset));
-    }
-
-    public static void PushNoAlign()
-    {
-        AlignmentStack.Add(null);
-    }
-
-    public static void PopAlign()
-    {
-        AlignmentStack.RemoveAt(AlignmentStack.Count - 1);
-    }
-
-    public static void Separator(
-        params object[] options
-    )
-    {
-        var direction = ContainerStack[^1];
-
-        if (direction == ContainerDirection.Horizontal)
-        {
-            GUILayout.Label(
-                GUIContent.none,
-                AdjustMargin(Resolution.VerticalSeparator),
-                Options(options)
-            );
-            UpdateMaxSize();
-        }
-        else if (direction == ContainerDirection.Vertical)
-        {
-            GUILayout.Label(
-                GUIContent.none,
-                AdjustMargin(Resolution.HorizontalSeparator),
-                Options(options)
-            );
-            UpdateMaxSize();
-        }
-    }
-
-    public static bool Text(
-        string text,
-        TextStyle style = TextStyle.Normal,
-        params object[] options
-    )
-    {
-        var result = GUILayout.Button(
-            text,
-            AdjustMargin(style switch
-            {
-                TextStyle.Normal => Resolution.NormalText,
-                TextStyle.Subtitle => Resolution.SubtitleText,
-                TextStyle.Title => Resolution.TitleText,
-                TextStyle.Secondary => Resolution.SecondaryText,
-                _ => Resolution.NormalText
-            }),
-            Options(options)
-        );
-        UpdateMaxSize();
-        return result;
-    }
-
-    public static bool Button(
-        string text,
-        ButtonStyle style = ButtonStyle.Primary,
-        params object[] options
-    )
-    {
-        var result = GUILayout.Button(
-            text,
-            AdjustMargin(style switch
-            {
-                ButtonStyle.Element => Resolution.ElementButton,
-                ButtonStyle.Primary => Resolution.PrimaryButton,
-                _ => Resolution.ElementButton
-            }),
-            Options(options)
-        );
-        UpdateMaxSize();
-        return result;
-    }
-
-    public static bool? Checkbox(
-        bool on,
-        params object[] options
-    )
-    {
-        bool? result = null;
-
-        if (
-            GUILayout.Button(
-                GUIContent.none,
-                AdjustMargin(on ? Resolution.CheckboxOn : Resolution.CheckboxOff),
-                Options(options)
-            )
-        ) result = !on;
-        UpdateMaxSize();
-        return result;
-    }
-
-    public static bool? Checkbox(
-        ref bool on,
-        params object[] options
-    )
-    {
-        var result = Checkbox(on, options);
-        if (result is not null) on = result.Value;
-        return result;
-    }
-
-    public static bool ArrowButton(
-        ArrowStyle style,
-        params object[] options
-    )
-    {
-        var result = GUILayout.Button(
-            GUIContent.none,
-            AdjustMargin(style switch
-            {
-                ArrowStyle.Right => Resolution.ArrowButtonRight,
-                ArrowStyle.Down => Resolution.ArrowButtonDown,
-                ArrowStyle.Left => Resolution.ArrowButtonLeft,
-                ArrowStyle.Up => Resolution.ArrowButtonUp,
-                _ => Resolution.ArrowButtonRight
-            }),
-            Options(options)
-        );
-        UpdateMaxSize();
-        return result;
-    }
-
-    public static bool? Switch(
-        bool on,
-        params object[] options
-    )
-    {
-        bool? result = null;
-
-        if (
-            GUILayout.Button(
-                GUIContent.none,
-                AdjustMargin(on ? Resolution.SwitchOn : Resolution.SwitchOff),
-                Options(options)
-            )
-        ) result = !on;
-        UpdateMaxSize();
-
-        return result;
-    }
-
-    public static bool? Switch(
-        ref bool on,
-        params object[] options
-    )
-    {
-        var result = Switch(on, options);
-        if (result is not null)
-        {
-            on = result.Value;
-            GUI.changed = true;
-        }
-        return result;
-    }
-
-    public static int? Selector(
-        int selected,
-        IReadOnlyList<string> selections,
-        ButtonStyle style = ButtonStyle.Element,
-        ButtonStyle styleSelected = ButtonStyle.Primary,
-        params object[] options
-    )
-    {
-        int? result = null;
-
-        for (var i = 0; i < selections.Count; i++)
-            if (Button(selections[i], i == selected ? styleSelected : style, options))
-                result = i;
-
-        return result;
-    }
-
-    public static string? Selector(
-        string selected,
-        IReadOnlyList<(string, string)> selections,
-        ButtonStyle style = ButtonStyle.Element,
-        ButtonStyle styleSelected = ButtonStyle.Primary,
-        params object[] options
-    )
-    {
-        string? result = null;
-
-        foreach (var (key, name) in selections)
-            if (Button(name, key == selected ? styleSelected : style, options))
-                result = key;
-
-        return result;
-    }
-
-    public static int? Selector(
-        ref int selected,
-        IReadOnlyList<string> selections,
-        ButtonStyle style = ButtonStyle.Element,
-        ButtonStyle styleSelected = ButtonStyle.Primary,
-        params object[] options
-    )
-    {
-        var result = Selector(selected, selections, style, styleSelected, options);
-        if (result is not null)
-        {
-            selected = result.Value;
-            GUI.changed = true;
-        }
-        return result;
-    }
-
-    public static string? Selector(
-        ref string selected,
-        IReadOnlyList<(string, string)> selections,
-        ButtonStyle style = ButtonStyle.Element,
-        ButtonStyle styleSelected = ButtonStyle.Primary,
-        params object[] options
-    )
-    {
-        var result = Selector(selected, selections, style, styleSelected, options);
-        if (result is not null)
-        {
-            selected = result;
-            GUI.changed = true;
-        }
-        return result;
-    }
-
-    public static string? TextField(
-        string content,
-        int? maxLength = null,
-        params object[] options
-    )
-    {
-        string? result = null;
-        string newContent;
-
-        if (
-            (newContent = GUILayout.TextField(
-                content,
-                maxLength ?? -1,
-                AdjustMargin(Resolution.TextField),
-                Options(options)
-            )) != content
-        ) result = newContent;
-        UpdateMaxSize();
-
-        return result;
-    }
-
-    public static string? TextField(
-        ref string? content,
-        int? maxLength = null,
-        params object[] options
-    )
-    {
-        var result = TextField(content ?? string.Empty, maxLength, options);
-        if (result is not null) content = result;
-        return result;
-    }
-
-    public static T? ClassField<T>(
-        T content,
-        IClassFormat<T> format,
-        params object[] options
-    ) where T : class
-    {
-        var oldContent = format.Format(content);
-        var newContent = TextField(oldContent, null, options);
-        if (newContent is null) return null;
-        var newValue = format.Parse(newContent);
-        return newValue;
-    }
-
-    public static T? ClassField<T>(
-        ref T content,
-        IClassFormat<T> format,
-        params object[] options
-    ) where T : class
-    {
-        var result = ClassField(content, format, options);
-        if (result is not null) content = result;
-        return result;
-    }
-
-    public static T? StructField<T>(
-        T content,
-        IStructFormat<T> format,
-        params object[] options
-    ) where T : struct
-    {
-        var oldContent = format.Format(content);
-        var newContent = TextField(
-            oldContent,
-            null,
-            options
-        );
-        if (newContent is null) return null;
-        var newValue = format.Parse(newContent);
-        return newValue;
-    }
-
-    public static T? StructField<T>(
-        ref T content,
-        IStructFormat<T> format,
-        params object[] options
-    ) where T : struct
-    {
-        var result = StructField(content, format, options);
-        if (result is not null) content = result.Value;
-        return result;
-    }
-
-    public static bool Icon(
-        IconStyle style = IconStyle.Information,
-        params object[] options
-    )
-    {
-        var result = GUILayout.Button(
-            GUIContent.none,
-            AdjustMargin(style switch
-            {
-                IconStyle.Information => Resolution.IconInformation,
-                IconStyle.Success => Resolution.IconSuccess,
-                IconStyle.Warning => Resolution.IconWarning,
-                IconStyle.Error => Resolution.IconError,
-                IconStyle.Stop => Resolution.IconStop,
-                _ => Resolution.IconInformation
-            }),
-            Options(options)
-        );
-        UpdateMaxSize();
-        return result;
-    }
+    public static GUILayoutOption WidthMax => GUILayout.ExpandWidth(true);
 
     public static GUILayoutOption Width(double width)
     {
@@ -718,34 +766,33 @@ public static class IridiumLayout
         T? Parse(string text);
     }
 
-    private class DoubleFormatImpl(
+    private sealed class DoubleFormatImpl(
         int? precision,
-        double min,
-        double max
+        double lower,
+        double upper
     ) : IStructFormat<double>
     {
         public string Format(double value)
         {
             if (precision is not null) return value.ToString($"F{precision}");
-            var formatted = $"{value:R}";
-            if (formatted.Contains('.') || !Polyfill.Double.IsFinite(value)) return formatted;
-            var indexToAddDot = formatted.IndexOfAny(['e', 'E']);
-            if (indexToAddDot < 0) indexToAddDot = formatted.Length;
-            return formatted.Insert(indexToAddDot, ".0");
+            var text = $"{value:R}";
+            if (text.Contains('.') || !Polyfill.Double.IsFinite(value)) return text;
+            var exponentIndex = text.IndexOfAny(['e', 'E']);
+            if (exponentIndex < 0) exponentIndex = text.Length;
+            return text.Insert(exponentIndex, ".0");
         }
 
         public double? Parse(string text)
         {
             if (text.IsNullOrEmpty()) return 0;
             if (!double.TryParse(text, out var result)) return null;
-            result = Polyfill.MathI.Clamp(result, min, max);
-            return result;
+            return Polyfill.MathI.Clamp(result, lower, upper);
         }
     }
 
-    private class IntFormatImpl(
-        int min,
-        int max
+    private sealed class IntFormatImpl(
+        int lower,
+        int upper
     ) : IStructFormat<int>
     {
         public string Format(int value)
@@ -757,40 +804,39 @@ public static class IridiumLayout
         {
             if (text.IsNullOrEmpty()) return 0;
             if (!int.TryParse(text, out var result)) return null;
-            result = Polyfill.MathI.Clamp(result, min, max);
-            return result;
+            return Polyfill.MathI.Clamp(result, lower, upper);
         }
     }
 
     public class Sizes
     {
-        private int ReadPointer { get; set; }
+        private readonly List<double> _recorded = [];
 
-        private int WritePointer { get; set; }
+        private int _readIndex;
 
-        private List<double> SizeList { get; } = [];
+        private int _writeIndex;
 
         public int MaxMargin { get; private set; }
 
         public int NextMaxMargin { get; set; }
 
-        public double? Max => SizeList.Count == 0 ? null : SizeList.Max();
+        public double? Max => _recorded.Count == 0 ? null : _recorded.Max();
 
-        public double? Next => ReadPointer < SizeList.Count ? SizeList[ReadPointer++] : null;
+        public double? Next => _readIndex < _recorded.Count ? _recorded[_readIndex++] : null;
 
         public void Begin()
         {
-            ReadPointer = 0;
-            WritePointer = 0;
+            _readIndex = 0;
+            _writeIndex = 0;
             MaxMargin = NextMaxMargin;
             NextMaxMargin = 0;
         }
 
         public void Put(double value)
         {
-            if (WritePointer < SizeList.Count) SizeList[WritePointer] = value;
-            else SizeList.Add(value);
-            ++WritePointer;
+            if (_writeIndex < _recorded.Count) _recorded[_writeIndex] = value;
+            else _recorded.Add(value);
+            ++_writeIndex;
         }
     }
 
@@ -800,20 +846,20 @@ public static class IridiumLayout
         {
         }
 
-        private int SizesPointer { get; set; }
+        private readonly List<Sizes> _sizesPool = [];
 
-        private int GroupPointer { get; set; }
+        private readonly List<SizesGroup> _groupsPool = [];
 
-        private List<Sizes> SizesList { get; } = [];
+        private int _sizesIndex;
 
-        private List<SizesGroup> Groups { get; } = [];
+        private int _groupsIndex;
 
         public Sizes Sizes
         {
             get
             {
-                while (SizesPointer >= SizesList.Count) SizesList.Add(new Sizes());
-                return SizesList[SizesPointer++];
+                while (_sizesIndex >= _sizesPool.Count) _sizesPool.Add(new Sizes());
+                return _sizesPool[_sizesIndex++];
             }
         }
 
@@ -821,8 +867,8 @@ public static class IridiumLayout
         {
             get
             {
-                while (GroupPointer >= Groups.Count) Groups.Add(new SizesGroup());
-                var group = Groups[GroupPointer++];
+                while (_groupsIndex >= _groupsPool.Count) _groupsPool.Add(new SizesGroup());
+                var group = _groupsPool[_groupsIndex++];
                 group.Begin();
                 return group;
             }
@@ -830,8 +876,8 @@ public static class IridiumLayout
 
         public void Begin()
         {
-            SizesPointer = 0;
-            GroupPointer = 0;
+            _sizesIndex = 0;
+            _groupsIndex = 0;
         }
 
         public static implicit operator Sizes(SizesGroup group)
@@ -850,7 +896,420 @@ public static class IridiumLayout
             }
         }
     }
+    internal static class Engine
+    {
+        private sealed class Frame
+        {
+            public ContainerDirection Direction { get; set; }
 
+            public int ElementCount { get; set; }
+
+            public bool IsBackground { get; set; }
+
+            public bool ApplyPreMarginHorizontal { get; set; }
+
+            public bool ApplyPreMarginVertical { get; set; }
+        }
+
+        internal static List<ContainerDirection> ContainerStack { get; } = [ContainerDirection.Vertical];
+
+        private static readonly List<Frame> Frames = [new Frame { Direction = ContainerDirection.Vertical }];
+
+        private static readonly List<(double?, Sizes)?> SizesScopes = [null];
+
+        private static readonly List<(double, double)?> AlignmentScopes = [null];
+
+        private static double TrailingMargin;
+
+        private static bool AlternateBackground;
+
+        private static GUILayoutOption[] BuildOptions(object[] options)
+        {
+            return options.OfType<GUILayoutOption>().Append(GUILayout.ExpandHeight(false)).ToArray();
+        }
+
+        private static GUIStyle OffsetStyle(GUIStyle source)
+        {
+            var frame = Frames[^1];
+            var count = frame.ElementCount++;
+            var isHorizontal = frame.Direction == ContainerDirection.Horizontal;
+            var prependAllowed = count > 0 || (isHorizontal
+                ? frame.ApplyPreMarginHorizontal
+                : frame.ApplyPreMarginVertical);
+
+            var margin = (int)((count > 0 ? Resolution.Margin : 0) + TrailingMargin);
+
+            var shift = !prependAllowed
+                ? new RectOffset(0, 0, 0, 0)
+                : isHorizontal
+                    ? new RectOffset(margin, 0, 0, 0)
+                    : new RectOffset(0, 0, margin, 0);
+
+            var adjusted = new GUIStyle(source);
+            adjusted.margin = new RectOffset(
+                adjusted.margin.left + shift.left,
+                adjusted.margin.right + shift.right,
+                adjusted.margin.top + shift.top,
+                adjusted.margin.bottom + shift.bottom
+            );
+
+            if (!prependAllowed)
+            {
+                if (isHorizontal) adjusted.margin.left = 0;
+                else adjusted.margin.top = 0;
+            }
+
+            var sizesScope = SizesScopes[^1];
+            var alignmentScope = AlignmentScopes[^1];
+
+            if (sizesScope is not null)
+            {
+                var (maxSize, sizes) = sizesScope.Value;
+                var leadingEdge = Math.Max(
+                    0,
+                    isHorizontal ? adjusted.margin.top : adjusted.margin.left
+                );
+                sizes.NextMaxMargin = Math.Max(0, leadingEdge);
+
+                if (alignmentScope is not null)
+                {
+                    var size = sizes.Next;
+                    var (ratio, offset) = alignmentScope.Value;
+                    if (maxSize is not null && size is not null)
+                    {
+                        var leftover = Math.Max(0, maxSize.Value - size.Value);
+                        var push = (int)Math.Floor(Math.Max(0, leftover * ratio + offset + sizes.MaxMargin - leadingEdge));
+                        if (isHorizontal) adjusted.margin.top += push;
+                        else adjusted.margin.left += push;
+                    }
+                }
+            }
+
+            TrailingMargin = isHorizontal ? adjusted.margin.right : adjusted.margin.bottom;
+
+            return adjusted;
+        }
+
+        internal static void AddMargin(double size)
+        {
+            TrailingMargin += Resolution.Scaled(size);
+        }
+
+        internal static void Space(double size)
+        {
+            GUILayout.Space((float)Resolution.Scaled(size));
+        }
+
+        internal static void Fill()
+        {
+            if (ContainerStack[^1] != ContainerDirection.Horizontal)
+                throw new InvalidOperationException("Fill can only be used in Horizontal containers");
+            GUILayout.FlexibleSpace();
+        }
+
+        internal static void PushSizes(Sizes? sizes = null)
+        {
+            if (sizes is null)
+            {
+                SizesScopes.Add(null);
+                return;
+            }
+
+            sizes.Begin();
+            SizesScopes.Add((sizes.Max, sizes));
+        }
+
+        internal static void PopSizes()
+        {
+            SizesScopes.RemoveAt(SizesScopes.Count - 1);
+        }
+
+        internal static void UpdateMaxSize()
+        {
+            if (Event.current.type != EventType.Repaint) return;
+            var sizesScope = SizesScopes[^1];
+            if (sizesScope is null) return;
+            var (_, sizes) = sizesScope.Value;
+            var rect = GUILayoutUtility.GetLastRect();
+            var isHorizontal = ContainerStack[^1] == ContainerDirection.Horizontal;
+            sizes.Put(Math.Max(0, isHorizontal ? rect.height : rect.width));
+        }
+
+        internal static void Begin(
+            ContainerDirection direction,
+            ContainerStyle style = ContainerStyle.None,
+            Sizes? sizes = null,
+            params object[] options
+        )
+        {
+            if (style == ContainerStyle.Background) AlternateBackground = !AlternateBackground;
+
+            var guiStyle = OffsetStyle(style switch
+            {
+                ContainerStyle.None => Resolution.Container,
+                ContainerStyle.Padding => Resolution.PaddingContainer,
+                ContainerStyle.Background => AlternateBackground
+                    ? Resolution.Background1Container
+                    : Resolution.Background0Container,
+                _ => Resolution.Container
+            });
+
+            if (direction == ContainerDirection.Horizontal) GUILayout.BeginHorizontal(guiStyle, BuildOptions(options));
+            else GUILayout.BeginVertical(guiStyle, BuildOptions(options));
+
+            TrailingMargin = 0;
+            ContainerStack.Add(direction);
+            Frames.Add(new Frame
+            {
+                Direction = direction,
+                IsBackground = style == ContainerStyle.Background,
+                ApplyPreMarginHorizontal = style == ContainerStyle.None && Frames[^1].ApplyPreMarginHorizontal,
+                ApplyPreMarginVertical = style == ContainerStyle.None && Frames[^1].ApplyPreMarginVertical
+            });
+            PushSizes(sizes);
+        }
+
+        internal static void End()
+        {
+            var frame = Frames[^1];
+            var direction = frame.Direction;
+            if (frame.IsBackground) AlternateBackground = !AlternateBackground;
+
+            TrailingMargin = 0;
+
+            if (direction == ContainerDirection.Horizontal)
+            {
+                GUILayout.EndHorizontal();
+                UpdateMaxSize();
+                ContainerStack.RemoveAt(ContainerStack.Count - 1);
+                Frames.RemoveAt(Frames.Count - 1);
+                SizesScopes.RemoveAt(SizesScopes.Count - 1);
+                Frames[^1].ApplyPreMarginHorizontal = true;
+            }
+            else
+            {
+                GUILayout.EndVertical();
+                UpdateMaxSize();
+                ContainerStack.RemoveAt(ContainerStack.Count - 1);
+                Frames.RemoveAt(Frames.Count - 1);
+                SizesScopes.RemoveAt(SizesScopes.Count - 1);
+                Frames[^1].ApplyPreMarginVertical = true;
+            }
+        }
+
+        internal static void PushAlign(double ratio = 0, double offset = 0)
+        {
+            AlignmentScopes.Add((ratio, offset));
+        }
+
+        internal static void PushNoAlign()
+        {
+            AlignmentScopes.Add(null);
+        }
+
+        internal static void PopAlign()
+        {
+            AlignmentScopes.RemoveAt(AlignmentScopes.Count - 1);
+        }
+
+        internal static void Separator(params object[] options)
+        {
+            var isHorizontal = ContainerStack[^1] == ContainerDirection.Horizontal;
+
+            GUILayout.Label(
+                GUIContent.none,
+                OffsetStyle(isHorizontal ? Resolution.VerticalSeparator : Resolution.HorizontalSeparator),
+                BuildOptions(options)
+            );
+            UpdateMaxSize();
+        }
+
+        internal static bool Text(
+            string text,
+            TextStyle style = TextStyle.Normal,
+            params object[] options
+        )
+        {
+            var guiStyle = OffsetStyle(style switch
+            {
+                TextStyle.Normal => Resolution.NormalText,
+                TextStyle.Subtitle => Resolution.SubtitleText,
+                TextStyle.Title => Resolution.TitleText,
+                TextStyle.Secondary => Resolution.SecondaryText,
+                _ => Resolution.NormalText
+            });
+
+            var result = GUILayout.Button(text, guiStyle, BuildOptions(options));
+            UpdateMaxSize();
+            return result;
+        }
+
+        internal static bool Button(
+            string text,
+            ButtonStyle style = ButtonStyle.Primary,
+            params object[] options
+        )
+        {
+            var guiStyle = OffsetStyle(style switch
+            {
+                ButtonStyle.Element => Resolution.ElementButton,
+                ButtonStyle.Primary => Resolution.PrimaryButton,
+                _ => Resolution.ElementButton
+            });
+
+            var result = GUILayout.Button(text, guiStyle, BuildOptions(options));
+            UpdateMaxSize();
+            return result;
+        }
+
+        internal static bool? Checkbox(bool on, params object[] options)
+        {
+            bool? result = null;
+
+            if (
+                GUILayout.Button(
+                    GUIContent.none,
+                    OffsetStyle(on ? Resolution.CheckboxOn : Resolution.CheckboxOff),
+                    BuildOptions(options)
+                )
+            ) result = !on;
+            UpdateMaxSize();
+            return result;
+        }
+
+        internal static bool? Checkbox(ref bool on, params object[] options)
+        {
+            var result = Checkbox(on, options);
+            if (result is not null) on = result.Value;
+            return result;
+        }
+
+        internal static bool ArrowButton(ArrowStyle style, params object[] options)
+        {
+            var guiStyle = OffsetStyle(style switch
+            {
+                ArrowStyle.Right => Resolution.ArrowButtonRight,
+                ArrowStyle.Down => Resolution.ArrowButtonDown,
+                ArrowStyle.Left => Resolution.ArrowButtonLeft,
+                ArrowStyle.Up => Resolution.ArrowButtonUp,
+                _ => Resolution.ArrowButtonRight
+            });
+
+            var result = GUILayout.Button(GUIContent.none, guiStyle, BuildOptions(options));
+            UpdateMaxSize();
+            return result;
+        }
+
+        internal static bool? Switch(bool on, params object[] options)
+        {
+            bool? result = null;
+
+            if (
+                GUILayout.Button(
+                    GUIContent.none,
+                    OffsetStyle(on ? Resolution.SwitchOn : Resolution.SwitchOff),
+                    BuildOptions(options)
+                )
+            ) result = !on;
+            UpdateMaxSize();
+
+            return result;
+        }
+
+        internal static bool? Switch(ref bool on, params object[] options)
+        {
+            var result = Switch(on, options);
+            if (result is not null)
+            {
+                on = result.Value;
+                GUI.changed = true;
+            }
+            return result;
+        }
+
+        internal static string? TextField(
+            string content,
+            int? maxLength = null,
+            params object[] options
+        )
+        {
+            string? result = null;
+            string newContent;
+
+            if (
+                (newContent = GUILayout.TextField(
+                    content,
+                    maxLength ?? -1,
+                    OffsetStyle(Resolution.TextField),
+                    BuildOptions(options)
+                )) != content
+            ) result = newContent;
+            UpdateMaxSize();
+
+            return result;
+        }
+
+        internal static string? TextField(
+            ref string? content,
+            int? maxLength = null,
+            params object[] options
+        )
+        {
+            var result = TextField(content ?? string.Empty, maxLength, options);
+            if (result is not null) content = result;
+            return result;
+        }
+
+        internal static T? ClassField<T>(
+            T content,
+            IClassFormat<T> format,
+            params object[] options
+        ) where T : class
+        {
+            var oldContent = format.Format(content);
+            var newContent = TextField(oldContent, null, options);
+            if (newContent is null) return null;
+            var newValue = format.Parse(newContent);
+            return newValue;
+        }
+
+        internal static T? StructField<T>(
+            T content,
+            IStructFormat<T> format,
+            params object[] options
+        ) where T : struct
+        {
+            var oldContent = format.Format(content);
+            var newContent = TextField(
+                oldContent,
+                null,
+                options
+            );
+            if (newContent is null) return null;
+            var newValue = format.Parse(newContent);
+            return newValue;
+        }
+
+        internal static bool Icon(
+            IconStyle style = IconStyle.Information,
+            params object[] options
+        )
+        {
+            var guiStyle = OffsetStyle(style switch
+            {
+                IconStyle.Information => Resolution.IconInformation,
+                IconStyle.Success => Resolution.IconSuccess,
+                IconStyle.Warning => Resolution.IconWarning,
+                IconStyle.Error => Resolution.IconError,
+                IconStyle.Stop => Resolution.IconStop,
+                _ => Resolution.IconInformation
+            });
+
+            var result = GUILayout.Button(GUIContent.none, guiStyle, BuildOptions(options));
+            UpdateMaxSize();
+            return result;
+        }
+    }
     private class ResolutionResources
     {
         private const double BaseTextSize = 12;
@@ -893,10 +1352,6 @@ public static class IridiumLayout
 
         private const double IconBorder = 2;
 
-        // ══════════════════════════════════════════════════════════════
-        // COLOR LOADING FROM Colors.iml — overrides hardcoded fallbacks
-        // ══════════════════════════════════════════════════════════════
-
         private static Dictionary<string, Color>? _loadedColors;
 
         private static void LoadColors()
@@ -938,13 +1393,13 @@ public static class IridiumLayout
             }
         }
 
-        private static Color GetColor(string key, Color fallback)
+        private static Color LookupColor(string key, Color fallback)
         {
             if (_loadedColors == null) LoadColors();
             return _loadedColors.TryGetValue(key, out var c) ? c : fallback;
         }
 
-        private static Color Darken(Color c, double factor)
+        private static Color ScaleChannel(Color c, double factor)
         {
             return new Color(
                 (float)Math.Max(0, Math.Min(1, c.r * factor)),
@@ -954,41 +1409,37 @@ public static class IridiumLayout
             );
         }
 
-        private static ColorGroup LoadGroup(string style, string prop, long fallback, double hf = 1.0, double af = 1.0)
+        private static ColorGroup LoadShadeGroup(string style, string prop, long fallback, double hoverScale = 1.0, double activeScale = 1.0)
         {
-            var normal = GetColor($"{style}.{prop}", RGB(fallback));
-            return new ColorGroup(normal, Darken(normal, hf), Darken(normal, af));
+            var normal = LookupColor($"{style}.{prop}", RGB(fallback));
+            return new ColorGroup(normal, ScaleChannel(normal, hoverScale), ScaleChannel(normal, activeScale));
         }
 
-        private static ColorGroup LoadFlatGroup(string style, string prop, long fallback)
+        private static ColorGroup LoadSolidGroup(string style, string prop, long fallback)
         {
-            var color = GetColor($"{style}.{prop}", RGB(fallback));
+            var color = LookupColor($"{style}.{prop}", RGB(fallback));
             return new ColorGroup(color, color, color, color);
         }
 
-        // ══════════════════════════════════════════════════════════════
-        // COLOR PALETTE — loaded from Colors.iml at runtime, fallback to hardcoded
-        // ══════════════════════════════════════════════════════════════
+        private static readonly ColorGroup Background0Colors = LoadSolidGroup("bg-default", "background", 0x151617);
 
-        private static readonly ColorGroup Background0Colors = LoadFlatGroup("bg-default", "background", 0x151617);
+        private static readonly ColorGroup Background1Colors = LoadSolidGroup("bg-alt", "background", 0x0D0E0F);
 
-        private static readonly ColorGroup Background1Colors = LoadFlatGroup("bg-alt", "background", 0x0D0E0F);
+        private static readonly ColorGroup SeparatorColors = new(LookupColor("bg-separator.background", ARGB(0x20FFFFFF)));
 
-        private static readonly ColorGroup SeparatorColors = new(GetColor("bg-separator.background", ARGB(0x20FFFFFF)));
+        private static readonly ColorGroup PrimaryColors = LoadShadeGroup("primary", "background", 0xD973A5, 0.89, 0.72);
 
-        private static readonly ColorGroup PrimaryColors = LoadGroup("primary", "background", 0xD973A5, 0.89, 0.72);
+        private static readonly ColorGroup ElementColors = LoadShadeGroup("element", "background", 0x313338, 1.12, 1.0);
 
-        private static readonly ColorGroup ElementColors = LoadGroup("element", "background", 0x313338, 1.12, 1.0);
+        private static readonly ColorGroup ElementBorderColors = LoadSolidGroup("bg-element-border", "background", 0x494F5C);
 
-        private static readonly ColorGroup ElementBorderColors = LoadFlatGroup("bg-element-border", "background", 0x494F5C);
+        private static readonly ColorGroup NormalTextColors = LoadSolidGroup("text-normal", "color", 0xE9ECEF);
 
-        private static readonly ColorGroup NormalTextColors = LoadFlatGroup("text-normal", "color", 0xE9ECEF);
+        private static readonly ColorGroup SubtitleTextColors = LoadSolidGroup("text-subtitle", "color", 0xF1F3F5);
 
-        private static readonly ColorGroup SubtitleTextColors = LoadFlatGroup("text-subtitle", "color", 0xF1F3F5);
+        private static readonly ColorGroup TitleTextColors = LoadSolidGroup("text-title", "color", 0xF8F9FA);
 
-        private static readonly ColorGroup TitleTextColors = LoadFlatGroup("text-title", "color", 0xF8F9FA);
-
-        private static readonly ColorGroup SecondaryTextColors = LoadFlatGroup("text-secondary", "color", 0x7D7E7F);
+        private static readonly ColorGroup SecondaryTextColors = LoadSolidGroup("text-secondary", "color", 0x7D7E7F);
 
         private static readonly ColorGroup CheckboxOffColors = ElementColors;
 
@@ -1012,13 +1463,13 @@ public static class IridiumLayout
 
         private static readonly ColorGroup SwitchButtonColors = TitleTextColors;
 
-        private static readonly ColorGroup TextFieldColors = LoadFlatGroup("bg-default", "background", 0x151719);
+        private static readonly ColorGroup TextFieldColors = LoadSolidGroup("bg-default", "background", 0x151719);
 
         private static readonly ColorGroup TextFieldBorderColors = new(
-            GetColor("bg-textfield-border.background", RGB(0x222326)),
-            GetColor("bg-textfield-border.background", RGB(0x222326)),
-            GetColor("primary.background", RGB(0xD973A5)),
-            GetColor("primary.background", RGB(0xD973A5))
+            LookupColor("bg-textfield-border.background", RGB(0x222326)),
+            LookupColor("bg-textfield-border.background", RGB(0x222326)),
+            LookupColor("primary.background", RGB(0xD973A5)),
+            LookupColor("primary.background", RGB(0xD973A5))
         );
 
         private static readonly ColorGroup IconInformationColors = ElementBorderColors;
@@ -1051,23 +1502,7 @@ public static class IridiumLayout
 
             Margin = Scaled(BaseMargin);
 
-            Base = new GUIStyle
-            {
-                name = "Iridium Base",
-                imagePosition = ImagePosition.ImageLeft,
-                alignment = TextAnchor.MiddleCenter,
-                wordWrap = true,
-                clipping = TextClipping.Overflow,
-                fontStyle = FontStyle.Normal,
-                richText = true,
-                border = new RectOffset(0, 0, 0, 0),
-                margin = new RectOffset(0, 0, 0, 0),
-                padding = new RectOffset(0, 0, 0, 0),
-                overflow = new RectOffset(0, 0, 0, 0)
-            };
-
-            SetupTextSize(Base, ScaledInt(BaseTextSize));
-            SetupTextColors(Base, NormalTextColors);
+            Base = BuildBaseStyle();
 
             Container = new GUIStyle(Base)
             {
@@ -1082,227 +1517,85 @@ public static class IridiumLayout
                 padding = new RectOffset(scaledPadding, scaledPadding, scaledPadding, scaledPadding)
             };
 
-            Background0Container = new GUIStyle(Base)
-            {
-                name = "Iridium Container With Background 0"
-            };
+            Background0Container = BuildBackground("Iridium Container With Background 0", Scaled(BackgroundRadius), Background0Colors);
 
-            SetupRoundedRectangleBackground(Background0Container, Scaled(BackgroundRadius), Background0Colors);
+            Background1Container = BuildBackground("Iridium Container With Background 1", Scaled(BackgroundRadius), Background1Colors);
 
-            Background1Container = new GUIStyle(Base)
-            {
-                name = "Iridium Container With Background 1"
-            };
+            HorizontalSeparator = BuildPlainFill("Iridium Horizontal Separator", SeparatorColors, fixedHeight: 1);
 
-            SetupRoundedRectangleBackground(Background1Container, Scaled(BackgroundRadius), Background1Colors);
+            VerticalSeparator = BuildPlainFill("Iridium Vertical Separator", SeparatorColors, fixedWidth: 1);
 
-            HorizontalSeparator = new GUIStyle(Base)
-            {
-                name = "Iridium Horizontal Separator",
-                fixedHeight = 1
-            };
-
-            SetupRectangleBackground(HorizontalSeparator, SeparatorColors);
-
-            VerticalSeparator = new GUIStyle(Base)
-            {
-                name = "Iridium Vertical Separator",
-                fixedWidth = 1
-            };
-
-            SetupRectangleBackground(VerticalSeparator, SeparatorColors);
-
-            NormalText = new GUIStyle(Base)
-            {
-                name = "Iridium Normal Text",
-                alignment = TextAnchor.MiddleLeft
-            };
-
-            SetupTextSize(NormalText, ScaledInt(BaseTextSize), true);
+            NormalText = BuildText("Iridium Normal Text", ScaledInt(BaseTextSize), NormalTextColors);
 
             var subtitleMargin = (int)Scaled(SubtitleAdditionalMargin);
 
-            SubtitleText = new GUIStyle(Base)
-            {
-                name = "Iridium Subtitle Text",
-                alignment = TextAnchor.MiddleLeft,
-                margin = new RectOffset(0, 0, subtitleMargin, subtitleMargin)
-            };
-
-            SetupTextSize(SubtitleText, ScaledInt(SubtitleTextSize), true);
-            SetupTextColors(SubtitleText, SubtitleTextColors);
+            SubtitleText = BuildText("Iridium Subtitle Text", ScaledInt(SubtitleTextSize), SubtitleTextColors, subtitleMargin);
 
             var titleMargin = (int)Scaled(TitleAdditionalMargin);
 
-            TitleText = new GUIStyle(Base)
-            {
-                name = "Iridium Title Text",
-                alignment = TextAnchor.MiddleLeft,
-                margin = new RectOffset(0, 0, titleMargin, titleMargin)
-            };
+            TitleText = BuildText("Iridium Title Text", ScaledInt(TitleTextSize), TitleTextColors, titleMargin);
 
-            SetupTextSize(TitleText, ScaledInt(TitleTextSize), true);
-            SetupTextColors(TitleText, TitleTextColors);
+            SecondaryText = BuildText("Iridium Secondary Text", ScaledInt(SecondaryTextSize), SecondaryTextColors);
 
-            SecondaryText = new GUIStyle(Base)
-            {
-                name = "Iridium Secondary Text",
-                alignment = TextAnchor.MiddleLeft
-            };
+            ElementButton = BuildButton("Iridium Element Button", Scaled(ButtonRadius), ElementColors, TitleTextColors);
 
-            SetupTextSize(SecondaryText, ScaledInt(SecondaryTextSize), true);
-            SetupTextColors(SecondaryText, SecondaryTextColors);
-
-            ElementButton = new GUIStyle(Base)
-            {
-                name = "Iridium Element Button"
-            };
-
-            SetupTextSize(ElementButton, ScaledInt(BaseTextSize), true);
-            SetupTextColors(ElementButton, TitleTextColors);
-            SetupRoundedRectangleBackground(ElementButton, Scaled(ButtonRadius), ElementColors);
-
-            PrimaryButton = new GUIStyle(Base)
-            {
-                name = "Iridium Primary Button"
-            };
-
-            SetupTextSize(PrimaryButton, ScaledInt(BaseTextSize), true);
-            SetupTextColors(PrimaryButton, TitleTextColors);
-            SetupRoundedRectangleBackground(PrimaryButton, Scaled(ButtonRadius), PrimaryColors);
+            PrimaryButton = BuildButton("Iridium Primary Button", Scaled(ButtonRadius), PrimaryColors, TitleTextColors);
 
             var squareIconSize = ScaledInt(SquareIconSize);
 
-            CheckboxOff = new GUIStyle(Base)
-            {
-                name = "Iridium Checkbox Off",
-                fixedWidth = squareIconSize,
-                fixedHeight = squareIconSize
-            };
+            CheckboxOff = BuildSquareGlyph(
+                "Iridium Checkbox Off",
+                squareIconSize,
+                CheckboxOffColors,
+                CheckboxOffBorderColors,
+                CheckboxCheckmarkColors,
+                (_, _, _) => { }
+            );
 
-            SetupSquareIcon(CheckboxOff, CheckboxOffColors, CheckboxOffBorderColors, CheckboxCheckmarkColors, DrawNothing);
+            CheckboxOn = BuildSquareGlyph(
+                "Iridium Checkbox On",
+                squareIconSize,
+                CheckboxOnColors,
+                CheckboxOnBorderColors,
+                CheckboxCheckmarkColors,
+                DrawCheckmark
+            );
 
-            CheckboxOn = new GUIStyle(Base)
-            {
-                name = "Iridium Checkbox On",
-                fixedWidth = squareIconSize,
-                fixedHeight = squareIconSize
-            };
+            ArrowButtonRight = BuildSquareGlyph("Iridium Arrow Button Right", squareIconSize, ArrowButtonColors, ArrowButtonBorderColors, ArrowButtonArrowColors, DrawRightArrow);
 
-            SetupSquareIcon(CheckboxOn, CheckboxOnColors, CheckboxOnBorderColors, CheckboxCheckmarkColors, DrawCheckmark);
+            ArrowButtonDown = BuildSquareGlyph("Iridium Arrow Button Down", squareIconSize, ArrowButtonColors, ArrowButtonBorderColors, ArrowButtonArrowColors, DrawDownArrow);
 
-            ArrowButtonRight = new GUIStyle(Base)
-            {
-                name = "Iridium Arrow Button Right",
-                fixedWidth = squareIconSize,
-                fixedHeight = squareIconSize
-            };
+            ArrowButtonLeft = BuildSquareGlyph("Iridium Arrow Button Left", squareIconSize, ArrowButtonColors, ArrowButtonBorderColors, ArrowButtonArrowColors, DrawLeftArrow);
 
-            SetupSquareIcon(ArrowButtonRight, ArrowButtonColors, ArrowButtonBorderColors, ArrowButtonArrowColors, DrawRightArrow);
-
-            ArrowButtonDown = new GUIStyle(Base)
-            {
-                name = "Iridium Arrow Button Down",
-                fixedWidth = squareIconSize,
-                fixedHeight = squareIconSize
-            };
-
-            SetupSquareIcon(ArrowButtonDown, ArrowButtonColors, ArrowButtonBorderColors, ArrowButtonArrowColors, DrawDownArrow);
-
-            ArrowButtonLeft = new GUIStyle(Base)
-            {
-                name = "Iridium Arrow Button Left",
-                fixedWidth = squareIconSize,
-                fixedHeight = squareIconSize
-            };
-
-            SetupSquareIcon(ArrowButtonLeft, ArrowButtonColors, ArrowButtonBorderColors, ArrowButtonArrowColors, DrawLeftArrow);
-
-            ArrowButtonUp = new GUIStyle(Base)
-            {
-                name = "Iridium Arrow Button Up",
-                fixedWidth = squareIconSize,
-                fixedHeight = squareIconSize
-            };
-
-            SetupSquareIcon(ArrowButtonUp, ArrowButtonColors, ArrowButtonBorderColors, ArrowButtonArrowColors, DrawUpArrow);
+            ArrowButtonUp = BuildSquareGlyph("Iridium Arrow Button Up", squareIconSize, ArrowButtonColors, ArrowButtonBorderColors, ArrowButtonArrowColors, DrawUpArrow);
 
             var switchWidth = ScaledInt(SwitchWidth);
             var switchHeight = ScaledInt(SwitchHeight);
 
-            SwitchOff = new GUIStyle(Base)
-            {
-                name = "Iridium Switch Off",
-                fixedWidth = switchWidth,
-                fixedHeight = switchHeight
-            };
+            SwitchOff = BuildSwitch("Iridium Switch Off", switchWidth, switchHeight, false, SwitchOffColors, SwitchButtonColors);
 
-            SetupSwitch(SwitchOff, false, SwitchOffColors, SwitchButtonColors);
+            SwitchOn = BuildSwitch("Iridium Switch On", switchWidth, switchHeight, true, SwitchOnColors, SwitchButtonColors);
 
-            SwitchOn = new GUIStyle(Base)
-            {
-                name = "Iridium Switch On",
-                fixedWidth = switchWidth,
-                fixedHeight = switchHeight
-            };
-
-            SetupSwitch(SwitchOn, true, SwitchOnColors, SwitchButtonColors);
-
-            TextField = new GUIStyle(Base)
-            {
-                name = "Iridium Text Field",
-                alignment = TextAnchor.MiddleLeft
-            };
-
-            SetupTextSize(TextField, ScaledInt(BaseTextSize), true);
-            SetupBorderedRoundedRectangleBackground(TextField, Scaled(TextFieldRadius), Scaled(TextFieldBorder), TextFieldColors, TextFieldBorderColors);
+            TextField = BuildTextField(
+                "Iridium Text Field",
+                ScaledInt(BaseTextSize),
+                Scaled(TextFieldRadius),
+                Scaled(TextFieldBorder),
+                TextFieldColors,
+                TextFieldBorderColors
+            );
 
             var iconSize = ScaledInt(IconSize);
 
-            IconInformation = new GUIStyle(Base)
-            {
-                name = "Iridium Icon Information",
-                fixedWidth = iconSize,
-                fixedHeight = iconSize
-            };
+            IconInformation = BuildIcon("Iridium Icon Information", iconSize, IconInformationColors, IconInformationBorderColors, IconStrokeColors, DrawInformation);
 
-            SetupIcon(IconInformation, IconInformationColors, IconInformationBorderColors, IconStrokeColors, DrawInformation);
+            IconSuccess = BuildIcon("Iridium Icon Success", iconSize, IconSuccessColors, IconSuccessBorderColors, IconStrokeColors, DrawSuccess);
 
-            IconSuccess = new GUIStyle(Base)
-            {
-                name = "Iridium Icon Success",
-                fixedWidth = iconSize,
-                fixedHeight = iconSize
-            };
+            IconWarning = BuildIcon("Iridium Icon Warning", iconSize, IconWarningColors, IconWarningBorderColors, IconStrokeColors, DrawWarning);
 
-            SetupIcon(IconSuccess, IconSuccessColors, IconSuccessBorderColors, IconStrokeColors, DrawSuccess);
+            IconError = BuildIcon("Iridium Icon Error", iconSize, IconErrorColors, IconErrorBorderColors, IconStrokeColors, DrawError);
 
-            IconWarning = new GUIStyle(Base)
-            {
-                name = "Iridium Icon Warning",
-                fixedWidth = iconSize,
-                fixedHeight = iconSize
-            };
-
-            SetupIcon(IconWarning, IconWarningColors, IconWarningBorderColors, IconStrokeColors, DrawWarning);
-
-            IconError = new GUIStyle(Base)
-            {
-                name = "Iridium Icon Error",
-                fixedWidth = iconSize,
-                fixedHeight = iconSize
-            };
-
-            SetupIcon(IconError, IconErrorColors, IconErrorBorderColors, IconStrokeColors, DrawError);
-
-            IconStop = new GUIStyle(Base)
-            {
-                name = "Iridium Icon Stop",
-                fixedWidth = iconSize,
-                fixedHeight = iconSize
-            };
-
-            SetupIcon(IconStop, IconStopColors, IconStopBorderColors, IconStrokeColors, DrawStop);
+            IconStop = BuildIcon("Iridium Icon Stop", iconSize, IconStopColors, IconStopBorderColors, IconStrokeColors, DrawStop);
         }
 
         private double Scale { get; }
@@ -1407,10 +1700,11 @@ public static class IridiumLayout
 
         private Texture2D RenderImage(int width, int height, Action<Graphics> renderer)
         {
-            Color[] colors;
+            Color[] pixels;
+            var stride = width * 4;
 
             {
-                byte[] byteData;
+                byte[] rawBytes;
 
                 {
                     using var bitmap = new Bitmap(width, height, PixelFormat.Format32bppArgb);
@@ -1422,36 +1716,38 @@ public static class IridiumLayout
                     renderer(graphics);
                     var rect = new Rectangle(0, 0, width, height);
                     var bitmapData = bitmap.LockBits(rect, ImageLockMode.ReadOnly, bitmap.PixelFormat);
-                    var bytes = Math.Abs(bitmapData.Stride) * bitmap.Height;
-                    byteData = new byte[bytes];
-                    Marshal.Copy(bitmapData.Scan0, byteData, 0, bytes);
+                    rawBytes = new byte[Math.Abs(bitmapData.Stride) * bitmap.Height];
+                    Marshal.Copy(bitmapData.Scan0, rawBytes, 0, rawBytes.Length);
                     bitmap.UnlockBits(bitmapData);
+                    stride = Math.Abs(bitmapData.Stride);
                 }
 
-                colors = new Color[width * height];
+                pixels = new Color[width * height];
 
-                var d = height * width - width;
-
-                for (var i = 0; i < colors.Length; i++)
+                for (var row = 0; row < height; row++)
                 {
-                    var baseAddress = (i % width * 2 - i + d) * 4;
-                    colors[i] = new Color(
-                        byteData[baseAddress + 2] / 255F,
-                        byteData[baseAddress + 1] / 255F,
-                        byteData[baseAddress] / 255F,
-                        byteData[baseAddress + 3] / 255F
-                    );
+                    var sourceRow = (height - 1 - row) * stride;
+                    for (var col = 0; col < width; col++)
+                    {
+                        var source = sourceRow + col * 4;
+                        pixels[row * width + col] = new Color(
+                            rawBytes[source + 2] / 255F,
+                            rawBytes[source + 1] / 255F,
+                            rawBytes[source] / 255F,
+                            rawBytes[source + 3] / 255F
+                        );
+                    }
                 }
             }
 
             var texture = new Texture2D(width, height, TextureFormat.ARGB32, false);
-            texture.SetPixels(colors);
+            texture.SetPixels(pixels);
             texture.Apply();
             Textures.Add(texture);
             return texture;
         }
 
-        private static void RoundedRectangle(
+        private static void AppendRoundRect(
             GraphicsPath path,
             double x,
             double y,
@@ -1462,19 +1758,17 @@ public static class IridiumLayout
         {
             radius = Math.Max(0.0, Math.Min(Math.Min(radius, width / 2.0), height / 2.0));
             var r = (float)radius;
-            var r2 = r + r;
-            var w = (float)width;
-            var h = (float)height;
-            var fx = (float)x;
-            var fy = (float)y;
-            path.AddArc(fx + w - r2, fy, r2, r2, 270, 90);
-            path.AddArc(fx + w - r2, fy + h - r2, r2, r2, 0, 90);
-            path.AddArc(fx, fy + h - r2, r2, r2, 90, 90);
-            path.AddArc(fx, fy, r2, r2, 180, 90);
+            var diameter = r + r;
+            var right = (float)(x + width);
+            var bottom = (float)(y + height);
+            path.AddArc(right - diameter, (float)y, diameter, diameter, 270, 90);
+            path.AddArc(right - diameter, bottom - diameter, diameter, diameter, 0, 90);
+            path.AddArc((float)x, bottom - diameter, diameter, diameter, 90, 90);
+            path.AddArc((float)x, (float)y, diameter, diameter, 180, 90);
             path.CloseFigure();
         }
 
-        private static void RoundedCorner(
+        private static void AppendCornerArc(
             GraphicsPath path,
             double radius,
             double xA,
@@ -1485,37 +1779,37 @@ public static class IridiumLayout
             double yB
         )
         {
-            var x1 = xA - xC;
-            var y1 = yA - yC;
-            var x2 = xB - xC;
-            var y2 = yB - yC;
-            var d1 = Math.Sqrt(x1 * x1 + y1 * y1);
-            var d2 = Math.Sqrt(x2 * x2 + y2 * y2);
-            x1 /= d1;
-            y1 /= d1;
-            x2 /= d2;
-            y2 /= d2;
-            var d = x1 * x2 + y1 * y2;
-            var a1 = (Math.Atan2(y1, x1) * 180 / Math.PI % 360 + 360) % 360;
-            var a2 = (Math.Atan2(y2, x2) * 180 / Math.PI % 360 + 360) % 360;
-            if (a1 > a2) (a1, a2) = (a2, a1);
-            if (a2 - a1 > 180) (a1, a2) = (a2, a1 + 360);
+            var dx1 = xA - xC;
+            var dy1 = yA - yC;
+            var dx2 = xB - xC;
+            var dy2 = yB - yC;
+            var len1 = Math.Sqrt(dx1 * dx1 + dy1 * dy1);
+            var len2 = Math.Sqrt(dx2 * dx2 + dy2 * dy2);
+            dx1 /= len1;
+            dy1 /= len1;
+            dx2 /= len2;
+            dy2 /= len2;
+            var dot = dx1 * dx2 + dy1 * dy2;
+            var startAngle = (Math.Atan2(dy1, dx1) * 180 / Math.PI % 360 + 360) % 360;
+            var endAngle = (Math.Atan2(dy2, dx2) * 180 / Math.PI % 360 + 360) % 360;
+            if (startAngle > endAngle) (startAngle, endAngle) = (endAngle, startAngle);
+            if (endAngle - startAngle > 180) (startAngle, endAngle) = (endAngle, startAngle + 360);
 
-            var m = radius / Math.Sqrt(1 - d * d);
-            var x = xC + (x1 + x2) * m;
-            var y = yC + (y1 + y2) * m;
+            var scale = radius / Math.Sqrt(1 - dot * dot);
+            var centerX = xC + (dx1 + dx2) * scale;
+            var centerY = yC + (dy1 + dy2) * scale;
 
             path.AddArc(
-                (float)(x - radius),
-                (float)(y - radius),
+                (float)(centerX - radius),
+                (float)(centerY - radius),
                 (float)(radius + radius),
                 (float)(radius + radius),
-                (float)(a2 + 90),
-                (float)(a1 - a2 + 180)
+                (float)(endAngle + 90),
+                (float)(startAngle - endAngle + 180)
             );
         }
 
-        private static double RoundedCornerOccupiedSpace(
+        private static double CornerProjection(
             double radius,
             double xA,
             double yA,
@@ -1525,32 +1819,33 @@ public static class IridiumLayout
             double yB
         )
         {
-            var x1 = xA - xC;
-            var y1 = yA - yC;
-            var x2 = xB - xC;
-            var y2 = yB - yC;
-            var d1 = Math.Sqrt(x1 * x1 + y1 * y1);
-            var d2 = Math.Sqrt(x2 * x2 + y2 * y2);
-            x1 /= d1;
-            y1 /= d1;
-            x2 /= d2;
-            y2 /= d2;
-            var d = x1 * x2 + y1 * y2;
-            var x = x1 + x2;
-            var y = y1 + y2;
-            return radius * Math.Sqrt((x * x + y * y) / (2 - d - d));
+            var dx1 = xA - xC;
+            var dy1 = yA - yC;
+            var dx2 = xB - xC;
+            var dy2 = yB - yC;
+            var len1 = Math.Sqrt(dx1 * dx1 + dy1 * dy1);
+            var len2 = Math.Sqrt(dx2 * dx2 + dy2 * dy2);
+            dx1 /= len1;
+            dy1 /= len1;
+            dx2 /= len2;
+            dy2 /= len2;
+            var dot = dx1 * dx2 + dy1 * dy2;
+            var sx = dx1 + dx2;
+            var sy = dy1 + dy2;
+            return radius * Math.Sqrt((sx * sx + sy * sy) / (2 - dot - dot));
         }
 
-        private static void LinesWithRoundedCorner(
+        private static void AppendRoundedPolyline(
             GraphicsPath path,
             double radius,
-            bool closePath,
+            bool close,
             params PointF[] points
         )
         {
             var count = points.Length;
 
             if (count <= 1) return;
+
             if (count == 2)
             {
                 path.AddLine(points[0], points[1]);
@@ -1559,62 +1854,62 @@ public static class IridiumLayout
 
             radius = Math.Max(radius, 0);
 
-            List<double> distances = [];
+            List<double> segmentLengths = [];
 
             for (var i = 0; i < count; i++)
             {
-                var last = points[i];
-                var curr = points[i + 1 == count ? 0 : i + 1];
-                var dx = curr.X - last.X;
-                var dy = curr.Y - last.Y;
-                distances.Add(Math.Sqrt(dx * dx + dy * dy));
+                var from = points[i];
+                var to = points[i + 1 == count ? 0 : i + 1];
+                var dx = to.X - from.X;
+                var dy = to.Y - from.Y;
+                segmentLengths.Add(Math.Sqrt(dx * dx + dy * dy));
             }
 
-            List<double> radii = [];
+            List<double> cornerRadii = [];
 
             for (var i = 1; i < count - 1; i++)
-                radii.Add(Math.Min(radius, Math.Min(distances[i - 1] / 2, distances[i] / 2)));
+                cornerRadii.Add(Math.Min(radius, Math.Min(segmentLengths[i - 1] / 2, segmentLengths[i] / 2)));
 
-            if (closePath)
+            if (close)
             {
-                radii.Add(Math.Min(radius, Math.Min(distances[^2] / 2, distances[^1] / 2)));
-                radii.Add(Math.Min(radius, Math.Min(distances[^1] / 2, distances[0] / 2)));
+                cornerRadii.Add(Math.Min(radius, Math.Min(segmentLengths[^2] / 2, segmentLengths[^1] / 2)));
+                cornerRadii.Add(Math.Min(radius, Math.Min(segmentLengths[^1] / 2, segmentLengths[0] / 2)));
             }
             else
             {
-                radii[0] = Math.Min(radius, Math.Min(distances[0], distances[1] / 2));
-                radii[^1] = Math.Min(
+                cornerRadii[0] = Math.Min(radius, Math.Min(segmentLengths[0], segmentLengths[1] / 2));
+                cornerRadii[^1] = Math.Min(
                     radius,
-                    Math.Min(distances[^3] / 2, distances[^2])
+                    Math.Min(segmentLengths[^3] / 2, segmentLengths[^2])
                 );
-                var distance = distances[0];
-                var p1 = points[0];
-                var p2 = points[1];
-                var p3 = points[2];
-                var length = distance - RoundedCornerOccupiedSpace(radii[0], p1.X, p1.Y, p2.X, p2.Y, p3.X, p3.Y);
-                var x = (points[1].X - points[0].X) * length / distance;
-                var y = (points[1].Y - points[0].Y) * length / distance;
-                path.AddLine(points[0], points[0] + new SizeF((float)x, (float)y));
+                var leadLength = segmentLengths[0] - CornerProjection(
+                    cornerRadii[0],
+                    points[0].X,
+                    points[0].Y,
+                    points[1].X,
+                    points[1].Y,
+                    points[2].X,
+                    points[2].Y
+                );
+                var leadX = (points[1].X - points[0].X) * leadLength / segmentLengths[0];
+                var leadY = (points[1].Y - points[0].Y) * leadLength / segmentLengths[0];
+                path.AddLine(points[0], points[0] + new SizeF((float)leadX, (float)leadY));
             }
 
-            for (var i = 0; i < radii.Count; i++)
+            for (var i = 0; i < cornerRadii.Count; i++)
             {
-                var cornerRadius = radii[i];
+                var cornerRadius = cornerRadii[i];
                 var p1 = points[i];
                 var p2 = points[i + 1 >= count ? i + 1 - count : i + 1];
                 var p3 = points[i + 2 >= count ? i + 2 - count : i + 2];
-                RoundedCorner(path, cornerRadius, p1.X, p1.Y, p2.X, p2.Y, p3.X, p3.Y);
+                AppendCornerArc(path, cornerRadius, p1.X, p1.Y, p2.X, p2.Y, p3.X, p3.Y);
             }
 
-            if (closePath) path.CloseFigure();
+            if (close) path.CloseFigure();
             else path.AddLine(path.GetLastPoint(), points[^1]);
         }
 
-        private Texture2D RenderRectangleImage(
-            int width,
-            int height,
-            Color color
-        )
+        private Texture2D RenderFilledRect(int width, int height, Color color)
         {
             return RenderImage(width, height, graphics =>
             {
@@ -1623,23 +1918,18 @@ public static class IridiumLayout
             });
         }
 
-        private Texture2D RenderRoundedRectangleImage(
-            int width,
-            int height,
-            double radius,
-            Color color
-        )
+        private Texture2D RenderRoundedRect(int width, int height, double radius, Color color)
         {
             return RenderImage(width, height, graphics =>
             {
                 using var path = new GraphicsPath();
-                RoundedRectangle(path, 0, 0, width, height, radius);
+                AppendRoundRect(path, 0, 0, width, height, radius);
                 using var brush = new SolidBrush(DrawingColor(color));
                 graphics.FillPath(brush, path);
             });
         }
 
-        private Texture2D RenderBorderedRoundedRectangleImage(
+        private Texture2D RenderBorderedRoundedRect(
             int width,
             int height,
             double radius,
@@ -1652,13 +1942,13 @@ public static class IridiumLayout
             {
                 {
                     using var path = new GraphicsPath();
-                    RoundedRectangle(path, 0, 0, width, height, radius);
+                    AppendRoundRect(path, 0, 0, width, height, radius);
                     using var brush = new SolidBrush(DrawingColor(borderColor));
                     graphics.FillPath(brush, path);
                 }
                 {
                     using var path = new GraphicsPath();
-                    RoundedRectangle(
+                    AppendRoundRect(
                         path,
                         border,
                         border,
@@ -1672,11 +1962,11 @@ public static class IridiumLayout
             });
         }
 
-        private Texture2D RenderSquareIconImage(
+        private Texture2D RenderSquareGlyph(
             Color color,
             Color borderColor,
             Color strokeColor,
-            Action<Graphics, int, Color> renderer
+            Action<Graphics, int, Color> stroke
         )
         {
             var size = ScaledInt(SquareIconSize);
@@ -1686,13 +1976,13 @@ public static class IridiumLayout
             {
                 {
                     using var path = new GraphicsPath();
-                    RoundedRectangle(path, 0, 0, size, size, radius);
+                    AppendRoundRect(path, 0, 0, size, size, radius);
                     using var brush = new SolidBrush(DrawingColor(borderColor));
                     graphics.FillPath(brush, path);
                 }
                 {
                     using var path = new GraphicsPath();
-                    RoundedRectangle(
+                    AppendRoundRect(
                         path,
                         border,
                         border,
@@ -1703,11 +1993,11 @@ public static class IridiumLayout
                     using var brush = new SolidBrush(DrawingColor(color));
                     graphics.FillPath(brush, path);
                 }
-                renderer(graphics, size, strokeColor);
+                stroke(graphics, size, strokeColor);
             });
         }
 
-        private Texture2D RenderSwitchImage(
+        private Texture2D RenderSwitchGlyph(
             bool on,
             Color color,
             Color buttonColor
@@ -1723,7 +2013,7 @@ public static class IridiumLayout
             {
                 {
                     using var path = new GraphicsPath();
-                    RoundedRectangle(path, 0, 0, width, height, radius);
+                    AppendRoundRect(path, 0, 0, width, height, radius);
                     using var brush = new SolidBrush(DrawingColor(color));
                     graphics.FillPath(brush, path);
                 }
@@ -1744,11 +2034,11 @@ public static class IridiumLayout
             });
         }
 
-        private Texture2D RenderIconImage(
+        private Texture2D RenderCircleGlyph(
             Color color,
             Color borderColor,
             Color strokeColor,
-            Action<Graphics, int, Color> renderer
+            Action<Graphics, int, Color> stroke
         )
         {
             var size = ScaledInt(IconSize);
@@ -1757,20 +2047,13 @@ public static class IridiumLayout
             {
                 {
                     using var path = new GraphicsPath();
-                    path.AddArc(
-                        0,
-                        0,
-                        size,
-                        size,
-                        0,
-                        360
-                    );
+                    path.AddArc(0, 0, size, size, 0, 360);
                     path.CloseFigure();
                     using var brush = new SolidBrush(DrawingColor(borderColor));
                     graphics.FillPath(brush, path);
                 }
                 {
-                    using var path = new System.Drawing.Drawing2D.GraphicsPath();
+                    using var path = new GraphicsPath();
                     path.AddArc(
                         border,
                         border,
@@ -1783,12 +2066,8 @@ public static class IridiumLayout
                     using var brush = new SolidBrush(DrawingColor(color));
                     graphics.FillPath(brush, path);
                 }
-                renderer(graphics, size, strokeColor);
+                stroke(graphics, size, strokeColor);
             });
-        }
-
-        private static void DrawNothing(Graphics graphics, int size, Color strokeColor)
-        {
         }
 
         private static void DrawCheckmark(Graphics graphics, int size, Color strokeColor)
@@ -1851,26 +2130,38 @@ public static class IridiumLayout
             DrawArrow(graphics, size, strokeColor, true, true);
         }
 
+        private static Pen StrokePen(int size, Color strokeColor, float thickness)
+        {
+            var pen = new Pen(DrawingColor(strokeColor), size * thickness / 20F);
+            pen.StartCap = LineCap.Round;
+            pen.EndCap = LineCap.Round;
+            pen.LineJoin = LineJoin.Round;
+            return pen;
+        }
+
+        private static void FillDot(Graphics graphics, float x, float y, float diameter, Color strokeColor)
+        {
+            using var path = new GraphicsPath();
+            path.AddArc(x, y, diameter, diameter, 0, 360);
+            path.CloseFigure();
+            using var brush = new SolidBrush(DrawingColor(strokeColor));
+            graphics.FillPath(brush, path);
+        }
+
+        private static void DrawRingWithStem(Graphics graphics, int size, Color strokeColor, float stemTop, float stemBottom)
+        {
+            using var path = new GraphicsPath();
+            path.AddArc(size * 4 / 20F, size * 4 / 20F, size * 12 / 20F, size * 12 / 20F, 0, 360);
+            path.StartFigure();
+            path.AddLine(size * 10 / 20F, size * stemTop / 20F, size * 10 / 20F, size * stemBottom / 20F);
+            using var pen = StrokePen(size, strokeColor, 1.5F);
+            graphics.DrawPath(pen, path);
+        }
+
         private static void DrawInformation(Graphics graphics, int size, Color strokeColor)
         {
-            {
-                var path = new System.Drawing.Drawing2D.GraphicsPath();
-                path.AddArc(size * 4 / 20F, size * 4 / 20F, size * 12 / 20F, size * 12 / 20F, 0, 360);
-                path.StartFigure();
-                path.AddLine(size * 10 / 20F, size * 9.5F / 20F, size * 10 / 20F, size * 13 / 20F);
-                using var pen = new Pen(DrawingColor(strokeColor), size * 1.5F / 20F);
-                pen.StartCap = LineCap.Round;
-                pen.EndCap = LineCap.Round;
-                pen.LineJoin = LineJoin.Round;
-                graphics.DrawPath(pen, path);
-            }
-            {
-                var path = new System.Drawing.Drawing2D.GraphicsPath();
-                path.AddArc(size * 9.25F / 20F, size * 6.25F / 20F, size * 1.5F / 20F, size * 1.5F / 20F, 0, 360);
-                path.CloseFigure();
-                using var pen = new SolidBrush(DrawingColor(strokeColor));
-                graphics.FillPath(pen, path);
-            }
+            DrawRingWithStem(graphics, size, strokeColor, 9.5F, 13F);
+            FillDot(graphics, size * 9.25F / 20F, size * 6.25F / 20F, size * 1.5F / 20F, strokeColor);
         }
 
         private static void DrawSuccess(Graphics graphics, int size, Color strokeColor)
@@ -1883,85 +2174,54 @@ public static class IridiumLayout
                 new PointF(size * 10 / 20F, size * 11F / 20F),
                 new PointF(size * 16 / 20F, size * 5F / 20F)
             ]);
-            using var pen = new Pen(DrawingColor(strokeColor), size * 1.5F / 20F);
-            pen.StartCap = LineCap.Round;
-            pen.EndCap = LineCap.Round;
-            pen.LineJoin = LineJoin.Round;
+            using var pen = StrokePen(size, strokeColor, 1.5F);
             graphics.DrawPath(pen, path);
         }
 
         private static void DrawWarning(Graphics graphics, int size, Color strokeColor)
         {
-            {
-                var path = new GraphicsPath();
-                LinesWithRoundedCorner(
-                    path,
-                    size * 2 / 20F,
-                    true,
-                    GetPoint(30, 9),
-                    GetPoint(150, 9),
-                    GetPoint(270, 9)
-                );
-                path.CloseFigure();
-                path.AddLine(size * 10 / 20F, size * 7 / 20F, size * 10 / 20F, size * 10.5F / 20F);
-                using var pen = new Pen(DrawingColor(strokeColor), size * 1.5F / 20F);
-                pen.StartCap = LineCap.Round;
-                pen.EndCap = LineCap.Round;
-                pen.LineJoin = LineJoin.Round;
-                graphics.DrawPath(pen, path);
-            }
-            {
-                var path = new GraphicsPath();
-                path.AddArc(size * 9.25F / 20F, size * 12.25F / 20F, size * 1.5F / 20F, size * 1.5F / 20F, 0, 360);
-                path.CloseFigure();
-                using var pen = new SolidBrush(DrawingColor(strokeColor));
-                graphics.FillPath(pen, path);
-            }
+            using var path = new GraphicsPath();
+            AppendRoundedPolyline(
+                path,
+                size * 2 / 20F,
+                true,
+                PolarPoint(size, 30, 9),
+                PolarPoint(size, 150, 9),
+                PolarPoint(size, 270, 9)
+            );
+            path.CloseFigure();
+            path.AddLine(size * 10 / 20F, size * 7 / 20F, size * 10 / 20F, size * 10.5F / 20F);
+            using var pen = StrokePen(size, strokeColor, 1.5F);
+            graphics.DrawPath(pen, path);
 
-            return;
-
-            PointF GetPoint(double angleDegrees, double distance)
-            {
-                return new PointF(
-                    (float)(size * (10 + distance * Math.Cos(angleDegrees / 180 * Math.PI)) / 20),
-                    (float)(size * (11 + distance * Math.Sin(angleDegrees / 180 * Math.PI)) / 20)
-                );
-            }
+            FillDot(graphics, size * 9.25F / 20F, size * 12.25F / 20F, size * 1.5F / 20F, strokeColor);
         }
 
         private static void DrawError(Graphics graphics, int size, Color strokeColor)
         {
-            {
-                var path = new GraphicsPath();
-                path.AddArc(size * 4 / 20F, size * 4 / 20F, size * 12 / 20F, size * 12 / 20F, 0, 360);
-                path.StartFigure();
-                path.AddLine(size * 10 / 20F, size * 7 / 20F, size * 10 / 20F, size * 10.5F / 20F);
-                using var pen = new Pen(DrawingColor(strokeColor), size * 1.5F / 20F);
-                pen.StartCap = LineCap.Round;
-                pen.EndCap = LineCap.Round;
-                pen.LineJoin = LineJoin.Round;
-                graphics.DrawPath(pen, path);
-            }
-            {
-                var path = new GraphicsPath();
-                path.AddArc(size * 9.25F / 20F, size * 12.25F / 20F, size * 1.5F / 20F, size * 1.5F / 20F, 0, 360);
-                path.CloseFigure();
-                using var pen = new SolidBrush(DrawingColor(strokeColor));
-                graphics.FillPath(pen, path);
-            }
+            DrawRingWithStem(graphics, size, strokeColor, 7F, 10.5F);
+            FillDot(graphics, size * 9.25F / 20F, size * 12.25F / 20F, size * 1.5F / 20F, strokeColor);
+        }
+
+        private static PointF PolarPoint(int size, double angleDegrees, double distance)
+        {
+            return new PointF(
+                (float)(size * (10 + distance * Math.Cos(angleDegrees / 180 * Math.PI)) / 20),
+                (float)(size * (11 + distance * Math.Sin(angleDegrees / 180 * Math.PI)) / 20)
+            );
         }
 
         private static void DrawStop(Graphics graphics, int size, Color strokeColor)
         {
             using var path = new GraphicsPath();
-            var margin = size * 4.5F / 20F;
-            var stopSize = size * 11F / 20F;
-            path.AddRectangle(new RectangleF(margin, margin, stopSize, stopSize));
+            var inset = size * 4.5F / 20F;
+            var block = size * 11F / 20F;
+            path.AddRectangle(new RectangleF(inset, inset, block, block));
             using var brush = new SolidBrush(DrawingColor(strokeColor));
             graphics.FillPath(brush, path);
         }
 
-        private static void SetupTextSize(
+        private static void ApplyFontSize(
             GUIStyle style,
             double size,
             bool isText = false
@@ -1973,7 +2233,7 @@ public static class IridiumLayout
                 : new Vector2(0, 0);
         }
 
-        private static void SetupTextColors(
+        private static void ApplyTextPalette(
             GUIStyle style,
             ColorGroup textColors
         )
@@ -1984,20 +2244,20 @@ public static class IridiumLayout
             style.onFocused.textColor = style.focused.textColor = textColors.Focused;
         }
 
-        private void SetupRectangleBackground(
+        private void ApplyRectFill(
             GUIStyle style,
             ColorGroup colors
         )
         {
             const int size = 256;
             style.padding = style.border = new RectOffset(0, 0, 0, 0);
-            style.onNormal.background = style.normal.background = RenderRectangleImage(size, size, colors.Normal);
-            style.onHover.background = style.hover.background = RenderRectangleImage(size, size, colors.Hovered);
-            style.onActive.background = style.active.background = RenderRectangleImage(size, size, colors.Active);
-            style.onFocused.background = style.focused.background = RenderRectangleImage(size, size, colors.Focused);
+            style.onNormal.background = style.normal.background = RenderFilledRect(size, size, colors.Normal);
+            style.onHover.background = style.hover.background = RenderFilledRect(size, size, colors.Hovered);
+            style.onActive.background = style.active.background = RenderFilledRect(size, size, colors.Active);
+            style.onFocused.background = style.focused.background = RenderFilledRect(size, size, colors.Focused);
         }
 
-        private void SetupRoundedRectangleBackground(
+        private void ApplyRoundFill(
             GUIStyle style,
             double radius,
             ColorGroup colors
@@ -2007,13 +2267,13 @@ public static class IridiumLayout
             var size = borderSize + 256;
             style.padding = style.border =
                 new RectOffset(borderSize, borderSize, borderSize, borderSize);
-            style.onNormal.background = style.normal.background = RenderRoundedRectangleImage(size, size, radius, colors.Normal);
-            style.onHover.background = style.hover.background = RenderRoundedRectangleImage(size, size, radius, colors.Hovered);
-            style.onActive.background = style.active.background = RenderRoundedRectangleImage(size, size, radius, colors.Active);
-            style.onFocused.background = style.focused.background = RenderRoundedRectangleImage(size, size, radius, colors.Focused);
+            style.onNormal.background = style.normal.background = RenderRoundedRect(size, size, radius, colors.Normal);
+            style.onHover.background = style.hover.background = RenderRoundedRect(size, size, radius, colors.Hovered);
+            style.onActive.background = style.active.background = RenderRoundedRect(size, size, radius, colors.Active);
+            style.onFocused.background = style.focused.background = RenderRoundedRect(size, size, radius, colors.Focused);
         }
 
-        private void SetupBorderedRoundedRectangleBackground(
+        private void ApplyBorderedRoundFill(
             GUIStyle style,
             double radius,
             double border,
@@ -2025,51 +2285,51 @@ public static class IridiumLayout
             var size = borderSize + 256;
             style.padding = style.border =
                 new RectOffset(borderSize, borderSize, borderSize, borderSize);
-            style.onNormal.background = style.normal.background = RenderBorderedRoundedRectangleImage(size, size, radius, border, colors.Normal, borderColors.Normal);
-            style.onHover.background = style.hover.background = RenderBorderedRoundedRectangleImage(size, size, radius, border, colors.Hovered, borderColors.Hovered);
-            style.onActive.background = style.active.background = RenderBorderedRoundedRectangleImage(size, size, radius, border, colors.Active, borderColors.Active);
-            style.onFocused.background = style.focused.background = RenderBorderedRoundedRectangleImage(size, size, radius, border, colors.Focused, borderColors.Focused);
+            style.onNormal.background = style.normal.background = RenderBorderedRoundedRect(size, size, radius, border, colors.Normal, borderColors.Normal);
+            style.onHover.background = style.hover.background = RenderBorderedRoundedRect(size, size, radius, border, colors.Hovered, borderColors.Hovered);
+            style.onActive.background = style.active.background = RenderBorderedRoundedRect(size, size, radius, border, colors.Active, borderColors.Active);
+            style.onFocused.background = style.focused.background = RenderBorderedRoundedRect(size, size, radius, border, colors.Focused, borderColors.Focused);
         }
 
-        private void SetupSquareIcon(
+        private void ApplyGlyphStates(
             GUIStyle style,
             ColorGroup colors,
             ColorGroup borderColors,
             ColorGroup strokeColors,
-            Action<Graphics, int, Color> renderer
+            Action<Graphics, int, Color> stroke
         )
         {
-            style.onNormal.background = style.normal.background = RenderSquareIconImage(colors.Normal, borderColors.Normal, strokeColors.Normal, renderer);
-            style.onHover.background = style.hover.background = RenderSquareIconImage(colors.Hovered, borderColors.Hovered, strokeColors.Hovered, renderer);
-            style.onActive.background = style.active.background = RenderSquareIconImage(colors.Active, borderColors.Active, strokeColors.Active, renderer);
-            style.onFocused.background = style.focused.background = RenderSquareIconImage(colors.Focused, borderColors.Focused, strokeColors.Focused, renderer);
+            style.onNormal.background = style.normal.background = RenderSquareGlyph(colors.Normal, borderColors.Normal, strokeColors.Normal, stroke);
+            style.onHover.background = style.hover.background = RenderSquareGlyph(colors.Hovered, borderColors.Hovered, strokeColors.Hovered, stroke);
+            style.onActive.background = style.active.background = RenderSquareGlyph(colors.Active, borderColors.Active, strokeColors.Active, stroke);
+            style.onFocused.background = style.focused.background = RenderSquareGlyph(colors.Focused, borderColors.Focused, strokeColors.Focused, stroke);
         }
 
-        private void SetupSwitch(
+        private void ApplySwitchStates(
             GUIStyle style,
             bool on,
             ColorGroup colors,
             ColorGroup buttonColors
         )
         {
-            style.onNormal.background = style.normal.background = RenderSwitchImage(on, colors.Normal, buttonColors.Normal);
-            style.onHover.background = style.hover.background = RenderSwitchImage(on, colors.Hovered, buttonColors.Hovered);
-            style.onActive.background = style.active.background = RenderSwitchImage(on, colors.Active, buttonColors.Active);
-            style.onFocused.background = style.focused.background = RenderSwitchImage(on, colors.Focused, buttonColors.Focused);
+            style.onNormal.background = style.normal.background = RenderSwitchGlyph(on, colors.Normal, buttonColors.Normal);
+            style.onHover.background = style.hover.background = RenderSwitchGlyph(on, colors.Hovered, buttonColors.Hovered);
+            style.onActive.background = style.active.background = RenderSwitchGlyph(on, colors.Active, buttonColors.Active);
+            style.onFocused.background = style.focused.background = RenderSwitchGlyph(on, colors.Focused, buttonColors.Focused);
         }
 
-        private void SetupIcon(
+        private void ApplyIconStates(
             GUIStyle style,
             ColorGroup colors,
             ColorGroup borderColors,
             ColorGroup strokeColors,
-            Action<Graphics, int, Color> renderer
+            Action<Graphics, int, Color> stroke
         )
         {
-            style.onNormal.background = style.normal.background = RenderIconImage(colors.Normal, borderColors.Normal, strokeColors.Normal, renderer);
-            style.onHover.background = style.hover.background = RenderIconImage(colors.Hovered, borderColors.Hovered, strokeColors.Hovered, renderer);
-            style.onActive.background = style.active.background = RenderIconImage(colors.Active, borderColors.Active, strokeColors.Active, renderer);
-            style.onFocused.background = style.focused.background = RenderIconImage(colors.Focused, borderColors.Focused, strokeColors.Focused, renderer);
+            style.onNormal.background = style.normal.background = RenderCircleGlyph(colors.Normal, borderColors.Normal, strokeColors.Normal, stroke);
+            style.onHover.background = style.hover.background = RenderCircleGlyph(colors.Hovered, borderColors.Hovered, strokeColors.Hovered, stroke);
+            style.onActive.background = style.active.background = RenderCircleGlyph(colors.Active, borderColors.Active, strokeColors.Active, stroke);
+            style.onFocused.background = style.focused.background = RenderCircleGlyph(colors.Focused, borderColors.Focused, strokeColors.Focused, stroke);
         }
 
         private static System.Drawing.Color DrawingColor(Color color)
@@ -2080,6 +2340,152 @@ public static class IridiumLayout
                 (int)(color.g * 255),
                 (int)(color.b * 255)
             );
+        }
+
+        private GUIStyle BuildBaseStyle()
+        {
+            var style = new GUIStyle
+            {
+                name = "Iridium Base",
+                imagePosition = ImagePosition.ImageLeft,
+                alignment = TextAnchor.MiddleCenter,
+                wordWrap = true,
+                clipping = TextClipping.Overflow,
+                fontStyle = FontStyle.Normal,
+                richText = true,
+                border = new RectOffset(0, 0, 0, 0),
+                margin = new RectOffset(0, 0, 0, 0),
+                padding = new RectOffset(0, 0, 0, 0),
+                overflow = new RectOffset(0, 0, 0, 0)
+            };
+            ApplyFontSize(style, ScaledInt(BaseTextSize));
+            ApplyTextPalette(style, NormalTextColors);
+            return style;
+        }
+
+        private GUIStyle BuildBackground(string name, double radius, ColorGroup colors)
+        {
+            var style = new GUIStyle(Base)
+            {
+                name = name
+            };
+            ApplyRoundFill(style, radius, colors);
+            return style;
+        }
+
+        private GUIStyle BuildPlainFill(string name, ColorGroup colors, int? fixedWidth = null, int? fixedHeight = null)
+        {
+            var style = new GUIStyle(Base)
+            {
+                name = name
+            };
+            if (fixedWidth is not null) style.fixedWidth = fixedWidth.Value;
+            if (fixedHeight is not null) style.fixedHeight = fixedHeight.Value;
+            ApplyRectFill(style, colors);
+            return style;
+        }
+
+        private GUIStyle BuildText(string name, double fontSize, ColorGroup textColors, int? verticalMargin = null)
+        {
+            var style = new GUIStyle(Base)
+            {
+                name = name,
+                alignment = TextAnchor.MiddleLeft,
+                margin = verticalMargin is null
+                    ? new RectOffset(0, 0, 0, 0)
+                    : new RectOffset(0, 0, verticalMargin.Value, verticalMargin.Value)
+            };
+            ApplyFontSize(style, fontSize, true);
+            ApplyTextPalette(style, textColors);
+            return style;
+        }
+
+        private GUIStyle BuildButton(string name, double radius, ColorGroup background, ColorGroup text)
+        {
+            var style = new GUIStyle(Base)
+            {
+                name = name
+            };
+            ApplyFontSize(style, ScaledInt(BaseTextSize), true);
+            ApplyTextPalette(style, text);
+            ApplyRoundFill(style, radius, background);
+            return style;
+        }
+
+        private GUIStyle BuildSquareGlyph(
+            string name,
+            int size,
+            ColorGroup colors,
+            ColorGroup borderColors,
+            ColorGroup strokeColors,
+            Action<Graphics, int, Color> stroke
+        )
+        {
+            var style = new GUIStyle(Base)
+            {
+                name = name,
+                fixedWidth = size,
+                fixedHeight = size
+            };
+            ApplyGlyphStates(style, colors, borderColors, strokeColors, stroke);
+            return style;
+        }
+
+        private GUIStyle BuildSwitch(
+            string name,
+            int width,
+            int height,
+            bool on,
+            ColorGroup colors,
+            ColorGroup buttonColors
+        )
+        {
+            var style = new GUIStyle(Base)
+            {
+                name = name,
+                fixedWidth = width,
+                fixedHeight = height
+            };
+            ApplySwitchStates(style, on, colors, buttonColors);
+            return style;
+        }
+
+        private GUIStyle BuildTextField(
+            string name,
+            double fontSize,
+            double radius,
+            double border,
+            ColorGroup colors,
+            ColorGroup borderColors
+        )
+        {
+            var style = new GUIStyle(Base)
+            {
+                name = name,
+                alignment = TextAnchor.MiddleLeft
+            };
+            ApplyFontSize(style, fontSize, true);
+            ApplyBorderedRoundFill(style, radius, border, colors, borderColors);
+            return style;
+        }
+
+        private GUIStyle BuildIcon(
+            string name,
+            int size,
+            ColorGroup colors,
+            ColorGroup borderColors,
+            ColorGroup strokeColors,
+            Action<Graphics, int, Color> stroke
+        )
+        {
+            var style = new GUIStyle(Base)
+            {
+                name = name,
+                fixedWidth = size,
+                fixedHeight = size
+            };
+            ApplyIconStates(style, colors, borderColors, strokeColors, stroke);
+            return style;
         }
 
         private class ColorGroup(Color normal, Color hovered, Color active, Color? focused = null)
