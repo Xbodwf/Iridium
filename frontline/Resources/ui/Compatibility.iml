@@ -72,5 +72,21 @@
             <Text text={localize('UseILPatch')} style="label" />
             <Switch value={settings.patchMode.useILPatch} on-changed="OnUseILPatchToggled" />
         </HBox>
+
+        <Separator />
+        <Text text={localize('ThirdPartyMods')} style="subtitle" />
+        <Separator />
+
+        <HBox align="center">
+            <Text text={localize('IgnoreRequiredMods')} style="label" />
+            <Checkbox value={settings.compatibility.ignoreRequiredMods} on-changed="OnIgnoreRequiredModsToggled" />
+        </HBox>
+
+        {settings.compatibility.ignoreRequiredMods && <>
+            <HBox gap="8">
+                <Icon type="warning" />
+                <Text text={localize('IgnoreRequiredModsWarning')} style="secondary" />
+            </HBox>
+        </>}
     </VBox>
 </Iris>

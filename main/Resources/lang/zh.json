@@ -216,5 +216,11 @@
   "AsyncInputSettings": "异步输入优化",
   "EnableAsyncInput": "启用异步输入优化",
   "AsyncInputHint": "提高音频时间精度、降低输入延迟，建议高 BPM / 高密度谱面时开启。",
-  "AsyncInputWarning": "警告：启用此功能游玩的谱面必须进行额外标注。未进行标注而导致的后果，Iridium 开发团队不予承担。"
+  "AsyncInputWarning": "警告：启用此功能游玩的谱面必须进行额外标注。未进行标注而导致的后果，Iridium 开发团队不予承担。",
+  "ThirdPartyMods": "第三方",
+  "IgnoreRequiredMods": "忽略需要的第三方Mod",
+  "IgnoreRequiredModsWarning": "将忽略缺失的第三方Mod，谱面可能无法正常游玩。",
+  "MissingModsNotice": "有{0} 等{1}个Mod缺失",
+  "MissingModsNoticeSingle": "有{0} Mod缺失",
+  "CustomEventReadOnlyNotice": "这些事件仅在安装了第三方Mod的情况下才能生效，你只能禁用和移除，不能修改它们。"
 }

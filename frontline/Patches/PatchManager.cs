@@ -211,6 +211,27 @@ namespace Iridium.Patches
 				Main.Settings.compatibility.legacyFlashMode != LegacyBehaviorMode.Default ||
 				Main.Settings.compatibility.legacyCamRelativeToMode != LegacyBehaviorMode.Default));
 
+			// Required third-party mods handling (applied on demand via ignoreRequiredMods)
+			var requiredModsCond = () => Main.Settings.compatibility.ignoreRequiredMods;
+			_definitions.Add(new PatchDef(typeof(RequiredModsClearPatches.LevelDataClearPatch), requiredModsCond));
+			_definitions.Add(new PatchDef(typeof(RequiredModsClearPatches.LevelDataCLSClearPatch), requiredModsCond));
+			_definitions.Add(new PatchDef(typeof(RequiredModsClearPatches.EncodeRestorePatch), requiredModsCond));
+			_definitions.Add(new PatchDef(typeof(RequiredModsClearPatches.LevelLoadNotifyPatch), requiredModsCond));
+
+			// Third-party custom events (fake event registration; always-on, runtime-gated)
+			_definitions.Add(new PatchDef(typeof(CustomEventsPatches.ScanRegisterPatch), () => true));
+			_definitions.Add(new PatchDef(typeof(CustomEventsPatches.ScanRegisterCLSPatch), () => true));
+			_definitions.Add(new PatchDef(typeof(CustomEventsPatches.FakeEventDecodePatch), () => true));
+			_definitions.Add(new PatchDef(typeof(CustomEventsPatches.FakeEventEncodePatch), () => true));
+			_definitions.Add(new PatchDef(typeof(CustomEventsPatches.ReadOnlyPanelPatch), () => true));
+			_definitions.Add(new PatchDef(typeof(CustomEventsPatches.ListItemEventPatch), () => true));
+			_definitions.Add(new PatchDef(typeof(CustomEventsPatches.EventIndicatorPatch), () => true));
+			_definitions.Add(new PatchDef(typeof(CustomEventsPatches.ShowPanelFakeEventPatch), () => true));
+			_definitions.Add(new PatchDef(typeof(CustomEventsPatches.RemoveEventAtSelectedPatch), () => true));
+			_definitions.Add(new PatchDef(typeof(CustomEventsPatches.ShowTabsForFloorPatch), () => true));
+			_definitions.Add(new PatchDef(typeof(CustomEventsPatches.FakeTabSetSelectedPatch), () => true));
+			_definitions.Add(new PatchDef(typeof(CustomEventsPatches.FakeTabClickPatch), () => true));
+
 			// Hit Sound
 			_definitions.Add(new PatchDef(typeof(HitSoundPatch), () => Main.Settings.hitSound.enableHitSoundPitch));
 
@@ -393,7 +414,7 @@ namespace Iridium.Patches
 				if (shouldBeActive)
 				{
 					var result = ApplyPatch(def);
-					if (result != null)
+					if (result == null)
 					{
 						_activePatches[def.Type] = true;
 						return null;
@@ -403,7 +424,7 @@ namespace Iridium.Patches
 				else
 				{
 					var result = RemovePatch(def);
-					if (result != null)
+					if (result == null)
 					{
 						_activePatches.Remove(def.Type);
 						return null;

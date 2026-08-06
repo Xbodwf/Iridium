@@ -231,5 +231,11 @@
   "ShowAutoplayHintUI": "显示自动播放提示UI",
   "CustomAutoplayHint": "自定义提示内容",
   "AutoplayHintTemplate": "提示模板。支持 {autoplay} {status} {key}",
-  "AutoplayStatusEnabled": "已启用"
+  "AutoplayStatusEnabled": "已启用",
+  "ThirdPartyMods": "第三方",
+  "IgnoreRequiredMods": "忽略需要的第三方Mod",
+  "IgnoreRequiredModsWarning": "将忽略缺失的第三方Mod，谱面可能无法正常游玩。",
+  "MissingModsNotice": "有{0} 等{1}个Mod缺失",
+  "MissingModsNoticeSingle": "有{0} Mod缺失",
+  "CustomEventReadOnlyNotice": "这些事件仅在安装了第三方Mod的情况下才能生效，你只能禁用和移除，不能修改它们。"
 }

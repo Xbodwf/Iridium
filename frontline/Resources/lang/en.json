@@ -231,5 +231,11 @@
   "ShowAutoplayHintUI": "Show Auto-Play Hint UI",
   "CustomAutoplayHint": "Custom Hint Content",
   "AutoplayHintTemplate": "Hint template. Supports {autoplay} {status} {key}",
-  "AutoplayStatusEnabled": "enabled"
+  "AutoplayStatusEnabled": "enabled",
+  "ThirdPartyMods": "Third-party",
+  "IgnoreRequiredMods": "Ignore required third-party mods",
+  "IgnoreRequiredModsWarning": "Required third-party mods will be ignored. The level may not play correctly.",
+  "MissingModsNotice": "Missing mods: {0} and {1} more",
+  "MissingModsNoticeSingle": "Missing mod: {0}",
+  "CustomEventReadOnlyNotice": "These events only work when the third-party mod is installed. You can only disable or remove them."
 }

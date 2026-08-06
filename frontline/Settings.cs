@@ -805,6 +805,17 @@ namespace Iridium
                 Iridium.Patches.PatchManager.ReapplyAllPatches();
                 Save();
             });
+
+            _renderer.RegisterHandler("OnIgnoreRequiredModsToggled", (obj) =>
+            {
+                bool value = obj is bool b ? b : false;
+                compatibility.ignoreRequiredMods = value;
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(RequiredModsClearPatches.LevelDataClearPatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(RequiredModsClearPatches.LevelDataCLSClearPatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(RequiredModsClearPatches.EncodeRestorePatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(RequiredModsClearPatches.LevelLoadNotifyPatch));
+                Save();
+            });
         }
 
         private void RegisterHitSoundHandlers()
@@ -959,7 +970,7 @@ namespace Iridium
 
         public void OnGUI()
         {
-            int initialStackDepth = IridiumLayout.ContainerStack.Count;
+            int initialStackDepth = IridiumLayout.Engine.ContainerStack.Count;
 
             try
             {
@@ -981,9 +992,13 @@ namespace Iridium
                 else
                 {
                     // fallback: hardcoded minimal UI if IML file missing
-                    IridiumLayout.Begin(IridiumLayout.ContainerDirection.Vertical, IridiumLayout.ContainerStyle.Padding);
-                    IridiumLayout.Text("IML file not found: Settings.iml", IridiumLayout.TextStyle.Secondary);
-                    IridiumLayout.End();
+                    IridiumLayout.Render(
+                        IridiumLayout.VBox(
+                            IridiumLayout.ContainerStyle.Padding,
+                            null,
+                            IridiumLayout.Text("IML file not found: Settings.iml", IridiumLayout.TextStyle.Secondary)
+                        )
+                    );
                 }
 
                 // Key binding capture — real-time display
@@ -1038,9 +1053,9 @@ namespace Iridium
             }
             finally
             {
-                while (IridiumLayout.ContainerStack.Count > initialStackDepth)
+                while (IridiumLayout.Engine.ContainerStack.Count > initialStackDepth)
                 {
-                    try { IridiumLayout.End(); }
+                    try { IridiumLayout.Engine.End(); }
                     catch { break; }
                 }
             }
@@ -1083,27 +1098,27 @@ namespace Iridium
     public class IridiumLayoutAdapter : Iris.Iml.IIrrLayout
     {
         public void BeginHorizontal(Iris.Iml.IrrContStyle style, GUILayoutOption[] options)
-            => IridiumLayout.Begin(ContainerDirection.Horizontal, (ContainerStyle)(int)style, null, options);
+            => IridiumLayout.Engine.Begin(ContainerDirection.Horizontal, (ContainerStyle)(int)style, null, options);
 
         public void BeginVertical(Iris.Iml.IrrContStyle style, GUILayoutOption[] options)
-            => IridiumLayout.Begin(ContainerDirection.Vertical, (ContainerStyle)(int)style, null, options);
+            => IridiumLayout.Engine.Begin(ContainerDirection.Vertical, (ContainerStyle)(int)style, null, options);
 
-        public void End() => IridiumLayout.End();
+        public void End() => IridiumLayout.Engine.End();
 
         public bool Button(string text, Iris.Iml.IrrButStyle style)
-            => IridiumLayout.Button(text, (ButtonStyle)(int)style);
+            => IridiumLayout.Engine.Button(text, (ButtonStyle)(int)style);
 
         public void Text(string text, Iris.Iml.IrrTextStyle style)
-            => IridiumLayout.Text(text, (TextStyle)(int)style);
+            => IridiumLayout.Engine.Text(text, (TextStyle)(int)style);
 
-        public bool? Switch(bool on) => IridiumLayout.Switch(on);
-        public bool? Checkbox(bool on) => IridiumLayout.Checkbox(on);
-        public void Separator() => IridiumLayout.Separator();
-        public void Space(double size) => IridiumLayout.Space(size);
-        public void Fill() => IridiumLayout.Fill();
-        public string? TextField(string content) => IridiumLayout.TextField(content);
+        public bool? Switch(bool on) => IridiumLayout.Engine.Switch(on);
+        public bool? Checkbox(bool on) => IridiumLayout.Engine.Checkbox(on);
+        public void Separator() => IridiumLayout.Engine.Separator();
+        public void Space(double size) => IridiumLayout.Engine.Space(size);
+        public void Fill() => IridiumLayout.Engine.Fill();
+        public string? TextField(string content) => IridiumLayout.Engine.TextField(content);
 
         public bool Icon(Iris.Iml.IrrIconStyle style)
-            => IridiumLayout.Icon((IconStyle)(int)style);
+            => IridiumLayout.Engine.Icon((IconStyle)(int)style);
     }
 }

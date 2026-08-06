@@ -231,5 +231,11 @@
   "ShowAutoplayHintUI": "자동 재생 힌트 UI 표시",
   "CustomAutoplayHint": "사용자 정의 힌트 내용",
   "AutoplayHintTemplate": "힌트 템플릿. {autoplay} {status} {key} 지원",
-  "AutoplayStatusEnabled": "활성화됨"
+  "AutoplayStatusEnabled": "활성화됨",
+  "ThirdPartyMods": "서드파티",
+  "IgnoreRequiredMods": "필요한 서드파티 모드 무시",
+  "IgnoreRequiredModsWarning": "필요한 서드파티 모드를 무시합니다. 레벨이 제대로 재생되지 않을 수 있습니다.",
+  "MissingModsNotice": "누락된 모드: {0} 외 {1}개",
+  "MissingModsNoticeSingle": "누락된 모드: {0}",
+  "CustomEventReadOnlyNotice": "이 이벤트는 서드파티 모드가 설치된 경우에만 작동합니다. 비활성화하거나 제거만 할 수 있습니다."
 }

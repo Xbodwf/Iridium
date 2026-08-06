@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using Iridium.UI;
 using Iridium.Config;
@@ -62,11 +63,16 @@ namespace Iridium
             return _cachedTabDisplayNames;
         }
 
-		public void OnGUI()
+        private static object[] WithWidthMax(params Element[] children)
         {
-            // Record initial stack depth for exception safety
-            int initialStackDepth = IridiumLayout.ContainerStack.Count;
+            var content = new object[children.Length + 1];
+            content[0] = WidthMax;
+            Array.Copy(children, 0, content, 1, children.Length);
+            return content;
+        }
 
+        public void OnGUI()
+        {
             try
             {
                 EnsureTexturesAlive();
@@ -74,840 +80,917 @@ namespace Iridium
                 _defaultLobbyMusicPathCache ??= lobbyMusic.defaultMusicPath;
                 _fastLobbyMusicPathCache ??= lobbyMusic.fastMusicPath;
 
-                Begin(ContainerDirection.Vertical, ContainerStyle.Padding);
+                Element[] tabContent = _currentTabIndex switch
                 {
-                    Begin(ContainerDirection.Horizontal);
-                    {
-                        Space(4);
-                        Selector(ref _currentTabIndex, GetTabDisplayNames(), options: WidthMin);
-                        Fill();
-                        Space(4);
-                        Text($"Iridium {VersionManager.GetFullVersionString()}", TextStyle.Secondary);
-                    }
-                    End();
+                    0 => DrawOptimizerTab(),
+                    1 => DrawUISettingsTab(),
+                    2 => DrawLevelSelectTab(),
+                    3 => DrawCompatibilityTab(),
+                    4 => DrawHitSoundAndJudgeTextTab(),
+                    5 => DrawAsyncInputTab(),
+                    _ => DrawEditorShortcutsTab(),
+                };
 
-                    Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
-                    {
-                        switch (_currentTabIndex)
-                        {
-                            case 0: DrawOptimizerTab(); break;
-                            case 1: DrawUISettingsTab(); break;
-                            case 2: DrawLevelSelectTab(); break;
-                            case 3: DrawCompatibilityTab(); break;
-                            case 4: DrawHitSoundAndJudgeTextTab(); break;
-                            case 5: DrawAsyncInputTab(); break;
-                            case 6: DrawEditorShortcutsTab(); break;
-                        }
-                    }
-                    End();
-
-                    Space(2);
-                    string asyncStatus = AsyncPatchManager.IsProcessing ? "⏳ " + Localization.Get("AsyncPatchProcessing") : "";
-                    Text(asyncStatus, TextStyle.Secondary, WidthMax);
-                    Space(2);
-                    Begin(ContainerDirection.Horizontal);
-                    {
-                        Fill();
-                        foreach (var lang in Localization.AvailableLanguages)
-                        {
-                            var isCurrent = language == lang;
-                            var displayName = Localization.GetDisplayName(lang);
-                            if (Button(displayName.ToUpper(), isCurrent ? ButtonStyle.Primary : ButtonStyle.Element, Height(28)))
-                                language = lang;
-                            Space(2);
-                        }
-                    }
-                    End();
+                var langButtons = new List<object> { Fill() };
+                foreach (var lang in Localization.AvailableLanguages)
+                {
+                    var isCurrent = language == lang;
+                    var displayName = Localization.GetDisplayName(lang);
+                    langButtons.Add(Button(displayName.ToUpper(), isCurrent ? ButtonStyle.Primary : ButtonStyle.Element, () => language = lang, Height(28)));
+                    langButtons.Add(Space(2));
                 }
-                End();
 
-    			if (GUI.changed) Save();
+                string asyncStatus = AsyncPatchManager.IsProcessing ? "⏳ " + Localization.Get("AsyncPatchProcessing") : "";
+
+                IridiumLayout.Render(
+                    VBox(
+                        ContainerStyle.Padding,
+                        null,
+                        HBox(
+                            ContainerStyle.None,
+                            null,
+                            Space(4),
+                            Selector(_currentTabIndex, GetTabDisplayNames(), i => _currentTabIndex = i, ButtonStyle.Element, ButtonStyle.Primary, WidthMin),
+                            Fill(),
+                            Space(4),
+                            Text($"Iridium {VersionManager.GetFullVersionString()}", TextStyle.Secondary)
+                        ),
+                        VBox(ContainerStyle.Background, null, WithWidthMax(tabContent)),
+                        Space(2),
+                        Text(asyncStatus, TextStyle.Secondary, WidthMax),
+                        Space(2),
+                        HBox(ContainerStyle.None, null, langButtons.ToArray())
+                    )
+                );
+
+                HandleShortcutKeyCapture();
+
+                if (GUI.changed) Save();
             }
             catch (Exception ex)
             {
                 Main.Logger?.Error($"Settings.OnGUI failed: {ex}");
                 throw;
             }
-            finally
-            {
-                // Ensure all containers are closed if an exception occurred mid-draw
-                while (IridiumLayout.ContainerStack.Count > initialStackDepth)
-                {
-                    try
-                    {
-                        IridiumLayout.End();
-                    }
-                    catch
-                    {
-                        // If End() itself fails, break to avoid infinite loop
-                        break;
-                    }
-                }
-            }
         }
 
         #region Optimizer Tab
-        private void DrawOptimizerTab()
+        private Element[] DrawOptimizerTab()
         {
             var sizes = _sizesHolder.Begin();
 
-            Text(Localization.Get("EnableOptimizer"), TextStyle.Title);
-            Separator();
-
-            var prevChanged = GUI.changed;
-            GUI.changed = false;
-            IridiumPreset.SwitchOption(sizes, ref optimizer.enableOptimizer, "EnableOptimizer");
-            if (GUI.changed)
+            var elements = new List<Element>
             {
-                if (optimizer.enableOptimizer)
+                Text(Localization.Get("EnableOptimizer"), TextStyle.Title),
+                Separator(),
+                IridiumPreset.SwitchOption(sizes, optimizer.enableOptimizer, v =>
                 {
-                    if (optimizer.disableShadows) QualitySettings.shadows = ShadowQuality.Disable;
+                    optimizer.enableOptimizer = v;
+                    if (v)
+                    {
+                        if (optimizer.disableShadows) QualitySettings.shadows = ShadowQuality.Disable;
+                    }
+                    else
+                    {
+                        QualitySettings.shadows = ShadowQuality.All;
+                    }
                     AsyncPatchManager.UpdateOptimizerPatchesAsync();
-                }
-                else
-                {
-                    QualitySettings.shadows = ShadowQuality.All;
-                    AsyncPatchManager.UpdateOptimizerPatchesAsync();
-                }
-            }
-            GUI.changed = prevChanged || GUI.changed;
+                }, "EnableOptimizer")
+            };
 
-            GUI.enabled = optimizer.enableOptimizer;
-
-            Separator();
+            var body = new List<Element>();
+            body.Add(Separator());
 
             if (OptimizerPatches.savedVRAM_MB > 0.1f)
             {
-                IridiumPreset.IconTextFormatted(sizes, IconStyle.Success, "SavedMemoryMsg", OptimizerPatches.savedVRAM_MB.ToString("F2"));
-                Separator();
+                body.Add(IridiumPreset.IconTextFormatted(sizes, IconStyle.Success, "SavedMemoryMsg", OptimizerPatches.savedVRAM_MB.ToString("F2")));
+                body.Add(Separator());
             }
 
-            Text(Localization.Get("ImageOptimizations"), TextStyle.Subtitle);
-            Separator();
-            Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
+            body.Add(Text(Localization.Get("ImageOptimizations"), TextStyle.Subtitle));
+            body.Add(Separator());
+
+            var image = new List<Element>();
+            image.Add(InvertedSwitchOption(sizes, optimizer.dontCompress, v =>
             {
-                GUI.changed = false;
-                InvertedSwitchOption(sizes, ref optimizer.dontCompress, "CompressImage");
-                if (GUI.changed) OptimizerPatches.ResetTextureOptimizationState();
+                optimizer.dontCompress = v;
+                OptimizerPatches.ResetTextureOptimizationState();
+            }, "CompressImage"));
 
-                bool compressEnabled = !optimizer.dontCompress;
-                if (compressEnabled)
+            bool compressEnabled = !optimizer.dontCompress;
+            if (compressEnabled)
+            {
+                image.Add(Separator());
+                image.Add(InvertedSwitchOption(sizes, optimizer.dontShowSavedMemory, v => optimizer.dontShowSavedMemory = v, "ShowSavedMemory"));
+
+                image.Add(Separator());
+                image.Add(IridiumPreset.SwitchOption(sizes, optimizer.useLossyCompression, v =>
                 {
-                    Separator();
-                    InvertedSwitchOption(sizes, ref optimizer.dontShowSavedMemory, "ShowSavedMemory");
+                    optimizer.useLossyCompression = v;
+                    OptimizerPatches.ResetTextureOptimizationState();
+                }, "UseLossyCompression"));
 
-                    Separator();
-                    GUI.changed = false;
-                    IridiumPreset.SwitchOption(sizes, ref optimizer.useLossyCompression, "UseLossyCompression");
-                    if (GUI.changed) OptimizerPatches.ResetTextureOptimizationState();
-
-                    if (optimizer.useLossyCompression)
+                if (optimizer.useLossyCompression)
+                {
+                    image.Add(Separator());
+                    image.Add(IridiumPreset.IntOption(sizes, optimizer.lossyQuality, v =>
                     {
-                        Separator();
-                        var quality = optimizer.lossyQuality;
-                        IridiumPreset.IntOption(sizes, ref quality, "LossyQuality", IntFormat(10, 100));
-                        if (quality != optimizer.lossyQuality)
+                        var clamped = Mathf.Clamp(v, 10, 100);
+                        if (clamped != optimizer.lossyQuality)
                         {
-                            optimizer.lossyQuality = Mathf.Clamp(quality, 10, 100);
+                            optimizer.lossyQuality = clamped;
                             OptimizerPatches.ResetTextureOptimizationState();
                         }
-                    }
-
-                    Separator();
-                    GUI.changed = false;
-                    InvertedSwitchOption(sizes, ref optimizer.dontResizeMultipleOf4, "MultipleOf4");
-                    if (GUI.changed) OptimizerPatches.ResetTextureOptimizationState();
-                    if (optimizer.dontCompress) optimizer.dontResizeMultipleOf4 = true;
-
-                    Separator();
-                    var prevDivideBy = optimizer.divideBy;
-                    IridiumPreset.DoubleOption(sizes, ref optimizer.divideBy, "DivideImageBy", DoubleFormat(precision: 1));
-                    if (prevDivideBy != optimizer.divideBy) OptimizerPatches.ResetTextureOptimizationState();
-                    Separator();
-                    InvertedSwitchOption(sizes, ref optimizer.dontResizeCollider, "DontResizeCollider");
+                    }, "LossyQuality", IntFormat(10, 100)));
                 }
-            }
-            End();
-            Separator();
 
-            Text(Localization.Get("CustomEasingEngine"), TextStyle.Subtitle);
-            Separator();
-            Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
-            {
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref optimizer.enableCustomEasingEngine, "EnableCustomEasingEngine");
-                if (GUI.changed)
+                image.Add(Separator());
+                image.Add(InvertedSwitchOption(sizes, optimizer.dontResizeMultipleOf4, v =>
                 {
+                    optimizer.dontResizeMultipleOf4 = v;
+                    OptimizerPatches.ResetTextureOptimizationState();
+                }, "MultipleOf4"));
+                if (optimizer.dontCompress) optimizer.dontResizeMultipleOf4 = true;
+
+                image.Add(Separator());
+                image.Add(IridiumPreset.DoubleOption(sizes, optimizer.divideBy, v =>
+                {
+                    if (v != optimizer.divideBy)
+                    {
+                        optimizer.divideBy = v;
+                        OptimizerPatches.ResetTextureOptimizationState();
+                    }
+                }, "DivideImageBy", DoubleFormat(precision: 1)));
+                image.Add(Separator());
+                image.Add(InvertedSwitchOption(sizes, optimizer.dontResizeCollider, v => optimizer.dontResizeCollider = v, "DontResizeCollider"));
+            }
+
+            body.Add(VBox(ContainerStyle.Background, null, WithWidthMax(image.ToArray())));
+            body.Add(Separator());
+
+            body.Add(Text(Localization.Get("CustomEasingEngine"), TextStyle.Subtitle));
+            body.Add(Separator());
+
+            var easing = new List<Element>
+            {
+                IridiumPreset.SwitchOption(sizes, optimizer.enableCustomEasingEngine, v =>
+                {
+                    optimizer.enableCustomEasingEngine = v;
                     ApplyCustomEasingMutualExclusion(optimizer);
                     AsyncPatchManager.UpdateOptimizerPatchesAsync();
-                }
-                if (optimizer.enableCustomEasingEngine)
-                {
-                    Separator();
-                    IridiumPreset.IconText(sizes, IconStyle.Information, "CustomEasingEngineHint");
-                }
+                }, "EnableCustomEasingEngine")
+            };
+            if (optimizer.enableCustomEasingEngine)
+            {
+                easing.Add(Separator());
+                easing.Add(IridiumPreset.IconText(sizes, IconStyle.Information, "CustomEasingEngineHint"));
             }
-            End();
-            Separator();
+            body.Add(VBox(ContainerStyle.Background, null, WithWidthMax(easing.ToArray())));
+            body.Add(Separator());
 
-            Text(Localization.Get("RenderingOptimizations"), TextStyle.Subtitle);
-            Separator();
-            Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
+            body.Add(Text(Localization.Get("RenderingOptimizations"), TextStyle.Subtitle));
+            body.Add(Separator());
+
+            var rendering = new List<Element>();
+            rendering.Add(IridiumPreset.SwitchOption(sizes, optimizer.disableShadows, v =>
             {
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref optimizer.disableShadows, "DisableShadows");
-                if (GUI.changed)
-                {
-                    if (optimizer.enableOptimizer && optimizer.disableShadows) QualitySettings.shadows = ShadowQuality.Disable;
-                    else QualitySettings.shadows = ShadowQuality.All;
-                }
-                Separator();
-                IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeDecorationUpdate, "OptimizeDecorationUpdate");
-                Separator();
-                IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeTileUpdate, "OptimizeTileUpdate");
-                Separator();
-                var prevEnabled = GUI.enabled;
-                GUI.enabled = prevEnabled && !optimizer.enableCustomEasingEngine;
-                IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeMoveTrack, "OptimizeMoveTrack");
-                Separator();
-                IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeRecolorTrack, "OptimizeRecolorTrack");
-                Separator();
-                IridiumPreset.SwitchOption(sizes, ref optimizer.skipEventIfPaused, "SkipEventIfPaused");
-                if (optimizer.skipEventIfPaused)
-                {
-                    Separator();
-                    IridiumPreset.IconText(sizes, IconStyle.Warning, "SkipEventIfPausedWarning");
-                    IridiumPreset.IconText(sizes, IconStyle.Information, "SkipEventIfPausedWarningDetail");
-                }
-                Separator();
-                IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeEventIcons, "OptimizeEventIcons");
-                Separator();
-                IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeScnGameUpdate, "OptimizeScnGameUpdate");
-                Separator();
-                IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeMoveDecorations, "OptimizeMoveDecorations");
-                GUI.enabled = prevEnabled;
-                Separator();
-                IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeFfxDecorations, "OptimizeFfxDecorations");
-                IridiumPreset.IconText(sizes, IconStyle.Warning, "DOTweenOptimizationWarning");
-                Separator();
-                IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeFloorMesh, "OptimizeFloorMesh");
-                Separator();
-                IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeFilters, "OptimizeFilters");
-                Separator();
-                IridiumPreset.SwitchOption(sizes, ref optimizer.fastLoading, "FastLoading");
-			}
-			End();
-			Separator();
-
-			Text(Localization.Get("ParticleOptimizations"), TextStyle.Subtitle);
-			Separator();
-			Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
-			{
-				IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeParticle, "OptimizeParticle");
-				if (optimizer.optimizeParticle)
-				{
-					Separator();
-					IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeParticleInactive, "OptimizeParticleInactive");
-					Separator();
-					IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeParticleCulling, "OptimizeParticleCulling");
-					Separator();
-					IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeParticleLod, "OptimizeParticleLod");
-				}
-			}
-			End();
-			Separator();
-
-			Text(Localization.Get("SceneOptimizations"), TextStyle.Subtitle);
-            Separator();
-            Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
+                optimizer.disableShadows = v;
+                if (optimizer.enableOptimizer && optimizer.disableShadows) QualitySettings.shadows = ShadowQuality.Disable;
+                else QualitySettings.shadows = ShadowQuality.All;
+            }, "DisableShadows"));
+            rendering.Add(Separator());
+            rendering.Add(IridiumPreset.SwitchOption(sizes, optimizer.optimizeDecorationUpdate, v => optimizer.optimizeDecorationUpdate = v, "OptimizeDecorationUpdate"));
+            rendering.Add(Separator());
+            rendering.Add(IridiumPreset.SwitchOption(sizes, optimizer.optimizeTileUpdate, v => optimizer.optimizeTileUpdate = v, "OptimizeTileUpdate"));
+            rendering.Add(Separator());
+            rendering.Add(Enabled(
+                () => optimizer.enableOptimizer && !optimizer.enableCustomEasingEngine,
+                IridiumPreset.SwitchOption(sizes, optimizer.optimizeMoveTrack, v => optimizer.optimizeMoveTrack = v, "OptimizeMoveTrack")
+            ));
+            rendering.Add(Separator());
+            rendering.Add(Enabled(
+                () => optimizer.enableOptimizer && !optimizer.enableCustomEasingEngine,
+                IridiumPreset.SwitchOption(sizes, optimizer.optimizeRecolorTrack, v => optimizer.optimizeRecolorTrack = v, "OptimizeRecolorTrack")
+            ));
+            rendering.Add(Separator());
+            rendering.Add(Enabled(
+                () => optimizer.enableOptimizer && !optimizer.enableCustomEasingEngine,
+                IridiumPreset.SwitchOption(sizes, optimizer.skipEventIfPaused, v => optimizer.skipEventIfPaused = v, "SkipEventIfPaused")
+            ));
+            if (optimizer.skipEventIfPaused)
             {
-                IridiumPreset.SwitchOption(sizes, ref optimizer.cacheGameObjectReferences, "CacheGameObjectReferences");
-                Separator();
-                IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeEventProcessing, "OptimizeEventProcessing");
-                Separator();
-                IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeEditorMouseDetection, "OptimizeEditorMouseDetection");
-                Separator();
-                IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeEditorEventIndicators, "OptimizeEditorEventIndicators");
+                rendering.Add(Separator());
+                rendering.Add(IridiumPreset.IconText(sizes, IconStyle.Warning, "SkipEventIfPausedWarning"));
+                rendering.Add(IridiumPreset.IconText(sizes, IconStyle.Information, "SkipEventIfPausedWarningDetail"));
             }
-            End();
-            Separator();
+            rendering.Add(Separator());
+            rendering.Add(IridiumPreset.SwitchOption(sizes, optimizer.optimizeEventIcons, v => optimizer.optimizeEventIcons = v, "OptimizeEventIcons"));
+            rendering.Add(Separator());
+            rendering.Add(IridiumPreset.SwitchOption(sizes, optimizer.optimizeScnGameUpdate, v => optimizer.optimizeScnGameUpdate = v, "OptimizeScnGameUpdate"));
+            rendering.Add(Separator());
+            rendering.Add(IridiumPreset.SwitchOption(sizes, optimizer.optimizeMoveDecorations, v => optimizer.optimizeMoveDecorations = v, "OptimizeMoveDecorations"));
+            rendering.Add(Separator());
+            rendering.Add(IridiumPreset.SwitchOption(sizes, optimizer.optimizeFfxDecorations, v => optimizer.optimizeFfxDecorations = v, "OptimizeFfxDecorations"));
+            rendering.Add(IridiumPreset.IconText(sizes, IconStyle.Warning, "DOTweenOptimizationWarning"));
+            rendering.Add(Separator());
+            rendering.Add(IridiumPreset.SwitchOption(sizes, optimizer.optimizeFloorMesh, v => optimizer.optimizeFloorMesh = v, "OptimizeFloorMesh"));
+            rendering.Add(Separator());
+            rendering.Add(IridiumPreset.SwitchOption(sizes, optimizer.optimizeFilters, v => optimizer.optimizeFilters = v, "OptimizeFilters"));
+            rendering.Add(Separator());
+            rendering.Add(IridiumPreset.SwitchOption(sizes, optimizer.fastLoading, v => optimizer.fastLoading = v, "FastLoading"));
 
-            Text(Localization.Get("LoadingOptimizations"), TextStyle.Subtitle);
-            Separator();
-            Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
+            body.Add(VBox(ContainerStyle.Background, null, WithWidthMax(rendering.ToArray())));
+            body.Add(Separator());
+
+            body.Add(Text(Localization.Get("ParticleOptimizations"), TextStyle.Subtitle));
+            body.Add(Separator());
+
+            var particle = new List<Element>
             {
-                IridiumPreset.SwitchOption(sizes, ref optimizer.cacheFloorEvents, "CacheFloorEvents");
-                Separator();
-                IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeMoveTrackTweens, "OptimizeMoveTrackTweens");
-                Separator();
-                IridiumPreset.SwitchOption(sizes, ref optimizer.batchMoveDecorations, "BatchMoveDecorations");
-                Separator();
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref optimizer.customLevelReadOptimization, "CustomLevelReadOptimization");
-                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JsonPatches.PatchLevelDataCLSLoadLevel));
-                Separator();
-
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref optimizer.frameSpreadDecorationLoading, "FrameSpreadDecorationLoading");
-                if (GUI.changed) AsyncPatchManager.UpdateOptimizerPatchesAsync();
-                if (optimizer.frameSpreadDecorationLoading)
-                {
-                    Separator();
-                    var decPerFrame = optimizer.decorationsPerFrame;
-                    IridiumPreset.IntOption(sizes, ref decPerFrame, "DecorationsPerFrame", IntFormat(10, 500));
-                    if (decPerFrame != optimizer.decorationsPerFrame)
-                        optimizer.decorationsPerFrame = Mathf.Clamp(decPerFrame, 10, 500);
-                    Separator();
-                    IridiumPreset.IconText(sizes, IconStyle.Information, "FrameSpreadLoadingHint");
-                }
+                IridiumPreset.SwitchOption(sizes, optimizer.optimizeParticle, v => optimizer.optimizeParticle = v, "OptimizeParticle")
+            };
+            if (optimizer.optimizeParticle)
+            {
+                particle.Add(Separator());
+                particle.Add(IridiumPreset.SwitchOption(sizes, optimizer.optimizeParticleInactive, v => optimizer.optimizeParticleInactive = v, "OptimizeParticleInactive"));
+                particle.Add(Separator());
+                particle.Add(IridiumPreset.SwitchOption(sizes, optimizer.optimizeParticleCulling, v => optimizer.optimizeParticleCulling = v, "OptimizeParticleCulling"));
+                particle.Add(Separator());
+                particle.Add(IridiumPreset.SwitchOption(sizes, optimizer.optimizeParticleLod, v => optimizer.optimizeParticleLod = v, "OptimizeParticleLod"));
             }
-            End();
-            Separator();
+            body.Add(VBox(ContainerStyle.Background, null, WithWidthMax(particle.ToArray())));
+            body.Add(Separator());
 
-            Text(Localization.Get("DOTweenOptimizations"), TextStyle.Subtitle);
-            Separator();
-            Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
+            body.Add(Text(Localization.Get("SceneOptimizations"), TextStyle.Subtitle));
+            body.Add(Separator());
+
+            body.Add(VBox(
+                ContainerStyle.Background,
+                null,
+                WithWidthMax(
+                    IridiumPreset.SwitchOption(sizes, optimizer.cacheGameObjectReferences, v => optimizer.cacheGameObjectReferences = v, "CacheGameObjectReferences"),
+                    Separator(),
+                    IridiumPreset.SwitchOption(sizes, optimizer.optimizeEventProcessing, v => optimizer.optimizeEventProcessing = v, "OptimizeEventProcessing"),
+                    Separator(),
+                    IridiumPreset.SwitchOption(sizes, optimizer.optimizeEditorMouseDetection, v => optimizer.optimizeEditorMouseDetection = v, "OptimizeEditorMouseDetection"),
+                    Separator(),
+                    IridiumPreset.SwitchOption(sizes, optimizer.optimizeEditorEventIndicators, v => optimizer.optimizeEditorEventIndicators = v, "OptimizeEditorEventIndicators")
+                )
+            ));
+            body.Add(Separator());
+
+            body.Add(Text(Localization.Get("LoadingOptimizations"), TextStyle.Subtitle));
+            body.Add(Separator());
+
+            var loading = new List<Element>
             {
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeDOTweenGlobal, "EnableDOTweenOptimization");
-                if (GUI.changed)
+                IridiumPreset.SwitchOption(sizes, optimizer.cacheFloorEvents, v => optimizer.cacheFloorEvents = v, "CacheFloorEvents"),
+                Separator(),
+                IridiumPreset.SwitchOption(sizes, optimizer.optimizeMoveTrackTweens, v => optimizer.optimizeMoveTrackTweens = v, "OptimizeMoveTrackTweens"),
+                Separator(),
+                IridiumPreset.SwitchOption(sizes, optimizer.batchMoveDecorations, v => optimizer.batchMoveDecorations = v, "BatchMoveDecorations"),
+                Separator(),
+                IridiumPreset.SwitchOption(sizes, optimizer.customLevelReadOptimization, v =>
                 {
-                    if (optimizer.optimizeDOTweenGlobal)
-                        DOTweenOptimizationPatches.ApplyRuntimeSettings();
-                    else
-                        DOTweenOptimizationPatches.ResetRuntimeSettings();
-                }
+                    optimizer.customLevelReadOptimization = v;
+                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JsonPatches.PatchLevelDataCLSLoadLevel));
+                }, "CustomLevelReadOptimization"),
+                Separator(),
+                IridiumPreset.SwitchOption(sizes, optimizer.frameSpreadDecorationLoading, v =>
+                {
+                    optimizer.frameSpreadDecorationLoading = v;
+                    AsyncPatchManager.UpdateOptimizerPatchesAsync();
+                }, "FrameSpreadDecorationLoading")
+            };
+            if (optimizer.frameSpreadDecorationLoading)
+            {
+                loading.Add(Separator());
+                loading.Add(IridiumPreset.IntOption(sizes, optimizer.decorationsPerFrame, v =>
+                {
+                    var clamped = Mathf.Clamp(v, 10, 500);
+                    if (clamped != optimizer.decorationsPerFrame)
+                    {
+                        optimizer.decorationsPerFrame = clamped;
+                    }
+                }, "DecorationsPerFrame", IntFormat(10, 500)));
+                loading.Add(Separator());
+                loading.Add(IridiumPreset.IconText(sizes, IconStyle.Information, "FrameSpreadLoadingHint"));
+            }
+            body.Add(VBox(ContainerStyle.Background, null, WithWidthMax(loading.ToArray())));
+            body.Add(Separator());
 
+            body.Add(Text(Localization.Get("DOTweenOptimizations"), TextStyle.Subtitle));
+            body.Add(Separator());
+
+            var dotween = new List<Element>();
+            dotween.Add(IridiumPreset.SwitchOption(sizes, optimizer.optimizeDOTweenGlobal, v =>
+            {
+                optimizer.optimizeDOTweenGlobal = v;
                 if (optimizer.optimizeDOTweenGlobal)
-                {
-                    Separator();
-
-                    var tweenerCap = optimizer.dotweenTweenerCapacity;
-                    IridiumPreset.IntOption(sizes, ref tweenerCap, "TweenerCapacity", IntFormat(200, 2000));
-                    if (tweenerCap != optimizer.dotweenTweenerCapacity)
-                    {
-                        optimizer.dotweenTweenerCapacity = Mathf.Clamp(tweenerCap, 200, 2000);
-                        DOTweenOptimizationPatches.ApplyRuntimeSettings();
-                    }
-                    Separator();
-
-                    var seqCap = optimizer.dotweenSequenceCapacity;
-                    IridiumPreset.IntOption(sizes, ref seqCap, "SequenceCapacity", IntFormat(50, 500));
-                    if (seqCap != optimizer.dotweenSequenceCapacity)
-                    {
-                        optimizer.dotweenSequenceCapacity = Mathf.Clamp(seqCap, 50, 500);
-                        DOTweenOptimizationPatches.ApplyRuntimeSettings();
-                    }
-                    Separator();
-
-                    GUI.changed = false;
-                    IridiumPreset.SwitchOption(sizes, ref optimizer.dotweenDefaultRecyclable, "DOTweenDefaultRecyclable");
-                    if (GUI.changed)
-                    {
-                        DOTweenOptimizationPatches.ApplyRuntimeSettings();
-                        AsyncPatchManager.UpdatePatchByTypeAsync(typeof(TweenSafetyPatches));
-                    }
-                    Separator();
-
-                    GUI.changed = false;
-                    IridiumPreset.SwitchOption(sizes, ref optimizer.dotweenDisableSafeMode, "DOTweenDisableSafeMode");
-                    if (GUI.changed) DOTweenOptimizationPatches.ApplyRuntimeSettings();
-                    Separator();
-
-                    IridiumPreset.IconText(sizes, IconStyle.Warning, "DOTweenOptimizationRestartRequired");
-                }
+                    DOTweenOptimizationPatches.ApplyRuntimeSettings();
                 else
-                {
-                    Separator();
-                    IridiumPreset.IconText(sizes, IconStyle.Warning, "DOTweenOptimizationWarning");
-                }
-            }
-            End();
-            Separator();
+                    DOTweenOptimizationPatches.ResetRuntimeSettings();
+            }, "EnableDOTweenOptimization"));
 
-            Text(Localization.Get("ExtremeOptimizations"), TextStyle.Subtitle);
-            Separator();
-            Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
+            if (optimizer.optimizeDOTweenGlobal)
             {
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref optimizer.enableExtremeOptimization, "EnableExtremeOptimization");
-                if (GUI.changed) AsyncPatchManager.UpdateOptimizerPatchesAsync();
-
-                if (optimizer.enableExtremeOptimization)
+                dotween.Add(Separator());
+                dotween.Add(IridiumPreset.IntOption(sizes, optimizer.dotweenTweenerCapacity, v =>
                 {
-                    Separator();
-                    var maxTweens = optimizer.maxTweensPerFrame;
-                    IridiumPreset.IntOption(sizes, ref maxTweens, "MaxTweensPerFrame", IntFormat(50, 500));
-                    optimizer.maxTweensPerFrame = Mathf.Clamp(maxTweens, 50, 500);
-                    Separator();
-                    IridiumPreset.IconText(sizes, IconStyle.Information, "ExtremeOptimizationHint");
-                }
+                    var clamped = Mathf.Clamp(v, 200, 2000);
+                    if (clamped != optimizer.dotweenTweenerCapacity)
+                    {
+                        optimizer.dotweenTweenerCapacity = clamped;
+                        DOTweenOptimizationPatches.ApplyRuntimeSettings();
+                    }
+                }, "TweenerCapacity", IntFormat(200, 2000)));
+                dotween.Add(Separator());
+                dotween.Add(IridiumPreset.IntOption(sizes, optimizer.dotweenSequenceCapacity, v =>
+                {
+                    var clamped = Mathf.Clamp(v, 50, 500);
+                    if (clamped != optimizer.dotweenSequenceCapacity)
+                    {
+                        optimizer.dotweenSequenceCapacity = clamped;
+                        DOTweenOptimizationPatches.ApplyRuntimeSettings();
+                    }
+                }, "SequenceCapacity", IntFormat(50, 500)));
+                dotween.Add(Separator());
+                dotween.Add(IridiumPreset.SwitchOption(sizes, optimizer.dotweenDefaultRecyclable, v =>
+                {
+                    optimizer.dotweenDefaultRecyclable = v;
+                    DOTweenOptimizationPatches.ApplyRuntimeSettings();
+                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(TweenSafetyPatches));
+                }, "DOTweenDefaultRecyclable"));
+                dotween.Add(Separator());
+                dotween.Add(IridiumPreset.SwitchOption(sizes, optimizer.dotweenDisableSafeMode, v =>
+                {
+                    optimizer.dotweenDisableSafeMode = v;
+                    DOTweenOptimizationPatches.ApplyRuntimeSettings();
+                }, "DOTweenDisableSafeMode"));
+                dotween.Add(Separator());
+                dotween.Add(IridiumPreset.IconText(sizes, IconStyle.Warning, "DOTweenOptimizationRestartRequired"));
             }
-            End();
-            Separator();
+            else
+            {
+                dotween.Add(Separator());
+                dotween.Add(IridiumPreset.IconText(sizes, IconStyle.Warning, "DOTweenOptimizationWarning"));
+            }
+
+            body.Add(VBox(ContainerStyle.Background, null, WithWidthMax(dotween.ToArray())));
+            body.Add(Separator());
+
+            body.Add(Text(Localization.Get("ExtremeOptimizations"), TextStyle.Subtitle));
+            body.Add(Separator());
+
+            var extreme = new List<Element>
+            {
+                IridiumPreset.SwitchOption(sizes, optimizer.enableExtremeOptimization, v =>
+                {
+                    optimizer.enableExtremeOptimization = v;
+                    AsyncPatchManager.UpdateOptimizerPatchesAsync();
+                }, "EnableExtremeOptimization")
+            };
+            if (optimizer.enableExtremeOptimization)
+            {
+                extreme.Add(Separator());
+                extreme.Add(IridiumPreset.IntOption(sizes, optimizer.maxTweensPerFrame, v =>
+                {
+                    optimizer.maxTweensPerFrame = Mathf.Clamp(v, 50, 500);
+                }, "MaxTweensPerFrame", IntFormat(50, 500)));
+                extreme.Add(Separator());
+                extreme.Add(IridiumPreset.IconText(sizes, IconStyle.Information, "ExtremeOptimizationHint"));
+            }
+            body.Add(VBox(ContainerStyle.Background, null, WithWidthMax(extreme.ToArray())));
+            body.Add(Separator());
 
             if (typeof(Notification).GetMethod("SetupNotification", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic) == null)
             {
-                IridiumPreset.IconText(sizes, IconStyle.Error, "MethodNotFound");
+                body.Add(IridiumPreset.IconText(sizes, IconStyle.Error, "MethodNotFound"));
                 optimizer.dontShowSavedMemory = true;
-                Separator();
+                body.Add(Separator());
             }
             if (typeof(scrVisualDecoration).GetProperty("spriteUnscaledSize", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public) == null)
             {
-                IridiumPreset.IconText(sizes, IconStyle.Error, "PropertyNotFound");
+                body.Add(IridiumPreset.IconText(sizes, IconStyle.Error, "PropertyNotFound"));
                 optimizer.dontResizeCollider = true;
-                Separator();
+                body.Add(Separator());
             }
 
-            Text(Localization.Get("MemorySettings"), TextStyle.Subtitle);
-            Separator();
-            Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
+            body.Add(Text(Localization.Get("MemorySettings"), TextStyle.Subtitle));
+            body.Add(Separator());
+
+            var memoryContent = new List<Element>
             {
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref memory.enableMemoryOptimization, "MemorySettings");
-                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.SmartGCPatch));
-
-                if (memory.enableMemoryOptimization)
+                IridiumPreset.SwitchOption(sizes, memory.enableMemoryOptimization, v =>
                 {
-                    Separator();
-                    GUI.changed = false;
-                    IridiumPreset.SwitchOption(sizes, ref memory.enableSmartGC, "EnableSmartGC");
-                    if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.SmartGCPatch));
+                    memory.enableMemoryOptimization = v;
+                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.SmartGCPatch));
+                }, "MemorySettings")
+            };
+            if (memory.enableMemoryOptimization)
+            {
+                memoryContent.Add(Separator());
+                memoryContent.Add(IridiumPreset.SwitchOption(sizes, memory.enableSmartGC, v =>
+                {
+                    memory.enableSmartGC = v;
+                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.SmartGCPatch));
+                }, "EnableSmartGC"));
 
-                    if (memory.enableSmartGC)
-                    {
-                        Separator();
-                        var gcIntervalVal = (double)memory.gcInterval;
-                        IridiumPreset.DoubleOption(sizes, ref gcIntervalVal, "GCInterval", DoubleFormat(precision: 0));
-                        memory.gcInterval = (float)gcIntervalVal;
-                        Separator();
-                        IridiumPreset.SwitchOption(sizes, ref memory.gcInGame, "GCInGame");
-                    }
+                if (memory.enableSmartGC)
+                {
+                    memoryContent.Add(Separator());
+                    memoryContent.Add(IridiumPreset.DoubleOption(sizes, memory.gcInterval, v => memory.gcInterval = (float)v, "GCInterval", DoubleFormat(precision: 0)));
+                    memoryContent.Add(Separator());
+                    memoryContent.Add(IridiumPreset.SwitchOption(sizes, memory.gcInGame, v => memory.gcInGame = v, "GCInGame"));
                 }
             }
-            End();
-            Separator();
+            body.Add(VBox(ContainerStyle.Background, null, WithWidthMax(memoryContent.ToArray())));
+            body.Add(Separator());
 
-            // --- Editor Floor Optimizations ---
-            Text(Localization.Get("EditorFloorOptimizations"), TextStyle.Subtitle);
-            Separator();
-            Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
+            body.Add(Text(Localization.Get("EditorFloorOptimizations"), TextStyle.Subtitle));
+            body.Add(Separator());
+
+            var editorFloor = new List<Element>
             {
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref optimizer.enableEditorFloorOptimization, "EnableEditorFloorOptimization");
-                if (GUI.changed) AsyncPatchManager.UpdateOptimizerPatchesAsync();
-
-                if (optimizer.enableEditorFloorOptimization)
+                IridiumPreset.SwitchOption(sizes, optimizer.enableEditorFloorOptimization, v =>
                 {
-                    Separator();
-                    IridiumPreset.SwitchOption(sizes, ref optimizer.incrementalFloorInsert, "IncrementalFloorInsert");
-                    if (optimizer.incrementalFloorInsert)
-                    {
-                        Separator();
-                        IridiumPreset.SwitchOption(sizes, ref optimizer.rangeBasedRedraw, "RangeBasedRedraw");
-                        Separator();
-                        IridiumPreset.SwitchOption(sizes, ref optimizer.skipRedundantRemakePath, "SkipRedundantRemakePath");
-                        Separator();
-                        IridiumPreset.SwitchOption(sizes, ref optimizer.optimizeOffsetFloorEvents, "OptimizeOffsetFloorEvents");
-                    }
-                    Separator();
-                    IridiumPreset.IconText(sizes, IconStyle.Warning, "EditorFloorOptimizationWarning");
+                    optimizer.enableEditorFloorOptimization = v;
+                    AsyncPatchManager.UpdateOptimizerPatchesAsync();
+                }, "EnableEditorFloorOptimization")
+            };
+            if (optimizer.enableEditorFloorOptimization)
+            {
+                editorFloor.Add(Separator());
+                editorFloor.Add(IridiumPreset.SwitchOption(sizes, optimizer.incrementalFloorInsert, v => optimizer.incrementalFloorInsert = v, "IncrementalFloorInsert"));
+                if (optimizer.incrementalFloorInsert)
+                {
+                    editorFloor.Add(Separator());
+                    editorFloor.Add(IridiumPreset.SwitchOption(sizes, optimizer.rangeBasedRedraw, v => optimizer.rangeBasedRedraw = v, "RangeBasedRedraw"));
+                    editorFloor.Add(Separator());
+                    editorFloor.Add(IridiumPreset.SwitchOption(sizes, optimizer.skipRedundantRemakePath, v => optimizer.skipRedundantRemakePath = v, "SkipRedundantRemakePath"));
+                    editorFloor.Add(Separator());
+                    editorFloor.Add(IridiumPreset.SwitchOption(sizes, optimizer.optimizeOffsetFloorEvents, v => optimizer.optimizeOffsetFloorEvents = v, "OptimizeOffsetFloorEvents"));
                 }
+                editorFloor.Add(Separator());
+                editorFloor.Add(IridiumPreset.IconText(sizes, IconStyle.Warning, "EditorFloorOptimizationWarning"));
             }
-            End();
+            body.Add(VBox(ContainerStyle.Background, null, WithWidthMax(editorFloor.ToArray())));
 
-            GUI.enabled = true;
+            elements.Add(Enabled(() => optimizer.enableOptimizer, body.ToArray()));
+            return elements.ToArray();
         }
         #endregion
 
         #region UI Settings Tab
-        private void DrawUISettingsTab()
+        private Element[] DrawUISettingsTab()
         {
             var sizes = _sizesHolder.Begin();
 
-            Text(Localization.Get("UISettings"), TextStyle.Title);
-            Separator();
-
-            Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
+            var elements = new List<Element>
             {
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref ui.removeNews, "RemoveNews");
-                if (GUI.changed)
-                {
-                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.RemoveNewsPatch));
-                    MiscPatches.RemoveNewsPatch.UpdateNews();
-                }
-                Separator();
+                Text(Localization.Get("UISettings"), TextStyle.Title),
+                Separator()
+            };
 
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref ui.hideBetaWatermark, "HideBetaWatermark");
-                if (GUI.changed)
-                {
-                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.HideBetaWatermarkPatch));
-                    MiscPatches.RefreshBetaWatermark();
-                }
-                Separator();
+            var body = new List<Element>();
+            body.Add(IridiumPreset.SwitchOption(sizes, ui.removeNews, v =>
+            {
+                ui.removeNews = v;
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.RemoveNewsPatch));
+                MiscPatches.RemoveNewsPatch.UpdateNews();
+            }, "RemoveNews"));
+            body.Add(Separator());
 
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref ui.forceDifficultyUI, "ForceDifficultyUI");
-                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.ForceDifficultyUIPatch));
-                Separator();
+            body.Add(IridiumPreset.SwitchOption(sizes, ui.hideBetaWatermark, v =>
+            {
+                ui.hideBetaWatermark = v;
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.HideBetaWatermarkPatch));
+                MiscPatches.RefreshBetaWatermark();
+            }, "HideBetaWatermark"));
+            body.Add(Separator());
 
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref ui.alwaysCountdown, "AlwaysCountdown");
-                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.AlwaysCountdownPatch));
-                Separator();
+            body.Add(IridiumPreset.SwitchOption(sizes, ui.forceDifficultyUI, v =>
+            {
+                ui.forceDifficultyUI = v;
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.ForceDifficultyUIPatch));
+            }, "ForceDifficultyUI"));
+            body.Add(Separator());
 
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref ui.moveAutoplayText, "MoveAutoplayText");
-                if (GUI.changed)
-                {
-                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.AutoplayTextPositionPatch));
-                    MiscPatches.RefreshAutoplayTextPosition();
-                }
+            body.Add(IridiumPreset.SwitchOption(sizes, ui.alwaysCountdown, v =>
+            {
+                ui.alwaysCountdown = v;
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.AlwaysCountdownPatch));
+            }, "AlwaysCountdown"));
+            body.Add(Separator());
 
-                if (ui.moveAutoplayText)
-                {
-                    Separator();
-                    Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-                    PushAlign(0.5);
-                    {
-                        Text("X:", TextStyle.Normal, WidthMin);
-                        ui.autoplayTextX = GUILayout.HorizontalSlider(ui.autoplayTextX, -Screen.width / 2f, Screen.width / 2f);
-                        Text(ui.autoplayTextX.ToString("F0"), TextStyle.Secondary, Width(40));
-                    }
-                    PopAlign();
-                    End();
+            body.Add(IridiumPreset.SwitchOption(sizes, ui.moveAutoplayText, v =>
+            {
+                ui.moveAutoplayText = v;
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.AutoplayTextPositionPatch));
+                MiscPatches.RefreshAutoplayTextPosition();
+            }, "MoveAutoplayText"));
 
-                    Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-                    PushAlign(0.5);
-                    {
-                        Text("Y:", TextStyle.Normal, WidthMin);
-                        ui.autoplayTextY = GUILayout.HorizontalSlider(ui.autoplayTextY, -Screen.height / 2f, Screen.height / 2f);
-                        Text(ui.autoplayTextY.ToString("F0"), TextStyle.Secondary, Width(40));
-                    }
-                    PopAlign();
-                    End();
+            if (ui.moveAutoplayText)
+            {
+                body.Add(Separator());
+                body.Add(HBox(
+                    ContainerStyle.None,
+                    sizes,
+                    WidthMax,
+                    Align(0.5, 0,
+                        Text("X:", TextStyle.Normal, WidthMin),
+                        Slider(ui.autoplayTextX, -Screen.width / 2f, Screen.width / 2f, v =>
+                        {
+                            ui.autoplayTextX = v;
+                            MiscPatches.RefreshAutoplayTextPosition();
+                        }),
+                        Text(ui.autoplayTextX.ToString("F0"), TextStyle.Secondary, Width(40))
+                    )
+                ));
 
-                    if (GUI.changed) MiscPatches.RefreshAutoplayTextPosition();
-                }
-                Separator();
-
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref ui.enableCircleArc, "EnableCircleArc");
-                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.CircleArcPatch));
-                if (ui.enableCircleArc)
-                {
-                    Separator();
-                    IridiumPreset.IconText(sizes, IconStyle.Warning, "RestartRequired");
-                }
+                body.Add(HBox(
+                    ContainerStyle.None,
+                    sizes,
+                    WidthMax,
+                    Align(0.5, 0,
+                        Text("Y:", TextStyle.Normal, WidthMin),
+                        Slider(ui.autoplayTextY, -Screen.height / 2f, Screen.height / 2f, v =>
+                        {
+                            ui.autoplayTextY = v;
+                            MiscPatches.RefreshAutoplayTextPosition();
+                        }),
+                        Text(ui.autoplayTextY.ToString("F0"), TextStyle.Secondary, Width(40))
+                    )
+                ));
             }
-            End();
+            body.Add(Separator());
+
+            body.Add(IridiumPreset.SwitchOption(sizes, ui.enableCircleArc, v =>
+            {
+                ui.enableCircleArc = v;
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.CircleArcPatch));
+            }, "EnableCircleArc"));
+            if (ui.enableCircleArc)
+            {
+                body.Add(Separator());
+                body.Add(IridiumPreset.IconText(sizes, IconStyle.Warning, "RestartRequired"));
+            }
+
+            elements.Add(VBox(ContainerStyle.Background, null, WithWidthMax(body.ToArray())));
+            return elements.ToArray();
         }
         #endregion
 
         #region Level Select Tab
-        private void DrawLevelSelectTab()
+        private Element[] DrawLevelSelectTab()
         {
             var sizes = _sizesHolder.Begin();
 
-            Text(Localization.Get("LevelSelectSettings"), TextStyle.Title);
-            Separator();
-
-            GUI.changed = false;
-            IridiumPreset.SwitchOption(sizes, ref lobbyMusic.enableLobbyMusicPatch, "LevelSelectSettings");
-            if (GUI.changed)
+            var elements = new List<Element>
             {
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.LobbyMusicPatch));
-                if (lobbyMusic.enableLobbyMusicPatch) MiscPatches.LobbyMusicPatch.ReloadFromSettings();
+                Text(Localization.Get("LevelSelectSettings"), TextStyle.Title),
+                Separator(),
+                IridiumPreset.SwitchOption(sizes, lobbyMusic.enableLobbyMusicPatch, v =>
+                {
+                    lobbyMusic.enableLobbyMusicPatch = v;
+                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.LobbyMusicPatch));
+                    if (lobbyMusic.enableLobbyMusicPatch) MiscPatches.LobbyMusicPatch.ReloadFromSettings();
+                }, "LevelSelectSettings")
+            };
+
+            var body = new List<Element>();
+            body.Add(Separator());
+
+            var inner = new List<Element>();
+            inner.Add(IridiumPreset.SwitchOption(sizes, lobbyMusic.enableCustomBpm, v => lobbyMusic.enableCustomBpm = v, "EnableCustomBpm"));
+
+            if (lobbyMusic.enableCustomBpm)
+            {
+                inner.Add(Separator());
+                inner.Add(IridiumPreset.DoubleOption(sizes, lobbyMusic.customBpm, v => lobbyMusic.customBpm = (float)v, "CustomBpm", DoubleFormat(precision: 1)));
             }
 
-            GUI.enabled = lobbyMusic.enableLobbyMusicPatch;
+            inner.Add(Separator());
+            inner.Add(IridiumPreset.SwitchOption(sizes, lobbyMusic.fastMusic, v => lobbyMusic.fastMusic = v, "LobbyFastMusic"));
+            inner.Add(Separator());
 
-            Separator();
-
-            Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
+            inner.Add(IridiumPreset.SwitchOption(sizes, lobbyMusic.customMusic, v =>
             {
-                IridiumPreset.SwitchOption(sizes, ref lobbyMusic.enableCustomBpm, "EnableCustomBpm");
+                lobbyMusic.customMusic = v;
+                MiscPatches.LobbyMusicPatch.ReloadFromSettings();
+            }, "LobbyCustomMusic"));
 
-                if (lobbyMusic.enableCustomBpm)
-                {
-                    Separator();
-                    var customBpmVal = (double)lobbyMusic.customBpm;
-                    IridiumPreset.DoubleOption(sizes, ref customBpmVal, "CustomBpm", DoubleFormat(precision: 1));
-                    lobbyMusic.customBpm = (float)customBpmVal;
-                }
-
-                Separator();
-                IridiumPreset.SwitchOption(sizes, ref lobbyMusic.fastMusic, "LobbyFastMusic");
-                Separator();
-
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref lobbyMusic.customMusic, "LobbyCustomMusic");
-                if (GUI.changed) MiscPatches.LobbyMusicPatch.ReloadFromSettings();
-
-                if (lobbyMusic.customMusic)
-                {
-                    Separator();
-
-                    Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-                    PushAlign(0.5);
-                    {
-                        Text(Localization.Get("LobbyDefaultMusicPath"), options: WidthMin);
-                        Fill();
-                        TextField(ref _defaultLobbyMusicPathCache, options: Width(200));
-                        Space(4);
-                        if (Button(Localization.Get("Apply"), ButtonStyle.Element, Width(60)))
+            if (lobbyMusic.customMusic)
+            {
+                inner.Add(Separator());
+                inner.Add(HBox(
+                    ContainerStyle.None,
+                    sizes,
+                    WidthMax,
+                    Align(0.5, 0,
+                        Text(Localization.Get("LobbyDefaultMusicPath"), TextStyle.Normal, WidthMin),
+                        Fill(),
+                        TextField(_defaultLobbyMusicPathCache ?? string.Empty, v => _defaultLobbyMusicPathCache = v, null, Width(200)),
+                        Space(4),
+                        Button(Localization.Get("Apply"), ButtonStyle.Element, () =>
                         {
                             lobbyMusic.defaultMusicPath = (_defaultLobbyMusicPathCache ?? string.Empty).Trim();
                             MiscPatches.LobbyMusicPatch.StartLoad(true, lobbyMusic.defaultMusicPath);
-                        }
-                    }
-                    PopAlign();
-                    End();
+                        }, Width(60))
+                    )
+                ));
 
-                    Separator();
-
-                    Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-                    PushAlign(0.5);
-                    {
-                        Text(Localization.Get("LobbyFastMusicPath"), options: WidthMin);
-                        Fill();
-                        TextField(ref _fastLobbyMusicPathCache, options: Width(200));
-                        Space(4);
-                        if (Button(Localization.Get("Apply"), ButtonStyle.Element, Width(60)))
+                inner.Add(Separator());
+                inner.Add(HBox(
+                    ContainerStyle.None,
+                    sizes,
+                    WidthMax,
+                    Align(0.5, 0,
+                        Text(Localization.Get("LobbyFastMusicPath"), TextStyle.Normal, WidthMin),
+                        Fill(),
+                        TextField(_fastLobbyMusicPathCache ?? string.Empty, v => _fastLobbyMusicPathCache = v, null, Width(200)),
+                        Space(4),
+                        Button(Localization.Get("Apply"), ButtonStyle.Element, () =>
                         {
                             lobbyMusic.fastMusicPath = (_fastLobbyMusicPathCache ?? string.Empty).Trim();
                             MiscPatches.LobbyMusicPatch.StartLoad(false, lobbyMusic.fastMusicPath);
-                        }
-                    }
-                    PopAlign();
-                    End();
+                        }, Width(60))
+                    )
+                ));
 
-                    Separator();
+                inner.Add(Separator());
+                inner.Add(HBox(
+                    ContainerStyle.None,
+                    sizes,
+                    WidthMax,
+                    Fill(),
+                    Button(Localization.Get("LobbyReloadMusic"), ButtonStyle.Element, () => MiscPatches.LobbyMusicPatch.ReloadFromSettings(), Width(140))
+                ));
 
-                    Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-                    {
-                        Fill();
-                        if (Button(Localization.Get("LobbyReloadMusic"), ButtonStyle.Element, Width(140)))
-                            MiscPatches.LobbyMusicPatch.ReloadFromSettings();
-                    }
-                    End();
-
-                    Separator();
-                    IridiumPreset.IconText(sizes, IconStyle.Information, "LobbyMusicHint");
-                }
+                inner.Add(Separator());
+                inner.Add(IridiumPreset.IconText(sizes, IconStyle.Information, "LobbyMusicHint"));
             }
-            End();
-            GUI.enabled = true;
+
+            body.Add(VBox(ContainerStyle.Background, null, WithWidthMax(inner.ToArray())));
+            elements.Add(Enabled(() => lobbyMusic.enableLobbyMusicPatch, body.ToArray()));
+            return elements.ToArray();
         }
         #endregion
 
         #region Compatibility Tab
-        private void DrawCompatibilityTab()
+        private Element[] DrawCompatibilityTab()
         {
             if (_compatFlashMode < 0) _compatFlashMode = (int)compatibility.legacyFlashMode;
             if (_compatCamRelMode < 0) _compatCamRelMode = (int)compatibility.legacyCamRelativeToMode;
 
             var sizes = _sizesHolder.Begin();
 
-            Text(Localization.Get("CompatibilitySettings"), TextStyle.Title);
-            Separator();
-
-            Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
+            var elements = new List<Element>
             {
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref compatibility.enableLegacyPauseFix, "EnableLegacyPauseFix");
-                if (GUI.changed)
+                Text(Localization.Get("CompatibilitySettings"), TextStyle.Title),
+                Separator()
+            };
+
+            var top = new List<Element>();
+            top.Add(IridiumPreset.SwitchOption(sizes, compatibility.enableLegacyPauseFix, v =>
+            {
+                compatibility.enableLegacyPauseFix = v;
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CompatibilityPatches.LegacyPauseFixPatch_Play));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CompatibilityPatches.LegacyPauseFixPatch_Apply));
+            }, "EnableLegacyPauseFix"));
+            top.Add(Separator());
+
+            top.Add(IridiumPreset.SwitchOption(sizes, compatibility.enableNoFailTooEarly, v =>
+            {
+                compatibility.enableNoFailTooEarly = v;
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CompatibilityPatches.NoFailTooEarlyPatch));
+            }, "EnableNoFailTooEarly"));
+            top.Add(Separator());
+
+            top.Add(IridiumPreset.SwitchOption(sizes, compatibility.scaleFilterSpeedWithPitch, v =>
+            {
+                compatibility.scaleFilterSpeedWithPitch = v;
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CompatibilityPatches.ScaleFilterSpeedWithPitchPatch));
+            }, "ScaleFilterSpeedWithPitch"));
+            top.Add(Separator());
+
+            top.Add(IridiumPreset.SwitchOption(sizes, compatibility.fixCameraRelativeDrag, v =>
+            {
+                compatibility.fixCameraRelativeDrag = v;
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CameraRelativeDragPatches));
+            }, "FixCameraRelativeDrag"));
+
+            elements.Add(VBox(ContainerStyle.Background, null, WithWidthMax(top.ToArray())));
+            elements.Add(Separator());
+
+            elements.Add(Text(Localization.Get("LegacyLevelBehavior"), TextStyle.Subtitle));
+            elements.Add(Separator());
+
+            var legacy = new List<Element>();
+            legacy.Add(IridiumPreset.SwitchOption(sizes, compatibility.forceAngleData, v =>
+            {
+                compatibility.forceAngleData = v;
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JsonPatches.ForceAngleDataPatch));
+            }, "ForceAngleData"));
+            legacy.Add(Separator());
+
+            legacy.Add(IridiumPreset.SelectorOption(
+                sizes,
+                _compatFlashMode,
+                v =>
                 {
-                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CompatibilityPatches.LegacyPauseFixPatch_Play));
-AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CompatibilityPatches.LegacyPauseFixPatch_Apply));
-                }
-                Separator();
+                    _compatFlashMode = v;
+                    ApplyLegacyBehavior();
+                },
+                new string[] { Localization.Get("ModeDefault"), Localization.Get("ModeAlwaysOff"), Localization.Get("ModeAlwaysOn") },
+                "LegacyFlashMode"));
+            legacy.Add(Separator());
 
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref compatibility.enableNoFailTooEarly, "EnableNoFailTooEarly");
-                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CompatibilityPatches.NoFailTooEarlyPatch));
-                Separator();
-
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref compatibility.scaleFilterSpeedWithPitch, "ScaleFilterSpeedWithPitch");
-                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CompatibilityPatches.ScaleFilterSpeedWithPitchPatch));
-                Separator();
-
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref compatibility.fixCameraRelativeDrag, "FixCameraRelativeDrag");
-                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CameraRelativeDragPatches));
-            }
-            End();
-            Separator();
-
-            Text(Localization.Get("LegacyLevelBehavior"), TextStyle.Subtitle);
-            Separator();
-            Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
-            {
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref compatibility.forceAngleData, "ForceAngleData");
-                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JsonPatches.ForceAngleDataPatch));
-                Separator();
-
-                IridiumPreset.SelectorOption(
-                    sizes,
-                    ref _compatFlashMode,
-                    new string[] { Localization.Get("ModeDefault"), Localization.Get("ModeAlwaysOff"), Localization.Get("ModeAlwaysOn") },
-                    "LegacyFlashMode");
-                Separator();
-
-                IridiumPreset.SelectorOption(
-                    sizes,
-                    ref _compatCamRelMode,
-                    new string[] { Localization.Get("ModeDefault"), Localization.Get("ModeAlwaysOff"), Localization.Get("ModeAlwaysOn") },
-                    "LegacyCamRelativeToMode");
-
-                var newFlashMode = (LegacyBehaviorMode)_compatFlashMode;
-                var newCamRelMode = (LegacyBehaviorMode)_compatCamRelMode;
-
-                if (newFlashMode != compatibility.legacyFlashMode || newCamRelMode != compatibility.legacyCamRelativeToMode)
+            legacy.Add(IridiumPreset.SelectorOption(
+                sizes,
+                _compatCamRelMode,
+                v =>
                 {
-                    compatibility.legacyFlashMode = newFlashMode;
-                    compatibility.legacyCamRelativeToMode = newCamRelMode;
-                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JsonPatches.LegacyBehaviorPatch));
-                }
-            }
-            End();
-            Separator();
+                    _compatCamRelMode = v;
+                    ApplyLegacyBehavior();
+                },
+                new string[] { Localization.Get("ModeDefault"), Localization.Get("ModeAlwaysOff"), Localization.Get("ModeAlwaysOn") },
+                "LegacyCamRelativeToMode"));
 
-            Text(Localization.Get("PatchMode"), TextStyle.Subtitle);
-            Separator();
-            Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
+            elements.Add(VBox(ContainerStyle.Background, null, WithWidthMax(legacy.ToArray())));
+            elements.Add(Separator());
+
+            elements.Add(Text(Localization.Get("PatchMode"), TextStyle.Subtitle));
+            elements.Add(Separator());
+
+            var patchModeContent = new List<Element>();
+            patchModeContent.Add(IridiumPreset.SwitchOption(sizes, patchMode.useILPatch, v =>
             {
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref patchMode.useILPatch, "UseILPatch");
-                if (GUI.changed) Core.BasePatchMethod.SyncILModeFromSettings();
-                Separator();
+                patchMode.useILPatch = v;
+                Core.BasePatchMethod.SyncILModeFromSettings();
+            }, "UseILPatch"));
+            patchModeContent.Add(Separator());
 
-                if (patchMode.useILPatch)
-                    IridiumPreset.IconText(sizes, IconStyle.Information, "UseILPatchHint");
-                else
-                    IridiumPreset.IconText(sizes, IconStyle.Information, "UsePrefixPostfixHint");
+            if (patchMode.useILPatch)
+                patchModeContent.Add(IridiumPreset.IconText(sizes, IconStyle.Information, "UseILPatchHint"));
+            else
+                patchModeContent.Add(IridiumPreset.IconText(sizes, IconStyle.Information, "UsePrefixPostfixHint"));
+
+            elements.Add(VBox(ContainerStyle.Background, null, WithWidthMax(patchModeContent.ToArray())));
+
+            elements.Add(Text(Localization.Get("ThirdPartyMods"), TextStyle.Subtitle));
+            elements.Add(Separator());
+
+            var thirdParty = new List<Element>();
+            thirdParty.Add(HBox(
+                ContainerStyle.None,
+                sizes,
+                WidthMax,
+                Align(
+                    0.5,
+                    0,
+                    IridiumPreset.OptionNameDescription("IgnoreRequiredMods", false),
+                    Fill(),
+                    Checkbox(compatibility.ignoreRequiredMods, v =>
+                    {
+                        compatibility.ignoreRequiredMods = v;
+                        Patches.PatchManager.UpdatePatchByType(typeof(RequiredModsClearPatches.LevelDataClearPatch));
+                        Patches.PatchManager.UpdatePatchByType(typeof(RequiredModsClearPatches.LevelDataCLSClearPatch));
+                        Patches.PatchManager.UpdatePatchByType(typeof(RequiredModsClearPatches.EncodeRestorePatch));
+                        Patches.PatchManager.UpdatePatchByType(typeof(RequiredModsClearPatches.LevelLoadNotifyPatch));
+                    }, WidthMin)
+                )
+            ));
+            thirdParty.Add(Separator());
+
+            if (compatibility.ignoreRequiredMods)
+                thirdParty.Add(IridiumPreset.IconText(sizes, IconStyle.Warning, "IgnoreRequiredModsWarning"));
+
+            elements.Add(VBox(ContainerStyle.Background, null, WithWidthMax(thirdParty.ToArray())));
+            return elements.ToArray();
+        }
+
+        private void ApplyLegacyBehavior()
+        {
+            var newFlashMode = (LegacyBehaviorMode)_compatFlashMode;
+            var newCamRelMode = (LegacyBehaviorMode)_compatCamRelMode;
+
+            if (newFlashMode != compatibility.legacyFlashMode || newCamRelMode != compatibility.legacyCamRelativeToMode)
+            {
+                compatibility.legacyFlashMode = newFlashMode;
+                compatibility.legacyCamRelativeToMode = newCamRelMode;
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JsonPatches.LegacyBehaviorPatch));
             }
-            End();
         }
         #endregion
 
         #region HitSound & JudgeText Tab
-        private void DrawHitSoundAndJudgeTextTab()
+        private Element[] DrawHitSoundAndJudgeTextTab()
         {
             var sizes = _sizesHolder.Begin();
 
-            Text(Localization.Get("HitSoundSettings"), TextStyle.Title);
-            Separator();
-
-            Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
+            var elements = new List<Element>
             {
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref hitSound.enableHitSoundPitch, "EnableHitSoundPitch");
-                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(HitSoundPatch));
-            }
-            End();
-            Separator();
+                Text(Localization.Get("HitSoundSettings"), TextStyle.Title),
+                Separator()
+            };
 
-            Text(Localization.Get("JudgeTextSettings"), TextStyle.Subtitle);
-            Separator();
-            Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
+            var hitSoundContent = new List<Element>
             {
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref judgeText.enableJudgeTextCustomization, "JudgeTextSettings");
-                if (GUI.changed)
+                IridiumPreset.SwitchOption(sizes, hitSound.enableHitSoundPitch, v =>
                 {
-                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.HitTextMeshInitPatch));
-                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.HitTextMeshShowPatch));
-                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.ResetTimingOnRewindPatch));
-                }
+                    hitSound.enableHitSoundPitch = v;
+                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(HitSoundPatch));
+                }, "EnableHitSoundPitch")
+            };
+            elements.Add(VBox(ContainerStyle.Background, null, WithWidthMax(hitSoundContent.ToArray())));
+            elements.Add(Separator());
 
-                GUI.enabled = judgeText.enableJudgeTextCustomization;
+            elements.Add(Text(Localization.Get("JudgeTextSettings"), TextStyle.Subtitle));
+            elements.Add(Separator());
 
-                Separator();
+            var judgeContent = new List<Element>();
+            judgeContent.Add(IridiumPreset.SwitchOption(sizes, judgeText.enableJudgeTextCustomization, v =>
+            {
+                judgeText.enableJudgeTextCustomization = v;
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.HitTextMeshInitPatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.HitTextMeshShowPatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.ResetTimingOnRewindPatch));
+            }, "JudgeTextSettings"));
+            judgeContent.Add(Separator());
+            judgeContent.Add(IridiumPreset.SwitchOption(sizes, judgeText.showAsOffset, v =>
+            {
+                judgeText.showAsOffset = v;
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.HitTextMeshShowPatch));
+            }, "ShowAsOffset"));
+            judgeContent.Add(Separator());
+            judgeContent.Add(Enabled(
+                () => !judgeText.showAsOffset && judgeText.enableJudgeTextCustomization,
+                Text(Localization.Get("CustomJudgeText"), TextStyle.Normal),
+                Separator(),
+                DrawJudgeTextInput(sizes, "TooEarly", judgeText.tooEarly, v => judgeText.tooEarly = v),
+                Separator(),
+                DrawJudgeTextInput(sizes, "VeryEarly", judgeText.veryEarly, v => judgeText.veryEarly = v),
+                Separator(),
+                DrawJudgeTextInput(sizes, "EarlyPerfect", judgeText.earlyPerfect, v => judgeText.earlyPerfect = v),
+                Separator(),
+                DrawJudgeTextInput(sizes, "Perfect", judgeText.perfect, v => judgeText.perfect = v),
+                Separator(),
+                DrawJudgeTextInput(sizes, "LatePerfect", judgeText.latePerfect, v => judgeText.latePerfect = v),
+                Separator(),
+                DrawJudgeTextInput(sizes, "VeryLate", judgeText.veryLate, v => judgeText.veryLate = v),
+                Separator(),
+                DrawJudgeTextInput(sizes, "TooLate", judgeText.tooLate, v => judgeText.tooLate = v),
+                Separator(),
+                DrawJudgeTextInput(sizes, "Multipress", judgeText.multipress, v => judgeText.multipress = v),
+                Separator(),
+                DrawJudgeTextInput(sizes, "FailMiss", judgeText.failMiss, v => judgeText.failMiss = v),
+                Separator(),
+                DrawJudgeTextInput(sizes, "FailOverload", judgeText.failOverload, v => judgeText.failOverload = v)
+            ));
+            judgeContent.Add(Separator());
+            judgeContent.Add(HBox(
+                ContainerStyle.None,
+                sizes,
+                WidthMax,
+                Fill(),
+                Button(Localization.Get("ResetJudgeText"), ButtonStyle.Element, judgeText.ResetToDefault, Width(120))
+            ));
 
-                GUI.changed = false;
-                IridiumPreset.SwitchOption(sizes, ref judgeText.showAsOffset, "ShowAsOffset");
-                if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JudgeTextPatches.HitTextMeshShowPatch));
-
-                Separator();
-
-                GUI.enabled = !judgeText.showAsOffset && judgeText.enableJudgeTextCustomization;
-
-                Text(Localization.Get("CustomJudgeText"), TextStyle.Normal);
-                Separator();
-
-                DrawJudgeTextInput(sizes, "TooEarly", ref judgeText.tooEarly);
-                Separator();
-                DrawJudgeTextInput(sizes, "VeryEarly", ref judgeText.veryEarly);
-                Separator();
-                DrawJudgeTextInput(sizes, "EarlyPerfect", ref judgeText.earlyPerfect);
-                Separator();
-                DrawJudgeTextInput(sizes, "Perfect", ref judgeText.perfect);
-                Separator();
-                DrawJudgeTextInput(sizes, "LatePerfect", ref judgeText.latePerfect);
-                Separator();
-                DrawJudgeTextInput(sizes, "VeryLate", ref judgeText.veryLate);
-                Separator();
-                DrawJudgeTextInput(sizes, "TooLate", ref judgeText.tooLate);
-                Separator();
-                DrawJudgeTextInput(sizes, "Multipress", ref judgeText.multipress);
-                Separator();
-                DrawJudgeTextInput(sizes, "FailMiss", ref judgeText.failMiss);
-                Separator();
-                DrawJudgeTextInput(sizes, "FailOverload", ref judgeText.failOverload);
-
-                GUI.enabled = true;
-
-                Separator();
-
-                Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-                {
-                    Fill();
-                    if (Button(Localization.Get("ResetJudgeText"), ButtonStyle.Element, Width(120)))
-                        judgeText.ResetToDefault();
-                }
-                End();
-            }
-            End();
+            elements.Add(Enabled(() => judgeText.enableJudgeTextCustomization,
+                VBox(ContainerStyle.Background, null, WithWidthMax(judgeContent.ToArray()))
+            ));
+            return elements.ToArray();
         }
 
-        private void DrawJudgeTextInput(Sizes sizes, string key, ref string value)
+        private Element DrawJudgeTextInput(Sizes sizes, string key, string value, Action<string> onChanged)
         {
-            Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-            PushAlign(0.5);
-            {
-                Text(Localization.Get($"JudgeText_{key}"), options: WidthMin);
-                Fill();
-                string? nullableValue = value;
-                TextField(ref nullableValue, 128, Width(120));
-                if (nullableValue != null) value = nullableValue;
-            }
-            PopAlign();
-            End();
+            return HBox(
+                ContainerStyle.None,
+                sizes,
+                WidthMax,
+                Align(0.5, 0,
+                    Text(Localization.Get($"JudgeText_{key}"), TextStyle.Normal, WidthMin),
+                    Fill(),
+                    TextField(value, onChanged, 128, Width(120))
+                )
+            );
         }
         #endregion
 
         #region Helpers
-        private void InvertedSwitchOption(Sizes sizes, ref bool invertedOption, string name)
+        private Element InvertedSwitchOption(Sizes sizes, bool invertedOption, Action<bool> onChanged, string name)
         {
-            var displayValue = !invertedOption;
-            Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-            PushAlign(0.5);
-            {
-                Text(Localization.Get(name), options: WidthMin);
-                Fill();
-                var result = Switch(ref displayValue);
-                if (result != null)
-                {
-                    invertedOption = !displayValue;
-                }
-            }
-            PopAlign();
-            End();
+            return HBox(
+                ContainerStyle.None,
+                sizes,
+                WidthMax,
+                Align(0.5, 0,
+                    Text(Localization.Get(name), TextStyle.Normal, WidthMin),
+                    Fill(),
+                    Switch(!invertedOption, v => onChanged(!v), WidthMin)
+                )
+            );
         }
         #endregion
 
@@ -915,6 +998,7 @@ AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CompatibilityPatches.LegacyPause
         private bool _isBindingShortcutKey = false;
         private int _bindingShortcutIndex = -1;
         private int _bindKeyStartFrame = -1;
+        private Action<int>? _bindingKeySetter;
 
         private static readonly string[] _shortcutSettingNames = new[]
         {
@@ -926,127 +1010,158 @@ AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CompatibilityPatches.LegacyPause
             "ShortcutPopupDiscard"
         };
 
-        private void DrawEditorShortcutsTab()
+        private Element[] DrawEditorShortcutsTab()
         {
             var sizes = _sizesHolder.Begin();
             var s = editorShortcuts;
 
-            Text(Localization.Get("EditorShortcuts"), TextStyle.Title);
-            Separator();
-
-            GUI.changed = false;
-            IridiumPreset.SwitchOption(sizes, ref s.enableEditorShortcuts, "EnableEditorShortcuts");
-            if (GUI.changed) AsyncPatchManager.UpdatePatchByTypeAsync(typeof(EditorShortcutPatches.EditorShortcutUpdatePatch));
+            var elements = new List<Element>
+            {
+                Text(Localization.Get("EditorShortcuts"), TextStyle.Title),
+                Separator(),
+                IridiumPreset.SwitchOption(sizes, s.enableEditorShortcuts, v =>
+                {
+                    s.enableEditorShortcuts = v;
+                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(EditorShortcutPatches.EditorShortcutUpdatePatch));
+                }, "EnableEditorShortcuts")
+            };
 
             if (s.enableEditorShortcuts)
             {
                 int idx = 0;
 
-                Separator();
-                Text(Localization.Get("EditorShortcutsDecoration"), TextStyle.Subtitle);
-                Separator();
-                Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
-                {
-                    DrawShortcutKeyBinding(sizes, idx++, "ShortcutSelectAll",
-                        ref s.selectAllKey, ref s.selectAllModifiers);
-                    Separator();
-                    DrawShortcutKeyBinding(sizes, idx++, "ShortcutDeselectAll",
-                        ref s.deselectAllKey, ref s.deselectAllModifiers);
-                    Separator();
-                    DrawShortcutKeyBinding(sizes, idx++, "ShortcutToggleVisibility",
-                        ref s.toggleVisibilityKey, ref s.toggleVisibilityModifiers);
-                    Separator();
-                    DrawShortcutKeyBinding(sizes, idx++, "ShortcutFocusDecoration",
-                        ref s.focusDecorationKey, ref s.focusDecorationModifiers);
-                }
-                End();
+                elements.Add(Separator());
+                elements.Add(Text(Localization.Get("EditorShortcutsDecoration"), TextStyle.Subtitle));
+                elements.Add(Separator());
+                elements.Add(VBox(
+                    ContainerStyle.Background,
+                    null,
+                    WithWidthMax(
+                        DrawShortcutKeyBinding(sizes, idx++, "ShortcutSelectAll",
+                            s.selectAllKey, v => s.selectAllKey = v,
+                            s.selectAllModifiers, v => s.selectAllModifiers = v),
+                        Separator(),
+                        DrawShortcutKeyBinding(sizes, idx++, "ShortcutDeselectAll",
+                            s.deselectAllKey, v => s.deselectAllKey = v,
+                            s.deselectAllModifiers, v => s.deselectAllModifiers = v),
+                        Separator(),
+                        DrawShortcutKeyBinding(sizes, idx++, "ShortcutToggleVisibility",
+                            s.toggleVisibilityKey, v => s.toggleVisibilityKey = v,
+                            s.toggleVisibilityModifiers, v => s.toggleVisibilityModifiers = v),
+                        Separator(),
+                        DrawShortcutKeyBinding(sizes, idx++, "ShortcutFocusDecoration",
+                            s.focusDecorationKey, v => s.focusDecorationKey = v,
+                            s.focusDecorationModifiers, v => s.focusDecorationModifiers = v)
+                    )
+                ));
 
-                Separator();
-                Text(Localization.Get("EditorShortcutsNavigation"), TextStyle.Subtitle);
-                Separator();
-                Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
-                {
-                    DrawShortcutKeyBinding(sizes, idx++, "ShortcutGoToFloor",
-                        ref s.goToFloorKey, ref s.goToFloorModifiers);
-                    Separator();
-                    IridiumPreset.SwitchOption(sizes, ref s.cameraFollowOnFloorSelect, "CameraFollowOnFloorSelect");
-                    Separator();
-                    DrawShortcutKeyBinding(sizes, idx++, "ShortcutSelectAllFloors",
-                        ref s.selectAllFloorsKey, ref s.selectAllFloorsModifiers);
-                }
-                End();
+                elements.Add(Separator());
+                elements.Add(Text(Localization.Get("EditorShortcutsNavigation"), TextStyle.Subtitle));
+                elements.Add(Separator());
+                elements.Add(VBox(
+                    ContainerStyle.Background,
+                    null,
+                    WithWidthMax(
+                        DrawShortcutKeyBinding(sizes, idx++, "ShortcutGoToFloor",
+                            s.goToFloorKey, v => s.goToFloorKey = v,
+                            s.goToFloorModifiers, v => s.goToFloorModifiers = v),
+                        Separator(),
+                        IridiumPreset.SwitchOption(sizes, s.cameraFollowOnFloorSelect, v => s.cameraFollowOnFloorSelect = v, "CameraFollowOnFloorSelect"),
+                        Separator(),
+                        DrawShortcutKeyBinding(sizes, idx++, "ShortcutSelectAllFloors",
+                            s.selectAllFloorsKey, v => s.selectAllFloorsKey = v,
+                            s.selectAllFloorsModifiers, v => s.selectAllFloorsModifiers = v)
+                    )
+                ));
 
-                Separator();
-                Text(Localization.Get("EditorShortcutsPopup"), TextStyle.Subtitle);
-                Separator();
-                Begin(ContainerDirection.Vertical, ContainerStyle.Background, options: WidthMax);
-                {
-                    DrawShortcutKeyBinding(sizes, idx++, "ShortcutPopupSave",
-                        ref s.popupSaveKey, ref s.popupSaveModifiers);
-                    Separator();
-                    DrawShortcutKeyBinding(sizes, idx++, "ShortcutPopupDiscard",
-                        ref s.popupDiscardKey, ref s.popupDiscardModifiers);
-                }
-                End();
+                elements.Add(Separator());
+                elements.Add(Text(Localization.Get("EditorShortcutsPopup"), TextStyle.Subtitle));
+                elements.Add(Separator());
+                elements.Add(VBox(
+                    ContainerStyle.Background,
+                    null,
+                    WithWidthMax(
+                        DrawShortcutKeyBinding(sizes, idx++, "ShortcutPopupSave",
+                            s.popupSaveKey, v => s.popupSaveKey = v,
+                            s.popupSaveModifiers, v => s.popupSaveModifiers = v),
+                        Separator(),
+                        DrawShortcutKeyBinding(sizes, idx++, "ShortcutPopupDiscard",
+                            s.popupDiscardKey, v => s.popupDiscardKey = v,
+                            s.popupDiscardModifiers, v => s.popupDiscardModifiers = v)
+                    )
+                ));
 
-                Separator();
-                IridiumPreset.IconText(sizes, IconStyle.Information, "EditorShortcutsHint");
+                elements.Add(Separator());
+                elements.Add(IridiumPreset.IconText(sizes, IconStyle.Information, "EditorShortcutsHint"));
             }
+
+            return elements.ToArray();
         }
 
-        private void DrawShortcutKeyBinding(Sizes sizes, int index, string name,
-            ref int key, ref int modifiers)
+        private Element DrawShortcutKeyBinding(
+            Sizes sizes,
+            int index,
+            string name,
+            int key,
+            Action<int> onKeyChanged,
+            int modifiers,
+            Action<int> onModifiersChanged
+        )
         {
             string display = (_isBindingShortcutKey && _bindingShortcutIndex == index)
                 ? Localization.Get("EditorPauseKeyPress")
                 : EditorShortcutPatches.GetKeyDisplay(key, modifiers);
 
-            Begin(ContainerDirection.Horizontal, sizes: sizes, options: WidthMax);
-            PushAlign(0.5);
-            {
-                Text(Localization.Get(name), options: WidthMin);
-                Fill();
-
-                if (Button(display, ButtonStyle.Element, Width(160)))
-                {
-                    _isBindingShortcutKey = true;
-                    _bindingShortcutIndex = index;
-                    _bindKeyStartFrame = Time.frameCount;
-                }
-
-                string modLabel = GetModifierLabel(modifiers);
-                if (Button(modLabel, ButtonStyle.Element, Width(60)))
-                {
-                    modifiers = EditorShortcutPatches.CycleModifier(modifiers);
-                }
-            }
-            PopAlign();
-            End();
-
-            if (_isBindingShortcutKey && _bindingShortcutIndex == index)
-            {
-                var e = Event.current;
-                if (e.type == EventType.KeyDown)
-                {
-                    if (e.keyCode != KeyCode.None && e.keyCode != KeyCode.Escape)
+            return HBox(
+                ContainerStyle.None,
+                sizes,
+                WidthMax,
+                Align(0.5, 0,
+                    Text(Localization.Get(name), TextStyle.Normal, WidthMin),
+                    Fill(),
+                    Button(display, ButtonStyle.Element, () =>
                     {
-                        key = (int)e.keyCode;
-                        _isBindingShortcutKey = false;
-                        _bindingShortcutIndex = -1;
-                        e.Use();
-                    }
-                    else if (e.keyCode == KeyCode.Escape)
+                        _isBindingShortcutKey = true;
+                        _bindingShortcutIndex = index;
+                        _bindingKeySetter = onKeyChanged;
+                        _bindKeyStartFrame = Time.frameCount;
+                    }, Width(160)),
+                    Button(GetModifierLabel(modifiers), ButtonStyle.Element, () =>
                     {
-                        _isBindingShortcutKey = false;
-                        _bindingShortcutIndex = -1;
-                        e.Use();
-                    }
+                        onModifiersChanged(EditorShortcutPatches.CycleModifier(modifiers));
+                    }, Width(60))
+                )
+            );
+        }
+
+        private void HandleShortcutKeyCapture()
+        {
+            if (!_isBindingShortcutKey || _bindingKeySetter == null) return;
+
+            var e = Event.current;
+            if (e.type == EventType.KeyDown)
+            {
+                if (e.keyCode != KeyCode.None && e.keyCode != KeyCode.Escape)
+                {
+                    _bindingKeySetter((int)e.keyCode);
+                    _isBindingShortcutKey = false;
+                    _bindingShortcutIndex = -1;
+                    _bindingKeySetter = null;
+                    e.Use();
                 }
-                else if (e.type == EventType.MouseDown && Time.frameCount != _bindKeyStartFrame)
+                else if (e.keyCode == KeyCode.Escape)
                 {
                     _isBindingShortcutKey = false;
                     _bindingShortcutIndex = -1;
+                    _bindingKeySetter = null;
+                    e.Use();
                 }
+            }
+            else if (e.type == EventType.MouseDown && Time.frameCount != _bindKeyStartFrame)
+            {
+                _isBindingShortcutKey = false;
+                _bindingShortcutIndex = -1;
+                _bindingKeySetter = null;
             }
         }
 
@@ -1061,39 +1176,41 @@ AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CompatibilityPatches.LegacyPause
         }
 
         #region AsyncInput Tab
-        private void DrawAsyncInputTab()
+        private Element[] DrawAsyncInputTab()
         {
             var sizes = _sizesHolder.Begin();
 
-            Text(Localization.Get("AsyncInputSettings"), TextStyle.Title);
-            Separator();
-
-            GUI.changed = false;
-            IridiumPreset.SwitchOption(sizes, ref asyncInput.enableAIO, "EnableAsyncInput");
-            if (GUI.changed)
+            var elements = new List<Element>
             {
-                if (asyncInput.enableAIO)
-                    Modules.AsyncInputOptimize.Main.Enable();
-                else
-                    Modules.AsyncInputOptimize.Main.Disable();
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Modules.AsyncInputOptimize.Patch.UnityEngine__SceneManagement__SceneManager));
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Modules.AsyncInputOptimize.Patch.__scnGame));
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Modules.AsyncInputOptimize.Patch.__scrConductor));
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Modules.AsyncInputOptimize.Patch.__scrCountdown));
-            }
+                Text(Localization.Get("AsyncInputSettings"), TextStyle.Title),
+                Separator(),
+                IridiumPreset.SwitchOption(sizes, asyncInput.enableAIO, v =>
+                {
+                    asyncInput.enableAIO = v;
+                    if (asyncInput.enableAIO)
+                        Modules.AsyncInputOptimize.Main.Enable();
+                    else
+                        Modules.AsyncInputOptimize.Main.Disable();
+                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Modules.AsyncInputOptimize.Patch.UnityEngine__SceneManagement__SceneManager));
+                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Modules.AsyncInputOptimize.Patch.__scnGame));
+                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Modules.AsyncInputOptimize.Patch.__scrConductor));
+                    AsyncPatchManager.UpdatePatchByTypeAsync(typeof(Modules.AsyncInputOptimize.Patch.__scrCountdown));
+                }, "EnableAsyncInput"),
+                Separator(),
+                Text(Localization.Get("AsyncInputHint"), TextStyle.Secondary),
+                Text(Localization.Get("AsyncInputWarning"), TextStyle.Secondary)
+            };
 
-            Separator();
-            Text(Localization.Get("AsyncInputHint"), TextStyle.Secondary);
-            Text(Localization.Get("AsyncInputWarning"), TextStyle.Secondary);
+            return elements.ToArray();
         }
         #endregion
 
         #endregion
 
-		public void Save()
-		{
-			Main.Handler?.SaveSettings(this);
-		}
+        public void Save()
+        {
+            Main.Handler?.SaveSettings(this);
+        }
 
         /// <summary>
         /// 启动时检测自定义缓速引擎与三个 Patch 的冲突。

@@ -123,6 +123,7 @@ namespace Iridium.Config
         public int editorPauseModifiers = 0; // bit: 1=Ctrl 2=Alt 4=Shift 8=Win
         public bool fixCoopPauseLock = true;
         public bool fixJudgeRotation = true;
+        public bool ignoreRequiredMods = false;
         public LegacyBehaviorMode legacyFlashMode = LegacyBehaviorMode.Default;
         public LegacyBehaviorMode legacyCamRelativeToMode = LegacyBehaviorMode.Default;
     }

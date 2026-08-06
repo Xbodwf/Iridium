@@ -111,6 +111,7 @@ namespace Iridium.Config
         public bool forceAngleData = false;
         public bool scaleFilterSpeedWithPitch = false;
         public bool fixCameraRelativeDrag = false;
+        public bool ignoreRequiredMods = false;
         public LegacyBehaviorMode legacyFlashMode = LegacyBehaviorMode.Default;
         public LegacyBehaviorMode legacyCamRelativeToMode = LegacyBehaviorMode.Default;
     }

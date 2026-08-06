@@ -216,5 +216,11 @@
   "AsyncInputSettings": "Async Input Optimization",
   "EnableAsyncInput": "Enable Async Input Optimization",
   "AsyncInputHint": "Improves audio timing accuracy and reduces input lag. Recommended for high BPM / dense levels.",
-  "AsyncInputWarning": "Warning: Levels played with this feature enabled must be clearly marked. The Iridium team assumes no responsibility for unmarked levels."
+  "AsyncInputWarning": "Warning: Levels played with this feature enabled must be clearly marked. The Iridium team assumes no responsibility for unmarked levels.",
+  "ThirdPartyMods": "Third-party",
+  "IgnoreRequiredMods": "Ignore required third-party mods",
+  "IgnoreRequiredModsWarning": "Required third-party mods will be ignored. The level may not play correctly.",
+  "MissingModsNotice": "Missing mods: {0} and {1} more",
+  "MissingModsNoticeSingle": "Missing mod: {0}",
+  "CustomEventReadOnlyNotice": "These events only work when the third-party mod is installed. You can only disable or remove them."
 }
