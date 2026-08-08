@@ -7,17 +7,11 @@
 
 ### 变更 / Changes / 변경 사항
 
-1. 重写了设置界面的实现方式。
-2. 兼容性设置中新增“忽略需要的第三方 Mod”开关：无视谱面声明的第三方 Mod 依赖，直接打开并游玩谱面。
-3. 针对 Iridium for ADOFAI v3，重新调整了设置选项卡与排版。
-4. 再次修复了异步输入优化。
+1. 修复了开启“忽略需要的第三方 Mod”的情况下，切换砖块导致事件检查器面板叠加的问题。
+2. 修复了 3.3.0 之后版本中移动轨道优化、移动装饰物优化的一些问题。
 
-1. Rewrote the settings UI implementation.
-2. Added an "Ignore required third-party mods" toggle in the Compatibility settings: open and play charts that declare third-party mod dependencies without them.
-3. Reorganized the settings tabs and layout for Iridium for ADOFAI v3.
-4. Fixed the Async Input optimization again.
+1. Fixed the event inspector panel stacking when switching tiles while "Ignore required third-party mods" is enabled.
+2. Fixed several issues with the Move Track / Move Decorations optimizations on versions after 3.3.0.
 
-1. 설정 UI 구현 방식을 다시 작성했습니다.
-2. 호환성 설정에 "필요한 서드파티 모드 무시" 토글이 추가되었습니다: 서드파티 모드가 필요한 맵을 모드 없이 바로 열고 플레이할 수 있습니다.
-3. Iridium for ADOFAI v3의 설정 탭과 레이아웃을 재구성했습니다.
-4. 비동기 입력 최적화를 다시 수정했습니다.
+1. "필요한 서드파티 모드 무시"가 활성화된 상태에서 타일을 전환할 때 이벤트 인스펙터 패널이 겹치던 문제를 수정했습니다.
+2. 3.3.0 이후 버전에서 이동 트랙 최적화 및 이동 장식 최적화의 일부 문제를 수정했습니다.
