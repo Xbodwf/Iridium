@@ -9,7 +9,7 @@ namespace Iridium.UI
 {
     /// <summary>
     /// UGUI/IML-backed modal dialog. Equivalent of IridiumWindow (IMGUI) for the
-    /// frontline project; main (v2.9.8) keeps the IMGUI path per project hard
+    /// v3 project; the v2 project keeps the IMGUI path per project hard
     /// constraints. IML is generated dynamically via <see cref="BuildIml"/> so
     /// any number of buttons can be rendered without per-instance IML files.
     /// </summary>

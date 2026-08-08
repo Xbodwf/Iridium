@@ -21,11 +21,11 @@ jobs:
       matrix:
         include:
           - game-version: v2
-            project-dir: main
-            project-file: Iridium.csproj
+            project-dir: v2
+            project-file: Iridium_v2.csproj
           - game-version: v3
-            project-dir: frontline
-            project-file: Iridium_frontline.csproj
+            project-dir: v3
+            project-file: Iridium_v3.csproj
     runs-on: ubuntu-latest
 
     steps:
@@ -259,8 +259,8 @@ jobs:
         git clone https://x-access-token:${{ secrets.LIBS_PAT }}@github.com/adofaiex/mod-update.git /tmp/mod-update
         cd /tmp/mod-update
 
-        mainTag=$(node $GITHUB_WORKSPACE/scripts/get-version.js main v2 | grep VERSION_TAG | cut -d= -f2)
-        frontlineTag=$(node $GITHUB_WORKSPACE/scripts/get-version.js frontline v3 | grep VERSION_TAG | cut -d= -f2)
+        v2Tag=$(node $GITHUB_WORKSPACE/scripts/get-version.js v2 v2 | grep VERSION_TAG | cut -d= -f2)
+        v3Tag=$(node $GITHUB_WORKSPACE/scripts/get-version.js v3 v3 | grep VERSION_TAG | cut -d= -f2)
         baseTag="${{ steps.version_info.outputs.BASE_TAG }}"
         tagName="${{ steps.version_info.outputs.TAG_NAME }}"
 
@@ -272,12 +272,12 @@ jobs:
               {
                 Id: 'Iridium',
                 Version: '$baseTag',
-                DownloadUrl: 'https://github.com/adofaiex/Iridium/releases/download/$tagName/Iridium_${frontlineTag}.zip'
+                DownloadUrl: 'https://github.com/adofaiex/Iridium/releases/download/$tagName/Iridium_${v3Tag}.zip'
               },
               {
                 Id: 'Iridium',
                 Version: '$baseTag',
-                DownloadUrl: 'https://github.com/adofaiex/Iridium/releases/download/$tagName/Iridium_${mainTag}.zip'
+                DownloadUrl: 'https://github.com/adofaiex/Iridium/releases/download/$tagName/Iridium_${v2Tag}.zip'
               }
             ]
           };

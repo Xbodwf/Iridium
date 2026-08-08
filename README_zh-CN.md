@@ -19,8 +19,8 @@ https://discord.gg/ddndY4xXeK
 
 ## 版本支持
 
-- **main 分支**：适用于 ADOFAI v2
-- **frontline 分支**：适用于 ADOFAI v3
+- **v2 分支**：适用于 ADOFAI v2
+- **v3 分支**：适用于 ADOFAI v3
 
 ---
 

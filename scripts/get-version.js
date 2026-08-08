@@ -2,14 +2,14 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * @param {string} [projectDir] - Project directory relative to repo root, e.g. "main" or "frontline".
- *                                 If omitted, defaults to "main".
+ * @param {string} [projectDir] - Project directory relative to repo root, e.g. "v2" or "v3".
+ *                                 If omitted, defaults to "v2".
  * @param {string} [adofaiVer] - ADOFAI version string, e.g. "2.10.0" or "2.9.8".
  *                                 If omitted, reads from BuildInfo.cs in the project directory.
  */
 function getVersionInfo(projectDir, adofaiVer) {
     try {
-        projectDir = projectDir || 'main';
+        projectDir = projectDir || 'v2';
 
         const infoPath = path.join(__dirname, '..', projectDir, 'Info.json');
         const infoContent = fs.readFileSync(infoPath, 'utf8');

@@ -858,6 +858,18 @@ namespace Iridium
                         Patches.PatchManager.UpdatePatchByType(typeof(RequiredModsClearPatches.LevelDataCLSClearPatch));
                         Patches.PatchManager.UpdatePatchByType(typeof(RequiredModsClearPatches.EncodeRestorePatch));
                         Patches.PatchManager.UpdatePatchByType(typeof(RequiredModsClearPatches.LevelLoadNotifyPatch));
+                        Patches.PatchManager.UpdatePatchByType(typeof(CustomEventsPatches.ScanRegisterPatch));
+                        Patches.PatchManager.UpdatePatchByType(typeof(CustomEventsPatches.ScanRegisterCLSPatch));
+                        Patches.PatchManager.UpdatePatchByType(typeof(CustomEventsPatches.FakeEventDecodePatch));
+                        Patches.PatchManager.UpdatePatchByType(typeof(CustomEventsPatches.FakeEventEncodePatch));
+                        Patches.PatchManager.UpdatePatchByType(typeof(CustomEventsPatches.ReadOnlyPanelPatch));
+                        Patches.PatchManager.UpdatePatchByType(typeof(CustomEventsPatches.ListItemEventPatch));
+                        Patches.PatchManager.UpdatePatchByType(typeof(CustomEventsPatches.EventIndicatorPatch));
+                        Patches.PatchManager.UpdatePatchByType(typeof(CustomEventsPatches.ShowPanelFakeEventPatch));
+                        Patches.PatchManager.UpdatePatchByType(typeof(CustomEventsPatches.ShowTabsForFloorPatch));
+                        Patches.PatchManager.UpdatePatchByType(typeof(CustomEventsPatches.FakeTabSetSelectedPatch));
+                        Patches.PatchManager.UpdatePatchByType(typeof(CustomEventsPatches.FakeTabClickPatch));
+                        Patches.PatchManager.UpdatePatchByType(typeof(CustomEventsPatches.RemoveEventAtSelectedPatch));
                     }, WidthMin)
                 )
             ));

@@ -1003,7 +1003,7 @@ namespace Iridium.Patches
 				if (Main.Settings.optimizer.enableCustomEasingEngine)
 					return true;
 
-				if (ADOBase.controller.visualQuality == VisualQuality.Low && ADOBase.isOfficialLevel && !ADOBase.levelIsMikoSkip)
+				if (ADOBase.controller.visualQuality == VisualQuality.Low && (ADOBase.isOfficialLevel || Persistence.forceVisualSettings) && !ADOBase.levelIsMikoSkip)
 				{
 					return false;
 				}

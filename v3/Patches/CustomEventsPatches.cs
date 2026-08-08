@@ -28,6 +28,21 @@ namespace Iridium.Patches
 		private static bool IsFakeEventName(string name) => name != null && FakeEventNames.Contains(name);
 		private static bool IsFakeInfo(LevelEventInfo info) => info != null && info.name != null && FakeInfos.ContainsKey(info.name);
 
+		private static void HideFakePanels(ADOFAI.InspectorPanel panel)
+		{
+			if (panel == null) return;
+			if (panel.panelsList != null)
+				foreach (var p in panel.panelsList)
+					if (p != null)
+						p.gameObject.SetActive(false);
+			// The original ShowPanel is skipped when we intercept, so its
+			// title/message cleanup never runs; clear them here too.
+			var titleCanvas = HarmonyLib.AccessTools.Field(typeof(InspectorPanel), "titleCanvas")?.GetValue(panel) as UnityEngine.GameObject;
+			titleCanvas?.SetActive(false);
+			var msgCanvas = HarmonyLib.AccessTools.Field(typeof(InspectorPanel), "messageCanvas")?.GetValue(panel) as UnityEngine.GameObject;
+			msgCanvas?.SetActive(false);
+		}
+
 		/// <summary>
 		/// Build a fake LevelEventInfo whose propertiesInfo mirrors every key found
 		/// in the event data, so LevelEvent.Encode round-trips the event untouched.
@@ -315,14 +330,19 @@ namespace Iridium.Patches
 				if (eventType != LevelEventType.None) return true;
 				try
 				{
+					// Switching to a floor without events clears the selection first;
+					// GetSelectedFloorEvents would then crash on selectedFloors[0].
+					if (ADOBase.editor == null || ADOBase.editor.selectedFloors == null || ADOBase.editor.selectedFloors.Count == 0)
+					{
+						HideFakePanels(__instance);
+						return false;
+					}
 					var floorEvents = ADOBase.editor.GetSelectedFloorEvents(eventType);
 					if (floorEvents == null || eventIndex < 0 || eventIndex >= floorEvents.Count || floorEvents[eventIndex] == null || !IsFakeInfo(floorEvents[eventIndex].info))
 					{
 						// No fake event to show: hide every fake panel so the original
 						// ShowPanel(None) logic cannot re-activate them (panel leakage).
-						foreach (var p in __instance.panelsList)
-							if (p != null && p.levelEventType == LevelEventType.None)
-								p.gameObject.SetActive(false);
+						HideFakePanels(__instance);
 						return false;
 					}
 					var ev = floorEvents[eventIndex];

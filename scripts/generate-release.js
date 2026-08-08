@@ -3,12 +3,12 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 /**
- * @param {string} [projectDir] - Project directory relative to repo root, e.g. "main" or "frontline".
- *                                 If omitted, defaults to "main".
+ * @param {string} [projectDir] - Project directory relative to repo root, e.g. "v2" or "v3".
+ *                                 If omitted, defaults to "v2".
  */
 function getVersionInfo(projectDir) {
     try {
-        projectDir = projectDir || 'main';
+        projectDir = projectDir || 'v2';
 
         const infoPath = path.join(__dirname, '..', projectDir, 'Info.json');
         const infoContent = fs.readFileSync(infoPath, 'utf8');

@@ -42,7 +42,7 @@ namespace Iridium
         }
 
         // Shared Loader entry point. The legacy main runtime still owns its
-        // Harmony instance; frontline consumes the injected backend directly.
+        // Harmony instance; the v3 project consumes the injected backend directly.
         public static bool Initialize(IHandler handler, IRuntimeHost runtimeHost)
         {
             return Initialize(handler);

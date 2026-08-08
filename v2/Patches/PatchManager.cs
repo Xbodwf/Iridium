@@ -190,18 +190,21 @@ _definitions.Add(new PatchDef(typeof(CompatibilityPatches.LegacyPauseFixPatch_Ap
             _definitions.Add(new PatchDef(typeof(RequiredModsClearPatches.LevelLoadNotifyPatch), requiredModsCond));
 
             // Third-party custom events (fake event registration; always-on, runtime-gated)
-            _definitions.Add(new PatchDef(typeof(CustomEventsPatches.ScanRegisterPatch), () => true));
-            _definitions.Add(new PatchDef(typeof(CustomEventsPatches.ScanRegisterCLSPatch), () => true));
-            _definitions.Add(new PatchDef(typeof(CustomEventsPatches.FakeEventDecodePatch), () => true));
-            _definitions.Add(new PatchDef(typeof(CustomEventsPatches.FakeEventEncodePatch), () => true));
-            _definitions.Add(new PatchDef(typeof(CustomEventsPatches.ReadOnlyPanelPatch), () => true));
-            _definitions.Add(new PatchDef(typeof(CustomEventsPatches.ListItemEventPatch), () => true));
-            _definitions.Add(new PatchDef(typeof(CustomEventsPatches.EventIndicatorPatch), () => true));
-            _definitions.Add(new PatchDef(typeof(CustomEventsPatches.ShowPanelFakeEventPatch), () => true));
-            _definitions.Add(new PatchDef(typeof(CustomEventsPatches.RemoveEventAtSelectedPatch), () => true));
-            _definitions.Add(new PatchDef(typeof(CustomEventsPatches.ShowTabsForFloorPatch), () => true));
-            _definitions.Add(new PatchDef(typeof(CustomEventsPatches.FakeTabSetSelectedPatch), () => true));
-            _definitions.Add(new PatchDef(typeof(CustomEventsPatches.FakeTabClickPatch), () => true));
+                        // Third-party custom events (fake event registration; applied on demand
+            // together with the "ignore required third-party mods" toggle)
+            var customEventsCond = () => Main.Settings.compatibility.ignoreRequiredMods;
+_definitions.Add(new PatchDef(typeof(CustomEventsPatches.ScanRegisterPatch), customEventsCond));
+            _definitions.Add(new PatchDef(typeof(CustomEventsPatches.ScanRegisterCLSPatch), customEventsCond));
+            _definitions.Add(new PatchDef(typeof(CustomEventsPatches.FakeEventDecodePatch), customEventsCond));
+            _definitions.Add(new PatchDef(typeof(CustomEventsPatches.FakeEventEncodePatch), customEventsCond));
+            _definitions.Add(new PatchDef(typeof(CustomEventsPatches.ReadOnlyPanelPatch), customEventsCond));
+            _definitions.Add(new PatchDef(typeof(CustomEventsPatches.ListItemEventPatch), customEventsCond));
+            _definitions.Add(new PatchDef(typeof(CustomEventsPatches.EventIndicatorPatch), customEventsCond));
+            _definitions.Add(new PatchDef(typeof(CustomEventsPatches.ShowPanelFakeEventPatch), customEventsCond));
+            _definitions.Add(new PatchDef(typeof(CustomEventsPatches.RemoveEventAtSelectedPatch), customEventsCond));
+            _definitions.Add(new PatchDef(typeof(CustomEventsPatches.ShowTabsForFloorPatch), customEventsCond));
+            _definitions.Add(new PatchDef(typeof(CustomEventsPatches.FakeTabSetSelectedPatch), customEventsCond));
+            _definitions.Add(new PatchDef(typeof(CustomEventsPatches.FakeTabClickPatch), customEventsCond));
 
             // Hit Sound
             _definitions.Add(new PatchDef(typeof(HitSoundPatch), () => Main.Settings.hitSound.enableHitSoundPitch));

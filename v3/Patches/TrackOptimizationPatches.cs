@@ -51,9 +51,8 @@ namespace Iridium.Patches
 				int count = floors.Count;
 				int step = 1 + __instance.gapLength;
 
-				for (int i = startIdx; i <= endIdx && i < count; i += step)
+				void ApplyToFloor(scrFloor target)
 				{
-					scrFloor target = floors[i];
 					Transform targetTransform = GetTransform(target);
 					var moveTweens = target.moveTweens;
 
@@ -112,6 +111,20 @@ namespace Iridium.Patches
 							var t = target.TweenOpacity(__instance.targetOpacity, __instance.duration, __instance.ease);
 							if (t != null) moveTweens[TweenType.Opacity] = t;
 						}
+					}
+				}
+
+				for (int i = startIdx; i <= endIdx && i < count; i += step)
+				{
+					scrFloor target = floors[i];
+					ApplyToFloor(target);
+					// Mirror the game: MoveTrack also moves landable floors inside
+					// freeroam areas, otherwise the track breaks there.
+					if (target.freeroamArea == null) continue;
+					foreach (scrFloor listFloor in target.freeroamArea.listFloors)
+					{
+						if (listFloor.isLandable)
+							ApplyToFloor(listFloor);
 					}
 				}
 				return false; 

@@ -7,7 +7,7 @@
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-		<OutputPath>..\bin\main\</OutputPath>
+		<OutputPath>..\bin\v2\</OutputPath>
 		<AllowUnsafeBlocks>false</AllowUnsafeBlocks>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
@@ -302,7 +302,7 @@
 	</Target>
 	<Target Name="CopyToOut" AfterTargets="Build">
 		<PropertyGroup>
-			<OutDir>$(ProjectDir)..\out\main\</OutDir>
+			<OutDir>$(ProjectDir)..\out\v2\</OutDir>
 		</PropertyGroup>
 		<MakeDir Directories="$(OutDir)" />
 		<MakeDir Directories="$(OutDir)Resources" />
@@ -341,8 +341,8 @@
 		<MakeDir Directories="$(ModsDir)" />
 		<MakeDir Directories="$(ModsDir)Resources" />
 		<ItemGroup>
-			<ModFiles Include="$(ProjectDir)..\out\main\*.*" Exclude="$(ProjectDir)..\out\main\Resources\**\*" />
-			<ModResourceFiles Include="$(ProjectDir)..\out\main\Resources\**\*" Exclude="$(ProjectDir)..\out\main\Resources\**\*\" />
+			<ModFiles Include="$(ProjectDir)..\out\v2\*.*" Exclude="$(ProjectDir)..\out\v2\Resources\**\*" />
+			<ModResourceFiles Include="$(ProjectDir)..\out\v2\Resources\**\*" Exclude="$(ProjectDir)..\out\v2\Resources\**\*\" />
 		</ItemGroup>
 		<Copy SourceFiles="@(ModFiles)" DestinationFolder="$(ModsDir)" SkipUnchangedFiles="true" />
 		<Copy SourceFiles="@(ModResourceFiles)" DestinationFolder="$(ModsDir)Resources\%(RecursiveDir)" SkipUnchangedFiles="true" />

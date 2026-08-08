@@ -814,6 +814,18 @@ namespace Iridium
                 AsyncPatchManager.UpdatePatchByTypeAsync(typeof(RequiredModsClearPatches.LevelDataCLSClearPatch));
                 AsyncPatchManager.UpdatePatchByTypeAsync(typeof(RequiredModsClearPatches.EncodeRestorePatch));
                 AsyncPatchManager.UpdatePatchByTypeAsync(typeof(RequiredModsClearPatches.LevelLoadNotifyPatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CustomEventsPatches.ScanRegisterPatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CustomEventsPatches.ScanRegisterCLSPatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CustomEventsPatches.FakeEventDecodePatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CustomEventsPatches.FakeEventEncodePatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CustomEventsPatches.ReadOnlyPanelPatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CustomEventsPatches.ListItemEventPatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CustomEventsPatches.EventIndicatorPatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CustomEventsPatches.ShowPanelFakeEventPatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CustomEventsPatches.ShowTabsForFloorPatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CustomEventsPatches.FakeTabSetSelectedPatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CustomEventsPatches.FakeTabClickPatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CustomEventsPatches.RemoveEventAtSelectedPatch));
                 Save();
             });
         }

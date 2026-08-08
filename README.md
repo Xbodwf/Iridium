@@ -20,8 +20,8 @@ https://discord.gg/ddndY4xXeK
 
 ## Supported Versions
 
-- **main branch**: ADOFAI v2
-- **frontline branch**: ADOFAI v3
+- **v2 branch**: ADOFAI v2
+- **v3 branch**: ADOFAI v3
 
 ---
 
