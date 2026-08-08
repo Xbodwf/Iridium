@@ -132,7 +132,7 @@ jobs:
       id: version_info
       shell: bash
       run: |
-        output=$(node scripts/get-version.js main)
+        output=$(node scripts/get-version.js v2)
         while IFS= read -r line; do
           if [[ $line =~ ^(VERSION_TAG|RELEASE_NAME|TAG_NAME|BASE_TAG)=(.*)$ ]]; then
             key="${BASH_REMATCH[1]}"

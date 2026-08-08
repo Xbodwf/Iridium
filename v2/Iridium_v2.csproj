@@ -311,12 +311,12 @@
 			<FilesToCopy Include="$(OutputPath)Iridium.Runtime.Abstractions.dll" Condition="Exists('$(OutputPath)Iridium.Runtime.Abstractions.dll')" />
 			<FilesToCopy Include="$(ProjectDir)..\bin\runtime\mono\Iridium.Runtime.Mono.dll" Condition="Exists('$(ProjectDir)..\bin\runtime\mono\Iridium.Runtime.Mono.dll')" />
 			<FilesToCopy Include="$(ProjectDir)..\bin\runtime\il2cpp\Iridium.Runtime.Il2Cpp.dll" Condition="Exists('$(ProjectDir)..\bin\runtime\il2cpp\Iridium.Runtime.Il2Cpp.dll')" />
-		<FilesToCopy Include="$(ProjectDir)..\bin\loaders\umm\net481\Iridium.Loader.UMM.dll"
-						 Condition="Exists('$(ProjectDir)..\bin\loaders\umm\net481\Iridium.Loader.UMM.dll')" />
-			<FilesToCopy Include="$(ProjectDir)..\bin\loaders\melon\net481\Iridium.Loader.Melon.dll"
-						 Condition="Exists('$(ProjectDir)..\bin\loaders\melon\net481\Iridium.Loader.Melon.dll')" />
-			<FilesToCopy Include="$(ProjectDir)..\bin\loaders\bepinex\net481\Iridium.Loader.BepInEx.dll"
-						 Condition="Exists('$(ProjectDir)..\bin\loaders\bepinex\net481\Iridium.Loader.BepInEx.dll')" />
+		<FilesToCopy Include="$(ProjectDir)..\bin\loaders\umm\$(TargetFramework)\Iridium.Loader.UMM.dll"
+						 Condition="Exists('$(ProjectDir)..\bin\loaders\umm\$(TargetFramework)\Iridium.Loader.UMM.dll')" />
+			<FilesToCopy Include="$(ProjectDir)..\bin\loaders\melon\$(TargetFramework)\Iridium.Loader.Melon.dll"
+						 Condition="Exists('$(ProjectDir)..\bin\loaders\melon\$(TargetFramework)\Iridium.Loader.Melon.dll')" />
+			<FilesToCopy Include="$(ProjectDir)..\bin\loaders\bepinex\$(TargetFramework)\Iridium.Loader.BepInEx.dll"
+						 Condition="Exists('$(ProjectDir)..\bin\loaders\bepinex\$(TargetFramework)\Iridium.Loader.BepInEx.dll')" />
 			<FilesToCopy Include="$(ProjectDir)Info.json" />
 			<ResourceFiles Include="$(ProjectDir)Resources\**\*" Exclude="$(ProjectDir)Resources\**\*\" />
 		</ItemGroup>

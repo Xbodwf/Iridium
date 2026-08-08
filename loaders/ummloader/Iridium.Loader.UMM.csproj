@@ -25,7 +25,7 @@
 		</Reference>
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\..\main\Iridium.csproj" />
+		<ProjectReference Include="..\..\v2\Iridium_v2.csproj" />
 		<ProjectReference Include="..\..\runtime\abstractions\Iridium.Runtime.Abstractions.csproj" />
 		<ProjectReference Include="..\..\runtime\mono\Iridium.Runtime.Mono.csproj" />
 	</ItemGroup>
