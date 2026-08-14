@@ -24,6 +24,8 @@ namespace Iridium.Config
         public bool skipEventIfPaused = false;
         public bool optimizeEventIcons = false;
         public bool optimizeScnGameUpdate = false;
+        public bool optimizePlayerInputAllocations = false;
+        public bool optimizeRDInputAllocations = false;
         public bool optimizeMoveDecorations = false;
         public bool optimizeFloorMesh = false;
         public bool optimizeFfxDecorations = false; // 新增：优化 ffx 装饰物更新
@@ -105,6 +107,11 @@ namespace Iridium.Config
     {
         public bool enableMemoryOptimization = false;
         public bool cleanOnSceneSwitch = true;
+
+        // Master switch for the embedded FerriteCore module. Individual
+        // options are read from the standalone FerriteCore/Config/FerriteCore.json
+        // — NOT from Settings.xml.
+        public bool enableFerriteCore = false;
     }
 
     public class CompatibilitySettings

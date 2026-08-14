@@ -17,6 +17,11 @@ namespace Iridium.UI
         private Coroutine? _fadeCoroutine;
         private Coroutine? _completeDelayCoroutine;
 
+        // The notification's own GraphicRaycaster. FrameSpreadDecorationLoadingPatch
+        // blocks ALL raycasters while loading — including this one — which makes the
+        // Stop button unclickable. Expose it so the loading patch can skip it.
+        public static GraphicRaycaster? InstanceRaycaster { get; private set; }
+
         // Cached references — captured right after each Rebuild so UpdateProgress
         // can change text without rebuilding the whole UI tree.
         private Text? _messageText;
@@ -35,6 +40,13 @@ namespace Iridium.UI
         public static void Show(string message)
         {
             EnsureInstance();
+            // Cancel any pending delayed-complete so it can't override this Show's
+            // fade timer afterwards.
+            if (_instance._completeDelayCoroutine != null)
+            {
+                _instance.StopCoroutine(_instance._completeDelayCoroutine);
+                _instance._completeDelayCoroutine = null;
+            }
             _instance!._isPersistent = false;
             _instance!._timer = FadeDuration + DisplayDuration + FadeDuration;
             _instance!._SetContent(message, iconType: "success", showStop: false);
@@ -160,7 +172,7 @@ namespace Iridium.UI
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 32766;
             canvasGo.AddComponent<CanvasScaler>();
-            canvasGo.AddComponent<GraphicRaycaster>();
+            InstanceRaycaster = canvasGo.AddComponent<GraphicRaycaster>();
 
             // Placeholder: the renderer's RebuildUI loop destroys all children except
             // index 0. Without this anchor, a previous-frame DialogWrapper would be
@@ -375,6 +387,11 @@ namespace Iridium.UI
         private void _StartFadeOut()
         {
             if (_fadeCoroutine != null) StopCoroutine(_fadeCoroutine);
+            if (_canvasGroup.alpha <= 0.001f)
+            {
+                _fadeCoroutine = null;
+                return;
+            }
             _fadeCoroutine = StartCoroutine(_FadeCanvasGroup(_canvasGroup.alpha, 0, FadeDuration));
         }
 
@@ -394,7 +411,7 @@ namespace Iridium.UI
         private void Update()
         {
             if (_timer > 0f && !_isPersistent) _timer -= Time.deltaTime;
-            if (_timer <= 0f && !_isPersistent && _fadeCoroutine == null && _canvasGroup.alpha >= 1f)
+            if (_timer <= 0f && !_isPersistent && _fadeCoroutine == null)
             {
                 _StartFadeOut();
             }

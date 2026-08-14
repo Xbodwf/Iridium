@@ -136,6 +136,81 @@ public static class IridiumLayout
         }
     }
 
+
+    private sealed class AreaElement : Element
+    {
+        private readonly Rect _rect;
+        private readonly Element[] _children;
+
+        public AreaElement(Rect rect, params Element[] children)
+        {
+            _rect = rect;
+            _children = children;
+        }
+
+        internal override void Render()
+        {
+            GUILayout.BeginArea(_rect);
+            try
+            {
+                foreach (var child in _children)
+                    child.Render();
+            }
+            finally
+            {
+                GUILayout.EndArea();
+            }
+        }
+    }
+
+    private sealed class ScrollViewElement : Element
+    {
+        private readonly Vector2 _scrollPosition;
+        private readonly Action<Vector2>? _onScrolled;
+        private readonly GUILayoutOption[] _options;
+        private readonly Element[] _children;
+        private readonly Action[] _callbacks;
+
+        public ScrollViewElement(
+            Vector2 scrollPosition,
+            Action<Vector2>? onScrolled,
+            params object[] content
+        )
+        {
+            _scrollPosition = scrollPosition;
+            _onScrolled = onScrolled;
+            var options = new List<GUILayoutOption>();
+            var children = new List<Element>();
+            var callbacks = new List<Action>();
+            foreach (var item in content)
+            {
+                if (item is Element child) children.Add(child);
+                else if (item is GUILayoutOption option) options.Add(option);
+                else if (item is Action callback) callbacks.Add(callback);
+            }
+            _options = options.ToArray();
+            _children = children.ToArray();
+            _callbacks = callbacks.ToArray();
+        }
+
+        internal override void Render()
+        {
+            var newPos = GUILayout.BeginScrollView(_scrollPosition, _options);
+            try
+            {
+                foreach (var child in _children)
+                    child.Render();
+                foreach (var callback in _callbacks)
+                    callback();
+            }
+            finally
+            {
+                GUILayout.EndScrollView();
+            }
+            _onScrolled?.Invoke(newPos);
+        }
+    }
+
     private sealed class TextElement : Element
     {
         private readonly string _text;
@@ -656,6 +731,20 @@ public static class IridiumLayout
     /// Render an element tree. Call this from OnGUI each frame. Containers are
     /// automatically Begin/End paired and the stack is unwound on exceptions.
     /// </summary>
+    public static Element Area(Rect rect, params Element[] children)
+    {
+        return new AreaElement(rect, children);
+    }
+
+    public static Element ScrollView(
+        Vector2 scrollPosition,
+        Action<Vector2>? onScrolled = null,
+        params object[] content
+    )
+    {
+        return new ScrollViewElement(scrollPosition, onScrolled, content);
+    }
+
     public static void Render(params Element[] roots)
     {
         var initialDepth = Engine.ContainerStack.Count;

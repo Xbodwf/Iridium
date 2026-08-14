@@ -243,5 +243,9 @@
   "UIBehavior": "UI Behavior",
   "AutoplayDisplay": "Autoplay Display",
   "EnableLobbyMusicPatch": "Enable lobby music patch",
-  "EnableJudgeTextCustomization": "Enable judge text customization"
+  "EnableJudgeTextCustomization": "Enable judge text customization",
+  "FerriteCore": "FerriteCore (Standalone Memory Optimizer)",
+  "OptimizePlayerInputAllocations": "Optimize Player Input Allocations",
+  "OptimizeRDInputAllocations": "Optimize Input Key List Allocations",
+  "EnableMemoryOptimization": "Enable Memory Optimization"
 }

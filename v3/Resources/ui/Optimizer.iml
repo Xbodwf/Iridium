@@ -10,9 +10,11 @@
 
         {settings.optimizer.enableOptimizer && <>
             <Separator />
-            <Text text={localize('ImageOptimizations')} style="subtitle" />
-            <Separator />
-            <View class="background">
+            <HBox align="center">
+                <ArrowButton direction={settings.expandImageOpts ? 'down' : 'right'} on-click="OnSectionToggle('image')" />
+                <Text text={localize('ImageOptimizations')} style="subtitle" />
+            </HBox>
+            {settings.expandImageOpts && <View class="background">
 
             <HBox align="center">
                 <Text text={localize('CompressImage')} style="label" />
@@ -59,12 +61,14 @@
                     <Checkbox value={settings.optimizer.dontResizeCollider} on-changed="OnDontResizeColliderToggled" />
                 </HBox>
             </>}
-            </View>
+            </View>}
 
             <Separator />
-            <Text text={localize('RenderingOptimizations')} style="subtitle" />
-            <Separator />
-            <View class="background">
+            <HBox align="center">
+                <ArrowButton direction={settings.expandRenderingOpts ? 'down' : 'right'} on-click="OnSectionToggle('rendering')" />
+                <Text text={localize('RenderingOptimizations')} style="subtitle" />
+            </HBox>
+            {settings.expandRenderingOpts && <View class="background">
 
             <HBox align="center">
                 <Text text={localize('DisableShadows')} style="label" />
@@ -143,23 +147,27 @@
                 <Fill />
                 <Switch value={settings.optimizer.fastLoading} on-changed="OnFastLoadingToggled" />
             </HBox>
-            </View>
+            </View>}
 
             <Separator />
-            <Text text={localize('CustomEasingEngine')} style="subtitle" />
-            <Separator />
-            <View class="background">
+            <HBox align="center">
+                <ArrowButton direction={settings.expandEasingOpts ? 'down' : 'right'} on-click="OnSectionToggle('easing')" />
+                <Text text={localize('CustomEasingEngine')} style="subtitle" />
+            </HBox>
+            {settings.expandEasingOpts && <View class="background">
             <HBox align="center">
                 <Text text={localize('EnableCustomEasingEngine')} style="label" />
                 <Fill />
                 <Switch value={settings.optimizer.enableCustomEasingEngine} on-changed="OnCustomEasingEngineToggled" />
             </HBox>
-            </View>
+            </View>}
 
             <Separator />
-            <Text text={localize('ParticleOptimizations')} style="subtitle" />
-            <Separator />
-            <View class="background">
+            <HBox align="center">
+                <ArrowButton direction={settings.expandParticleOpts ? 'down' : 'right'} on-click="OnSectionToggle('particle')" />
+                <Text text={localize('ParticleOptimizations')} style="subtitle" />
+            </HBox>
+            {settings.expandParticleOpts && <View class="background">
 
             <HBox align="center">
                 <Text text={localize('OptimizeParticle')} style="label" />
@@ -186,12 +194,14 @@
                     <Checkbox value={settings.optimizer.optimizeParticleLod} on-changed="OnOptimizeParticleLodToggled" />
                 </HBox>
             </>}
-            </View>
+            </View>}
 
             <Separator />
-            <Text text={localize('SceneOptimizations')} style="subtitle" />
-            <Separator />
-            <View class="background">
+            <HBox align="center">
+                <ArrowButton direction={settings.expandSceneOpts ? 'down' : 'right'} on-click="OnSectionToggle('scene')" />
+                <Text text={localize('SceneOptimizations')} style="subtitle" />
+            </HBox>
+            {settings.expandSceneOpts && <View class="background">
 
             <HBox align="center">
                 <Text text={localize('CacheGameObjectReferences')} style="label" />
@@ -216,12 +226,14 @@
                 <Fill />
                 <Switch value={settings.optimizer.optimizeEditorEventIndicators} on-changed="OnOptimizeEditorEventIndicatorsToggled" />
             </HBox>
-            </View>
+            </View>}
 
             <Separator />
-            <Text text={localize('LoadingOptimizations')} style="subtitle" />
-            <Separator />
-            <View class="background">
+            <HBox align="center">
+                <ArrowButton direction={settings.expandLoadingOpts ? 'down' : 'right'} on-click="OnSectionToggle('loading')" />
+                <Text text={localize('LoadingOptimizations')} style="subtitle" />
+            </HBox>
+            {settings.expandLoadingOpts && <View class="background">
 
             <HBox align="center">
                 <Text text={localize('CacheFloorEvents')} style="label" />
@@ -260,12 +272,14 @@
                     <Slider value={settings.optimizer.decorationsPerFrame} min="10" max="500" showValue="true" on-changed="OnDecorationsPerFrameChanged" />
                 </HBox>
             </>}
-            </View>
+            </View>}
 
             <Separator />
-            <Text text={localize('DOTweenOptimizations')} style="subtitle" />
-            <Separator />
-            <View class="background">
+            <HBox align="center">
+                <ArrowButton direction={settings.expandTweenOpts ? 'down' : 'right'} on-click="OnSectionToggle('tween')" />
+                <Text text={localize('DOTweenOptimizations')} style="subtitle" />
+            </HBox>
+            {settings.expandTweenOpts && <View class="background">
 
             <HBox align="center">
                 <Text text={localize('EnableDOTweenOptimization')} style="label" />
@@ -298,12 +312,14 @@
                     <Checkbox value={settings.optimizer.dotweenDisableSafeMode} on-changed="OnDOTweenDisableSafeModeToggled" />
                 </HBox>
             </>}
-            </View>
+            </View>}
 
             <Separator />
-            <Text text={localize('ExtremeOptimizations')} style="subtitle" />
-            <Separator />
-            <View class="background">
+            <HBox align="center">
+                <ArrowButton direction={settings.expandExtremeOpts ? 'down' : 'right'} on-click="OnSectionToggle('extreme')" />
+                <Text text={localize('ExtremeOptimizations')} style="subtitle" />
+            </HBox>
+            {settings.expandExtremeOpts && <View class="background">
 
             <HBox align="center">
                 <Text text={localize('EnableExtremeOptimization')} style="label" />
@@ -318,19 +334,39 @@
                     <Slider value={settings.optimizer.maxTweensPerFrame} min="50" max="500" showValue="true" on-changed="OnMaxTweensPerFrameChanged" />
                 </HBox>
             </>}
-            </View>
+            </View>}
 
             <Separator />
-            <Text text={localize('MemorySettings')} style="subtitle" />
-            <Separator />
-            <View class="background">
+            <HBox align="center">
+                <ArrowButton direction={settings.expandMemoryOpts ? 'down' : 'right'} on-click="OnSectionToggle('memory')" />
+                <Text text={localize('MemorySettings')} style="subtitle" />
+            </HBox>
+            {settings.expandMemoryOpts && <View class="background">
 
             <HBox align="center">
-                <Text text={localize('MemorySettings')} style="label" />
+                <Text text={localize('EnableMemoryOptimization')} style="label" />
                 <Fill />
                 <Switch value={settings.memory.enableMemoryOptimization} on-changed="OnMemoryOptimizationToggled" />
             </HBox>
-            </View>
+
+            <HBox align="center">
+                <Text text={localize('FerriteCore')} style="label" />
+                <Fill />
+                <Switch value={settings.memory.enableFerriteCore} on-changed="OnFerriteCoreToggled" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text={localize('OptimizePlayerInputAllocations')} style="label" />
+                <Fill />
+                <Switch value={settings.optimizer.optimizePlayerInputAllocations} on-changed="OnOptimizePlayerInputAllocationsToggled" />
+            </HBox>
+
+            <HBox align="center">
+                <Text text={localize('OptimizeRDInputAllocations')} style="label" />
+                <Fill />
+                <Switch value={settings.optimizer.optimizeRDInputAllocations} on-changed="OnOptimizeRDInputAllocationsToggled" />
+            </HBox>
+            </View>}
         </>}
     </VBox>
 </Iris>

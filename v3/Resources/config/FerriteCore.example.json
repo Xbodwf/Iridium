@@ -1,0 +1,28 @@
+{
+  "L0": {
+    "enableEngineTune": true,
+    "targetFrameRate": 0,
+    "forceVSyncCount": false,
+    "vsyncCount": 0,
+    "enableQualityPreset": false,
+    "qualityPreset": 0,
+    "limitShadowDistance": false,
+    "shadowDistance": 50.0,
+    "enableIncrementalGC": false,
+    "gcOnSceneSwitch": false,
+    "limitFixedTimestep": false,
+    "fixedTimestep": 0.01,
+    "limitMaxAllowedTimestep": false,
+    "maxAllowedTimestep": 0.1,
+    "reducePhysicsQueries": false,
+    "tuneAudioBuffer": false,
+    "audioBufferSize": 512
+  },
+  "L1": {
+    "enableL1": false,
+    "sleepOffscreenRenderers": false,
+    "sleepDistance": 30.0,
+    "enableStringPool": false,
+    "enableOwnPool": false
+  }
+}

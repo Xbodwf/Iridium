@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using UnityEngine;
 using Iris.Iml;
 
@@ -136,8 +134,15 @@ namespace Iridium.UI
                 ParentTransform = transform,
             };
 
-            // Data context: dictionary so we can dynamically add hasBtn{i}/btn{i}Text
-            // entries for an arbitrary number of buttons.
+            // Data context feeds the shared Dialog.iml template. Buttons are declared
+            // in the IML as btn1..btn3; unused entries are hidden via hasBtn{i}.
+            const int MaxButtons = 3;
+
+            // Dialog sizing: keep a 16:9 (1280x720) aspect ratio scaled to the screen.
+            var screenW = Mathf.Max(Screen.width, 1f);
+            var dlgW = Mathf.Min(screenW * 0.35f, 720f);
+            var dlgH = dlgW * 720f / 1280f;
+
             var data = new Dictionary<string, object>
             {
                 ["title"] = _config.Title ?? string.Empty,
@@ -146,13 +151,24 @@ namespace Iridium.UI
                     ? _config.Icon.Value.ToString().ToLowerInvariant()
                     : string.Empty,
                 ["showIcon"] = _config.Icon.HasValue,
+                ["dlgWidth"] = dlgW,
+                ["dlgHeight"] = dlgH,
             };
-            for (int i = 0; i < _config.Buttons.Length; i++)
+            for (int i = 0; i < MaxButtons; i++)
             {
                 var idx = i + 1;
-                data[$"btn{idx}Text"] = _config.Buttons[i].Text ?? string.Empty;
-                data[$"btn{idx}Style"] = _config.Buttons[i].Style.ToString().ToLowerInvariant();
-                data[$"hasBtn{idx}"] = true;
+                if (i < _config.Buttons.Length)
+                {
+                    data[$"btn{idx}Text"] = _config.Buttons[i].Text ?? string.Empty;
+                    data[$"btn{idx}Style"] = _config.Buttons[i].Style.ToString().ToLowerInvariant();
+                    data[$"hasBtn{idx}"] = true;
+                }
+                else
+                {
+                    data[$"btn{idx}Text"] = string.Empty;
+                    data[$"btn{idx}Style"] = "element";
+                    data[$"hasBtn{idx}"] = false;
+                }
             }
             _renderer.SetDataContext(data);
 
@@ -169,58 +185,14 @@ namespace Iridium.UI
                 });
             }
 
-            var iml = BuildIml(_config);
-            _renderer.LoadContent(iml, basePath: Main.Handler?.ModPath ?? string.Empty);
+            var uiDir = System.IO.Path.Combine(Main.Handler?.ModPath ?? string.Empty, "Resources", "ui");
+            var imlPath = System.IO.Path.Combine(uiDir, "Dialog.iml");
+            if (System.IO.File.Exists(imlPath))
+                _renderer.LoadFile(imlPath);
+            else
+                Main.Logger?.Log($"[ImlWindow] Dialog.iml not found: {imlPath}");
             _renderer.Rebuild();
             Main.Logger?.Log("[ImlWindow] Render complete");
-        }
-
-        /// <summary>
-        /// Build the IML document for <paramref name="config"/>. Mirrors the style
-        /// values from the legacy IridiumWindow.iml (dialog radius 16, primary/element
-        /// radius 8, dialog padding 16, dialog minWidth 400) and emits one
-        /// <c>&lt;Button&gt;</c> per <see cref="Config.Buttons"/> entry because
-        /// <see cref="IrisGoRenderer"/> does not yet support <c>&lt;ForEach&gt;</c>.
-        /// </summary>
-        private static string BuildIml(Config config)
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine("<Iris>");
-            sb.AppendLine("    <Resources>");
-            sb.AppendLine("        <Reference path=\"@Colors.iml\" />");
-            sb.AppendLine("        <Style name=\"dialog\" on=\".dialog\">");
-            sb.AppendLine("            <Setter property=\"padding\" value=\"16,16,16,16\" />");
-            sb.AppendLine("            <Setter property=\"radius\" value=\"16\" />");
-            sb.AppendLine("        </Style>");
-            sb.AppendLine("        <Style name=\"title\" on=\".title\">");
-            sb.AppendLine("            <Setter property=\"fontSize\" value=\"24\" />");
-            sb.AppendLine("        </Style>");
-            sb.AppendLine("        <Style name=\"normal\" on=\".normal\">");
-            sb.AppendLine("            <Setter property=\"fontSize\" value=\"12\" />");
-            sb.AppendLine("        </Style>");
-            sb.AppendLine("    </Resources>");
-            sb.AppendLine();
-            sb.AppendLine("    <VBox class=\"dialog bg-default\" minWidth=\"400\">");
-            sb.AppendLine("        <HBox gap=\"8\">");
-            sb.AppendLine("            <If condition=\"{showIcon}\">");
-            sb.AppendLine("                <Icon type={iconType} />");
-            sb.AppendLine("            </If>");
-            sb.AppendLine("            <Text text={title} class=\"title text-title\" />");
-            sb.AppendLine("        </HBox>");
-            sb.AppendLine("        <Spacer height=\"10\" />");
-            sb.AppendLine("        <Text text={message} class=\"normal text-normal\" />");
-            sb.AppendLine("        <Fill />");
-            sb.AppendLine("        <HBox gap=\"8\">");
-            sb.AppendLine("            <Fill />");
-            for (int i = 0; i < config.Buttons.Length; i++)
-            {
-                var idx = i + 1;
-                sb.AppendLine($"            <Button text={{btn{idx}Text}} class={{btn{idx}Style}} visible={{hasBtn{idx}}} on-click=\"OnBtn{idx}\" width=\"120\" />");
-            }
-            sb.AppendLine("        </HBox>");
-            sb.AppendLine("    </VBox>");
-            sb.AppendLine("</Iris>");
-            return sb.ToString();
         }
     }
 }

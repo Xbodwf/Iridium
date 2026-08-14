@@ -243,5 +243,9 @@
   "UIBehavior": "UI 동작",
   "AutoplayDisplay": "오토플레이 표시",
   "EnableLobbyMusicPatch": "로비 음악 패치 활성화",
-  "EnableJudgeTextCustomization": "판정 텍스트 커스터마이징 활성화"
+  "EnableJudgeTextCustomization": "판정 텍스트 커스터마이징 활성화",
+  "FerriteCore": "페라이트 코어 (독립형 메모리 최적화)",
+  "OptimizePlayerInputAllocations": "플레이어 입력 할당 최적화",
+  "OptimizeRDInputAllocations": "입력 키 목록 할당 최적화",
+  "EnableMemoryOptimization": "메모리 최적화 활성화"
 }

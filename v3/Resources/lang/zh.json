@@ -243,5 +243,9 @@
   "UIBehavior": "界面行为",
   "AutoplayDisplay": "自动播放显示",
   "EnableLobbyMusicPatch": "启用大厅音乐修改",
-  "EnableJudgeTextCustomization": "启用判定文本"
+  "EnableJudgeTextCustomization": "启用判定文本",
+  "FerriteCore": "启用铁氧体磁芯（独立内存优化）",
+  "OptimizePlayerInputAllocations": "优化玩家输入内存分配",
+  "OptimizeRDInputAllocations": "优化输入按键列表内存分配",
+  "EnableMemoryOptimization": "启用内存优化"
 }

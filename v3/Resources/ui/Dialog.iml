@@ -1,0 +1,37 @@
+<Iris>
+    <Resources>
+        <Reference path="@Colors.iml" />
+
+        <!-- Modal dialog style — used by first-run / upgrade notices.
+             Colors (bg-default, primary, element, text-title, ...) come from
+             @Colors.iml; layout-only styles live here. -->
+        <Style name="dialog" on=".dialog">
+            <Setter property="padding" value="16,16,16,16" />
+            <Setter property="radius" value="16" />
+        </Style>
+        <Style name="title" on=".title">
+            <Setter property="fontSize" value="24" />
+        </Style>
+        <Style name="normal" on=".normal">
+            <Setter property="fontSize" value="12" />
+        </Style>
+    </Resources>
+
+    <VBox class="dialog bg-default" width={dlgWidth} height={dlgHeight}>
+        <HBox gap="8">
+            <If condition="{showIcon}">
+                <Icon type={iconType} />
+            </If>
+            <Text text={title} class="title text-title" />
+        </HBox>
+        <Spacer height="10" />
+        <Text text={message} class="normal text-normal" />
+        <Fill />
+        <HBox gap="8">
+            <Fill />
+            <Button text={btn1Text} style={btn1Style} visible={hasBtn1} on-click="OnBtn1" width="120" />
+            <Button text={btn2Text} style={btn2Style} visible={hasBtn2} on-click="OnBtn2" width="120" />
+            <Button text={btn3Text} style={btn3Style} visible={hasBtn3} on-click="OnBtn3" width="120" />
+        </HBox>
+    </VBox>
+</Iris>

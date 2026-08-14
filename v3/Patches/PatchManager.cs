@@ -141,6 +141,8 @@ namespace Iridium.Patches
 			// 分帧加载需要额外检查 frameSpreadDecorationLoading 子开关
 			_definitions.Add(new PatchDef(typeof(LoadingOptimizationPatches.FrameSpreadDecorationLoadingPatch),
 				() => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.frameSpreadDecorationLoading));
+			_definitions.Add(new PatchDef(typeof(LoadingOptimizationPatches.FrameSpreadDecorationLoadingPatch.ReloadAssets_Patch),
+				() => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.frameSpreadDecorationLoading));
 			_definitions.Add(new PatchDef(typeof(LoadingOptimizationPatches.FrameSpreadDecorationLoadingPatch.ResetDecorations_Patch),
 				() => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.frameSpreadDecorationLoading));
 			_definitions.Add(new PatchDef(typeof(LoadingOptimizationPatches.FrameSpreadDecorationLoadingPatch.Play_Patch),
@@ -169,6 +171,12 @@ namespace Iridium.Patches
 			// so SetPlayerCount and Reset sync are handled by the game natively.
 			// Always-on: snap offsetTick calibration at start of each level
 			_definitions.Add(new PatchDef(typeof(BugfixPatches.AsyncInputPlaySnapPatch), () => true));
+			// Opt-in: eliminate per-frame lambda allocations in player input hot path
+			_definitions.Add(new PatchDef(typeof(PlayerInputOptimizationPatches.SimulatedPlayerControlUpdatePatch),
+				() => Main.Settings.optimizer.optimizePlayerInputAllocations));
+			// Opt-in: reuse List buffers in RDInput.GetStateKeys to avoid per-frame allocations
+			_definitions.Add(new PatchDef(typeof(RDInputOptimizationPatches.GetStateKeysPatch),
+				() => Main.Settings.optimizer.optimizeRDInputAllocations));
 			// Fix: ensures hardestDifficulty is reset when playing from editor
 			_definitions.Add(new PatchDef(typeof(BugfixPatches.EditorPlayResetMistakesPatch),
 				() => Main.Settings.compatibility.fixEditorPlayResetMistakes));
@@ -360,7 +368,9 @@ _definitions.Add(new PatchDef(typeof(CustomEventsPatches.ScanRegisterPatch), cus
 				typeof(SceneOptimizationPatches),
 				typeof(LoadingOptimizationPatches),
 				typeof(ExtremeOptimizationPatches),
-				typeof(EditorFloorOptimizationPatches)
+				typeof(EditorFloorOptimizationPatches),
+				typeof(PlayerInputOptimizationPatches),
+				typeof(RDInputOptimizationPatches)
 			};
 
 			foreach (var def in _definitions)

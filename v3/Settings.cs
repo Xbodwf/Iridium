@@ -35,6 +35,31 @@ namespace Iridium
 
         private string _currentTab = "general";
         public string currentTab => _currentTab;
+
+        // Collapsible section states (default collapsed). Used by the settings IML
+        // to show/hide option groups so the panel stays readable.
+        private readonly Dictionary<string, bool> _sectionExpanded = new();
+        public bool expandImageOpts => IsSectionExpanded("image");
+        public bool expandRenderingOpts => IsSectionExpanded("rendering");
+        public bool expandEasingOpts => IsSectionExpanded("easing");
+        public bool expandParticleOpts => IsSectionExpanded("particle");
+        public bool expandSceneOpts => IsSectionExpanded("scene");
+        public bool expandLoadingOpts => IsSectionExpanded("loading");
+        public bool expandTweenOpts => IsSectionExpanded("tween");
+        public bool expandExtremeOpts => IsSectionExpanded("extreme");
+        public bool expandMemoryOpts => IsSectionExpanded("memory");
+
+        private bool IsSectionExpanded(string key) => _sectionExpanded.TryGetValue(key, out var v) && v;
+
+        private void ToggleSection(string key)
+        {
+            _sectionExpanded[key] = !IsSectionExpanded(key);
+        }
+
+        public string GetSectionHeader(string key, string labelKey)
+        {
+            return (IsSectionExpanded(key) ? "▾ " : "▸ ") + Localization.Get(labelKey);
+        }
         private Vector2 _contentScrollPosition = Vector2.zero;
         private SizesGroup.Holder _sizesHolder = new();
 
@@ -102,6 +127,7 @@ namespace Iridium
             });
 
             _renderer.RegisterHandler<string>("OnTabClick", key => { _currentTab = key; });
+            _renderer.RegisterHandler<string>("OnSectionToggle", key => ToggleSection(key));
             _renderer.RegisterHandler<string>("OnLanguageClick", lang => { language = lang; Save(); });
 
             RegisterShortcutHandlers();
@@ -253,6 +279,22 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 optimizer.optimizeScnGameUpdate = value;
+                Save();
+            });
+
+            _renderer.RegisterHandler("OnOptimizePlayerInputAllocationsToggled", (obj) =>
+            {
+                bool value = obj is bool b ? b : false;
+                optimizer.optimizePlayerInputAllocations = value;
+                AsyncPatchManager.UpdateOptimizerPatchesAsync();
+                Save();
+            });
+
+            _renderer.RegisterHandler("OnOptimizeRDInputAllocationsToggled", (obj) =>
+            {
+                bool value = obj is bool b ? b : false;
+                optimizer.optimizeRDInputAllocations = value;
+                AsyncPatchManager.UpdateOptimizerPatchesAsync();
                 Save();
             });
 
@@ -471,6 +513,17 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 memory.enableMemoryOptimization = value;
+                Save();
+            });
+
+            _renderer.RegisterHandler("OnFerriteCoreToggled", (obj) =>
+            {
+                bool value = obj is bool b ? b : false;
+                memory.enableFerriteCore = value;
+                if (value)
+                    Modules.FerriteCore.FerriteCoreModule.Enable();
+                else
+                    Modules.FerriteCore.FerriteCoreModule.Disable();
                 Save();
             });
 

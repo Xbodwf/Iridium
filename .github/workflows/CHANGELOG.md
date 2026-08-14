@@ -1,17 +1,13 @@
 > [!NOTE]
-> Iridium 支持多个模组加载器，查看 README.md 可了解对应平台的安装方式。
->
 > Iridium supports multiple mod loaders — see README.md for platform-specific installation instructions.
 >
-> Iridium은 여러 모드 로더를 지원합니다. 플랫폼별 설치 방법은 README.md를 참고하세요.
+> [!WARNING]
+> On Linux/macOS, this mod may require libgdiplus to be installed separately. It is used for UI rendering (icons, buttons, switches) as well as image compression.
 
-### 变更 / Changes / 변경 사항
+### Changes
 
-1. 修复了开启“忽略需要的第三方 Mod”的情况下，切换砖块导致事件检查器面板叠加的问题。
-2. 修复了 3.3.0 之后版本中移动轨道优化、移动装饰物优化的一些问题。
-
-1. Fixed the event inspector panel stacking when switching tiles while "Ignore required third-party mods" is enabled.
-2. Fixed several issues with the Move Track / Move Decorations optimizations on versions after 3.3.0.
-
-1. "필요한 서드파티 모드 무시"가 활성화된 상태에서 타일을 전환할 때 이벤트 인스펙터 패널이 겹치던 문제를 수정했습니다.
-2. 3.3.0 이후 버전에서 이동 트랙 최적화 및 이동 장식 최적화의 일부 문제를 수정했습니다.
+1. Fixed the Iridium for ADOFAI v3 settings panel not opening under the MelonLoader and BepInEx loaders.
+2. Added two new memory optimization options (disabled by default): "Optimize Player Input Allocations" and "Optimize Input Key List Allocations". These reduce how much extra memory the game uses while playing, which can help on weaker machines and lower the chance of stutters.
+3. The Optimizer settings tab now groups options into collapsible sections so the panel is easier to read.
+4. FerriteCore (https://github.com/adofaiex/FerriteCore-ADOFAI) has been merged into Iridium after being improved, as a standalone memory optimization engine. It is controlled by its own config file (Config/FerriteCore.json) and can be toggled from the Memory Optimization section.
+5. Fixed the style issue with the first-launch window and fixed a bug that could cause a black bar to cover the screen.

@@ -144,10 +144,30 @@ namespace Iridium.Patches
 			private static scnGame? _pendingGame;
 			private static bool _playWasBlocked;
 			private static bool _uiCompleted;
+			// Set by ReloadAssets when a full decoration rebuild is about to happen
+			// (level load). Editor-driven incremental updates (e.g. modifying a tile
+			// event) call UpdateDecorationObjects directly without ReloadAssets, so
+			// they must NOT be intercepted — otherwise every tile edit re-triggers a
+			// frame-spread load and blocks the whole UI.
+			private static bool _shouldFrameSpread;
 
 			public static bool IsLoading => _isLoading;
 
 			private const float TIME_BUDGET_PER_FRAME = 0.012f;
+
+			[HarmonyPatch(typeof(scnGame), "ReloadAssets")]
+			public static class ReloadAssets_Patch
+			{
+				[HarmonyPostfix]
+				public static void Postfix(bool reloadDecorations)
+				{
+					// ReloadAssets(reloadDecorations: false) signals the caller is about
+					// to rebuild decorations manually (UpdateDecorationObjects) right
+					// after — that is the level-load path we want to frame-spread.
+					if (!reloadDecorations)
+						_shouldFrameSpread = true;
+				}
+			}
 
 			[HarmonyPrefix]
 			public static bool Prefix(scnGame __instance, bool reloadDecorations)
@@ -160,6 +180,13 @@ namespace Iridium.Patches
 				if (ADOBase.isOfficialLevel) return true;
 
 				if (!reloadDecorations) return true;
+
+				// Only intercept when this call is part of a level-load sequence
+				// (flagged by ReloadAssets). Direct calls from the editor (tile edits,
+				// undo/redo, ...) are left untouched.
+				if (!_shouldFrameSpread)
+					return true;
+				_shouldFrameSpread = false;
 
 				try
 				{
@@ -210,11 +237,12 @@ namespace Iridium.Patches
 					foreach (var canvas in canvases)
 					{
 						var raycaster = canvas.GetComponent<GraphicRaycaster>();
-						if (raycaster != null && raycaster.enabled)
-						{
-							raycaster.enabled = false;
-							_disabledRaycasters.Add(raycaster);
-						}
+						// Keep the VRAM notification's raycaster alive so the Stop
+						// button stays clickable during frame-spread loading.
+						if (raycaster == null || !raycaster.enabled) continue;
+						if (raycaster == UI.VRAMNotificationUI.InstanceRaycaster) continue;
+						raycaster.enabled = false;
+						_disabledRaycasters.Add(raycaster);
 					}
 					Main.Logger?.Log($"[LoadingOptimization] Blocked UI input: disabled {_disabledRaycasters.Count} raycaster(s)");
 				}
@@ -429,6 +457,7 @@ namespace Iridium.Patches
 				_cancelled = false;
 				_pendingGame = null;
 				_playWasBlocked = false;
+				_shouldFrameSpread = false;
 				_pendingDecorations.Clear();
 				RestoreUIInput();
 				if (!_uiCompleted)
