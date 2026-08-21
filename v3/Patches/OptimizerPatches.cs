@@ -189,7 +189,7 @@ namespace Iridium.Patches
 			}
 		}
 
-		[HarmonyPatch(typeof(TextureManager), "LoadTexture")]
+		[HarmonyPatch(typeof(TextureManager), nameof(TextureManager.LoadTexture))]
 		public static class TextureOptimizationPatch
 		{
 			private static int AlignTo4(int val) => Math.Max(4, (val + 2) & ~3);
@@ -690,14 +690,14 @@ namespace Iridium.Patches
 		public static class OptimizationResetPatches
 		{
 			[HarmonyPatch("OnDestroy")]
-			[HarmonyPatch("LoadAndPlayLevel")]
+			[HarmonyPatch(nameof(scnGame.LoadAndPlayLevel))]
 			[HarmonyPrefix]
 			public static void FullReset()
 			{
 				ResetDecorOptimization(true);
 			}
 
-			[HarmonyPatch("LoadLevel"), HarmonyPrefix]
+			[HarmonyPatch(nameof(scnGame.LoadLevel)), HarmonyPrefix]
 			public static void SoftReset() => ResetDecorOptimization(false);
 
 			[HarmonyPatch("Awake"), HarmonyPostfix]
@@ -707,7 +707,7 @@ namespace Iridium.Patches
 			}
 		}
 
-		[HarmonyPatch(typeof(scrCustomBackgroundSprite), "SetCustomBG")]
+		[HarmonyPatch(typeof(scrCustomBackgroundSprite), nameof(scrCustomBackgroundSprite.SetCustomBG))]
 		public static class BackgroundScalingPatch
 		{
 			public static void Postfix(scrCustomBackgroundSprite __instance)
@@ -775,7 +775,7 @@ namespace Iridium.Patches
 			method1?.Invoke(dec, new object[] { customSprite.sprite });
 		}
 
-		[HarmonyPatch(typeof(scrVisualDecoration), "UpdateShader")]
+		[HarmonyPatch(typeof(scrVisualDecoration), nameof(scrVisualDecoration.UpdateShader))]
 		public static class MeshRendererScalingPatch
 		{
 			public static void Postfix(scrVisualDecoration __instance)
@@ -866,7 +866,7 @@ namespace Iridium.Patches
 			}
 		}
 
-		[HarmonyPatch(typeof(scrVisualDecoration), "GetDecorationWorldSize")]
+		[HarmonyPatch(typeof(scrVisualDecoration), nameof(scrVisualDecoration.GetDecorationWorldSize))]
 		public static class WorldSizeScalingPatch
 		{
 			public static void Postfix(scrVisualDecoration __instance, ref Vector2 __result)
@@ -881,7 +881,7 @@ namespace Iridium.Patches
 			}
 		}
 
-		[HarmonyPatch(typeof(scnGame), "LoadLevel")]
+		[HarmonyPatch(typeof(scnGame), nameof(scnGame.LoadLevel))]
 		public static class ShadowOptimizationPatch
 		{
 			public static void Postfix()
@@ -893,7 +893,7 @@ namespace Iridium.Patches
 			}
 		}
 
-		[HarmonyPatch(typeof(scrVisualDecoration), "Awake")]
+		[HarmonyPatch(typeof(scrVisualDecoration), nameof(scrVisualDecoration.Awake))]
 		public static class DecorationUpdateOptimizationPatch
 		{
 			public static void Postfix(scrVisualDecoration __instance)
@@ -909,7 +909,7 @@ namespace Iridium.Patches
 			}
 		}
 
-		[HarmonyPatch(typeof(scrFloor), "Awake")]
+		[HarmonyPatch(typeof(scrFloor), nameof(scrFloor.Awake))]
 		public static class TileUpdateOptimizationPatch
 		{
 			public static void Postfix(scrFloor __instance)
@@ -925,7 +925,7 @@ namespace Iridium.Patches
 			}
 		}
 
-		[HarmonyPatch(typeof(scrVisualDecoration), "UpdateHitbox")]
+		[HarmonyPatch(typeof(scrVisualDecoration), nameof(scrVisualDecoration.UpdateHitbox))]
 		public static class VisualDecorationUpdateHitboxPatch
 		{
 			[HarmonyPrefix]
@@ -962,7 +962,7 @@ namespace Iridium.Patches
 			}
 		}
 
-		[HarmonyPatch(typeof(scnGame), "ApplyEventsToFloors", typeof(List<scrFloor>), typeof(LevelData), typeof(scrLevelMaker), typeof(List<LevelEvent>))]
+		[HarmonyPatch(typeof(scnGame), nameof(scnGame.ApplyEventsToFloors), typeof(List<scrFloor>), typeof(LevelData), typeof(scrLevelMaker), typeof(List<LevelEvent>))]
 		public static class ApplyEventsToFloorsOptimizationPatch
 		{
 			[HarmonyPrefix]
@@ -976,7 +976,7 @@ namespace Iridium.Patches
 			}
 		}
 
-		[HarmonyPatch(typeof(scrFloor), "UpdateIconSprite")]
+		[HarmonyPatch(typeof(scrFloor), nameof(scrFloor.UpdateIconSprite))]
 		public static class UpdateIconSpriteOptimizationPatch
 		{
 			[HarmonyPrefix]
@@ -992,7 +992,7 @@ namespace Iridium.Patches
 
 		// NOTE: scnGame.Update optimization moved to SceneOptimizationPatches.cs
 
-		[HarmonyPatch(typeof(ffxMoveDecorationsPlus), "StartEffect")]
+		[HarmonyPatch(typeof(ffxMoveDecorationsPlus), nameof(ffxMoveDecorationsPlus.StartEffect))]
 		public static class MoveDecorationsOptimizationPatch
 		{
 			[HarmonyPrefix]
@@ -1332,7 +1332,7 @@ namespace Iridium.Patches
 			}
 		}
 
-		[HarmonyPatch(typeof(scnGame), "UpdateDecorationObjects")]
+		[HarmonyPatch(typeof(scnGame), nameof(scnGame.UpdateDecorationObjects))]
 		public static class VRAMNotificationPatch
 		{
 			public static bool isFinished = false;

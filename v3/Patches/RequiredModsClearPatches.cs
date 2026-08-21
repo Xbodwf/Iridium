@@ -99,7 +99,7 @@ namespace Iridium.Patches
 		/// After a chart has finished loading (editor open or play), notify the
 		/// player of the ignored missing mods.
 		/// </summary>
-		[HarmonyPatch(typeof(scnGame), "LoadLevel")]
+		[HarmonyPatch(typeof(scnGame), nameof(scnGame.LoadLevel))]
 		public static class LevelLoadNotifyPatch
 		{
 			[HarmonyPostfix]

@@ -59,7 +59,7 @@ namespace Iridium.Patches
 		}
 
 		/// <summary>
-		/// 注册一个包含 HarmonyPatch 嵌套类型的补丁类中的所有嵌套补丁
+		/// registers all nested types of a parent type that are marked with HarmonyPatch attributes, with an optional condition and exclusion list.
 		/// </summary>
 		private static void RegisterNestedPatches(Type parentType, Func<bool> condition, HashSet<Type>? exclude = null)
 		{
@@ -135,10 +135,10 @@ namespace Iridium.Patches
 			_definitions.Add(new PatchDef(typeof(EventTweenOptimizationPatches.FfxPlusBaseKillCacheInvalidationPatch), eventTweenCond));
 
 			// --- Loading Optimization Patches ---
-			// 排除 FrameSpreadDecorationLoadingPatch，因为它有独立的子开关条件
+			// exclude FrameSpreadDecorationLoadingPatch from the main optimizer condition, since it has its own sub-condition
 			RegisterNestedPatches(typeof(LoadingOptimizationPatches), optCond,
 				new HashSet<Type> { typeof(LoadingOptimizationPatches.FrameSpreadDecorationLoadingPatch) });
-			// 分帧加载需要额外检查 frameSpreadDecorationLoading 子开关
+			// frame-spread decoration loading patches (sub-condition)
 			_definitions.Add(new PatchDef(typeof(LoadingOptimizationPatches.FrameSpreadDecorationLoadingPatch),
 				() => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.frameSpreadDecorationLoading));
 			_definitions.Add(new PatchDef(typeof(LoadingOptimizationPatches.FrameSpreadDecorationLoadingPatch.ReloadAssets_Patch),
@@ -147,9 +147,6 @@ namespace Iridium.Patches
 				() => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.frameSpreadDecorationLoading));
 			_definitions.Add(new PatchDef(typeof(LoadingOptimizationPatches.FrameSpreadDecorationLoadingPatch.Play_Patch),
 				() => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.frameSpreadDecorationLoading));
-
-			// --- DOTween Optimization Patches ---
-			// 注意：DOTween优化现在不使用任何HarmonyPatch，只使用运行时配置
 
 			// --- Extreme Optimization Patches ---
 			RegisterNestedPatches(typeof(ExtremeOptimizationPatches),
@@ -281,7 +278,7 @@ _definitions.Add(new PatchDef(typeof(CustomEventsPatches.ScanRegisterPatch), cus
 		}
 
 		/// <summary>
-		/// 更新所有patch（仅用于初始化或全量更新）
+		/// update all patches based on their current conditions and settings
 		/// </summary>
 		public static void UpdateAllPatches()
 		{
@@ -340,7 +337,7 @@ _definitions.Add(new PatchDef(typeof(CustomEventsPatches.ScanRegisterPatch), cus
 		}
 
 		/// <summary>
-		/// 按类型更新单个patch - 用于增量更新
+		/// update a single patch by its type (e.g., when a specific setting changes)
 		/// </summary>
 		public static void UpdatePatchByType(Type patchType)
 		{
@@ -354,13 +351,13 @@ _definitions.Add(new PatchDef(typeof(CustomEventsPatches.ScanRegisterPatch), cus
 		}
 
 		/// <summary>
-		/// 更新所有优化器相关的patch（当 enableOptimizer 改变时调用）
+		/// update all optimizer-related patches (e.g., when the "enable optimizer" setting changes)
 		/// </summary>
 		public static void UpdateOptimizerPatches()
 		{
 			if (Main.RuntimeHost?.PatchBackend == null) return;
 
-			// 优化器相关的 patch 类型
+			// optimizer patches collection
 			var optimizerParentTypes = new HashSet<Type>
 			{
 				typeof(OptimizerPatches),
@@ -375,7 +372,7 @@ _definitions.Add(new PatchDef(typeof(CustomEventsPatches.ScanRegisterPatch), cus
 
 			foreach (var def in _definitions)
 			{
-				// 检查是否是优化器相关的 patch
+				// check if the patch is a child of any of the optimizer parent types
 				bool isOptimizerPatch = optimizerParentTypes.Contains(def.Type) ||
 					(def.Type.DeclaringType != null && optimizerParentTypes.Contains(def.Type.DeclaringType));
 
@@ -387,7 +384,7 @@ _definitions.Add(new PatchDef(typeof(CustomEventsPatches.ScanRegisterPatch), cus
 		}
 
 		/// <summary>
-		/// 更新满足条件的patch - 用于批量增量更新
+		/// update all patches that match a given condition (e.g., a specific setting changed)
 		/// </summary>
 		public static void UpdatePatchesByCondition(Func<Type, bool> predicate)
 		{
@@ -415,7 +412,7 @@ _definitions.Add(new PatchDef(typeof(CustomEventsPatches.ScanRegisterPatch), cus
 		}
 
 		/// <summary>
-		/// 更新单个patch定义。返回 null 表示成功，返回 FailureDetail 表示失败。
+		/// update a single patch definition. Returns null on success, or a FailureDetail on failure.
 		/// </summary>
 		private static FailureDetail? UpdateSinglePatch(PatchDef def)
 		{
@@ -462,8 +459,6 @@ _definitions.Add(new PatchDef(typeof(CustomEventsPatches.ScanRegisterPatch), cus
 
 			return true;
 		}
-
-		// 移除不再使用的 IsActuallyPatched 辅助方法
 
 		private static FailureDetail? ApplyPatch(PatchDef def)
 		{

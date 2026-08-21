@@ -15,7 +15,7 @@ namespace Iridium.Patches
 
 		private static float PathIdToRadiansSafe(char c)
 		{
-			var partial = AccessTools.Method(typeof(FloorHelper), "PathIdToRadiansPartial");
+			var partial = AccessTools.Method(typeof(FloorHelper), nameof(FloorHelper.PathIdToRadiansPartial));
 			if (partial != null)
 			{
 				double? result = (double?)partial.Invoke(null, new object[] { c });
@@ -25,8 +25,8 @@ namespace Iridium.Patches
 		}
 
 		/// <summary>
-		/// 安全替换：将 Json.Deserialize(str) 替换为 Json.DeserializePartially(str, "actions")。
-		/// 如果 _deserializePartially 为 null（方法未找到），则跳过替换，使用原始 Deserialize。
+		/// Safe Replace：Replace Json.Deserialize(str) with Json.DeserializePartially(str, "actions")。
+		/// If _deserializePartially is null (method not found), skip the replacement and use the original Deserialize.
 		/// </summary>
 		private static IEnumerable<CodeInstruction> ReplaceDeserializeWithPartially(IEnumerable<CodeInstruction> instructions)
 		{
@@ -54,9 +54,9 @@ namespace Iridium.Patches
 		}
 
 		/// <summary>
-		/// LevelData.GetCustomLevelName 只取 settings，无需解析 actions 数组。
-		/// 用 DeserializePartially(str, "actions") 遇到 "actions" 时提前停止。
-		/// 安全性修正：如果 settings 未找到（JSON 中 actions 在 settings 之前），则返回 "" 避免崩溃。
+		/// LevelData.GetCustomLevelName only get level settings，so it's no need to parse actions array。
+		/// use DeserializePartially(str, "actions") and stop when meet "actions" 。
+		/// Safety fix：if settings not found（in JSON,actions appears earlier than settings），return "" to prevent crashes.
 		/// </summary>
 		[HarmonyPatch(typeof(LevelData), nameof(LevelData.GetCustomLevelName))]
 		public static class PatchGetCustomLevelName
@@ -138,6 +138,7 @@ namespace Iridium.Patches
 				if (dict is null) return;
 				if (!Main.Settings.compatibility.forceAngleData) return;
 				if (!dict.TryGetValue("pathData", out object val) || val is not string pathData) return;
+				// for compatibility, convert pathData to angleData if not present. But: two methods exists and only one works in game,so uses string instaed nameof()
 
 				var convertMethod = AccessTools.Method(typeof(scrLevelMaker), "StringToAngleArray");
 				if (convertMethod != null)
@@ -166,16 +167,13 @@ namespace Iridium.Patches
 			public static void Postfix(LevelData __instance)
 			{
 				var comp = Main.Settings.compatibility;
+				// LegacyBehaviorMode.Default means "use the value from the JSON", so we only override if it's not Default.
 
 				if (comp.legacyFlashMode != LegacyBehaviorMode.Default)
-				{
 					__instance.legacyFlash = comp.legacyFlashMode == LegacyBehaviorMode.AlwaysOn;
-				}
 
 				if (comp.legacyCamRelativeToMode != LegacyBehaviorMode.Default)
-				{
 					__instance.legacyCamRelativeTo = comp.legacyCamRelativeToMode == LegacyBehaviorMode.AlwaysOn;
-				}
 			}
 		}
 	}

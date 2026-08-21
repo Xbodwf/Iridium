@@ -59,7 +59,7 @@ namespace Iridium.Patches
 		/// 没有 null 检查也没有 IsActive() 检查。
 		/// eventTweens 是 protected 属性，通过 AccessTools 反射读取。
 		/// </summary>
-		[HarmonyPatch(typeof(ffxPlusBase), "Kill")]
+		[HarmonyPatch(typeof(ffxPlusBase),nameof(ffxPlusBase.Kill))]
 		public static class SafeFfxPlusBaseKill
 		{
 			private static readonly PropertyInfo EventTweensProp =
@@ -89,7 +89,7 @@ namespace Iridium.Patches
 		/// 
 		/// 该补丁完整替换原方法并添加了安全性检查。
 		/// </summary>
-		[HarmonyPatch(typeof(ffxPlusBase), "ScrubToTime")]
+		[HarmonyPatch(typeof(ffxPlusBase), nameof(ffxPlusBase.ScrubToTime))]
 		public static class SafeFfxPlusBaseScrubToTime
 		{
 			private static readonly PropertyInfo EventTweensProp =

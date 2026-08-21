@@ -156,7 +156,7 @@ namespace Iridium.Patches
 		/// <summary>
 		/// 优化 ApplyEventsToFloors - 预先分类事件避免多次 FindAll
 		/// </summary>
-		[HarmonyPatch(typeof(scnGame), "ApplyEventsToFloors",
+		[HarmonyPatch(typeof(scnGame), nameof(scnGame.ApplyEventsToFloors),
 			typeof(List<scrFloor>), typeof(LevelData), typeof(scrLevelMaker), typeof(List<LevelEvent>))]
 		public static class ApplyEventsOptimizationPatch
 		{
@@ -380,7 +380,7 @@ namespace Iridium.Patches
 		/// ToggleFloorNumsEditorAction 不再调用 RemakePath()（重建整个路径很慢），
 		/// 改为只调 DrawFloorNums() 刷新编号标签的可见性。
 		/// </summary>
-		[HarmonyPatch(typeof(ToggleFloorNumsEditorAction), "Execute")]
+		[HarmonyPatch(typeof(ToggleFloorNumsEditorAction), nameof(ToggleFloorNumsEditorAction.Execute))]
 		public static class ToggleFloorNumsActionPatch
 		{
 			private static Action<scnEditor>? _drawFloorNums;

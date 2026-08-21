@@ -49,7 +49,7 @@ namespace Iridium.Patches
             return cache;
         }
 
-        [HarmonyPatch(typeof(scrPlayer), "Simulated_PlayerControl_Update")]
+        [HarmonyPatch(typeof(scrPlayer), nameof(scrPlayer.Simulated_PlayerControl_Update))]
         public static class SimulatedPlayerControlUpdatePatch
         {
             [HarmonyPrefix]

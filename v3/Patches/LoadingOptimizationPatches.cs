@@ -26,7 +26,7 @@ namespace Iridium.Patches
 
 		#region Event Processing Optimization
 
-		[HarmonyPatch(typeof(scnGame), "ApplyEventsToFloors",
+		[HarmonyPatch(typeof(scnGame), nameof(scnGame.ApplyEventsToFloors),
 			typeof(List<scrFloor>), typeof(LevelData), typeof(scrLevelMaker), typeof(List<LevelEvent>))]
 		public static class EventPreprocessingPatch
 		{
@@ -134,7 +134,7 @@ namespace Iridium.Patches
 
 		#region Frame-Spread Decoration Loading
 
-		[HarmonyPatch(typeof(scnGame), "UpdateDecorationObjects")]
+		[HarmonyPatch(typeof(scnGame), nameof(scnGame.UpdateDecorationObjects))]
 		public static class FrameSpreadDecorationLoadingPatch
 		{
 			private static readonly Queue<LevelEvent> _pendingDecorations = new();
@@ -155,7 +155,7 @@ namespace Iridium.Patches
 
 			private const float TIME_BUDGET_PER_FRAME = 0.012f;
 
-			[HarmonyPatch(typeof(scnGame), "ReloadAssets")]
+			[HarmonyPatch(typeof(scnGame), nameof(scnGame.ReloadAssets))]
 			public static class ReloadAssets_Patch
 			{
 				[HarmonyPostfix]
@@ -424,7 +424,7 @@ namespace Iridium.Patches
 				gameToPlay?.Play();
 			}
 
-			[HarmonyPatch(typeof(scrDecorationManager), "ResetDecorations")]
+			[HarmonyPatch(typeof(scrDecorationManager), nameof(scrDecorationManager.ResetDecorations))]
 			public static class ResetDecorations_Patch
 			{
 				[HarmonyPrefix]
@@ -435,7 +435,7 @@ namespace Iridium.Patches
 				}
 			}
 
-			[HarmonyPatch(typeof(scnGame), "Play",
+			[HarmonyPatch(typeof(scnGame), nameof(scnGame.Play),
 				new Type[] { typeof(int), typeof(bool) })]
 			public static class Play_Patch
 			{

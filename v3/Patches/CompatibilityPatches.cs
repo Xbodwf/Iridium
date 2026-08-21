@@ -25,7 +25,7 @@ namespace Iridium.Patches
 			}
 		}
 
-		[HarmonyPatch(typeof(scrDecoration), "HitboxTriggerAction")]
+		[HarmonyPatch(typeof(scrDecoration), nameof(scrDecoration.HitboxTriggerAction))]
 		public static class NoFailTooEarlyPatch
 		{
 			public static void Prefix(scrDecoration __instance, out HitboxType __state, scrPlanet planet)

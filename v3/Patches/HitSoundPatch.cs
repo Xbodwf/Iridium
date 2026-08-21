@@ -25,11 +25,11 @@ namespace Iridium.Patches
 			float playbackSpeed = ADOBase.editor?.playbackSpeed ?? 1f;
 			float finalPitch = targetPitch * playbackSpeed;
 
-			// 只在 pitch 变化时更新
+			// update only if the pitch has changed to avoid unnecessary updates
 			if (Mathf.Approximately(finalPitch, _lastPitch)) return;
 			_lastPitch = finalPitch;
 
-			// 缓存 container 引用
+			// cache container reference
 			if (_audioSourceContainer == null)
 			{
 				var go = GameObject.Find("AudioSource Container");
@@ -37,14 +37,14 @@ namespace Iridium.Patches
 				_audioSourceContainer = go.transform;
 			}
 
-			// 遍历子对象
+			// find all AudioSource children and update their pitch
 			int childCount = _audioSourceContainer.childCount;
 			for (int i = 0; i < childCount; i++)
 			{
 				Transform child = _audioSourceContainer.GetChild(i);
 				if (child.name != "Audio Source(Clone)") continue;
 
-				// 使用缓存获取 AudioSource
+				// get or add AudioSource component from cache
 				if (!_audioSourceCache.TryGetValue(child, out var audioSource) || audioSource == null)
 				{
 					audioSource = child.GetComponent<AudioSource>();

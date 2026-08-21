@@ -331,7 +331,7 @@
 		<Message Text="Files copied to: $(OutDir)" Importance="high" />
 	</Target>
 	<PropertyGroup>
-		<GameExePath>I:\SteamLibrary\steamapps\common\A Dance of Fire and Ice\A Dance Of Fire And Ice.exe</GameExePath>
+		<GameExePath>/home/xbouo/.local/share/Steam/steamapps/common/A Dance of Fire and Ice/ADanceOfFireAndIce</GameExePath>
 		<AutoLaunchGame>true</AutoLaunchGame>
 		<Loader></Loader>
 	</PropertyGroup>

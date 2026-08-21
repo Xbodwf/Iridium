@@ -15,7 +15,7 @@ namespace Iridium.Patches
 		private const double TwoPi = 6.2831854820251465;
 		private const double TurnaroundEpsilon = 0.0001;
 
-		[HarmonyPatch(typeof(scrController), "PortalTravelAction")]
+		[HarmonyPatch(typeof(scrController), nameof(scrController.PortalTravelAction))]
 		public static class PortalTravelFixPatch
 		{
 			private static FieldInfo? _f_transitioningLevel;
@@ -43,7 +43,7 @@ namespace Iridium.Patches
 			}
 		}
 
-		[HarmonyPatch(typeof(scnGame), "Play")]
+		[HarmonyPatch(typeof(scnGame), nameof(scnGame.Play))]
 		public static class AsyncInputPlaySnapPatch
 		{
 			[HarmonyPrefix]
@@ -54,7 +54,7 @@ namespace Iridium.Patches
 			}
 		}
 
-		[HarmonyPatch(typeof(scnGame), "Play")]
+		[HarmonyPatch(typeof(scnGame), nameof(scnGame.Play))]
 		public static class EditorPlayResetMistakesPatch
 		{
 			[HarmonyPrefix]
@@ -65,7 +65,7 @@ namespace Iridium.Patches
 			}
 		}
 
-		[HarmonyPatch(typeof(scrLevelMaker), "CalculateSingleFloorAngleLength")]
+		[HarmonyPatch(typeof(scrLevelMaker), nameof(scrLevelMaker.CalculateSingleFloorAngleLength))]
 		public static class TurnaroundConditionFix
 		{
 			[HarmonyPostfix]

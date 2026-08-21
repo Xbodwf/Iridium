@@ -9,7 +9,7 @@ namespace Iridium.Patches
 	/// 修复 DragDecorations 对 Camera/CameraAspect 类型装饰物的拖拽偏移计算。
 	/// 原版 GetDecorationDragDelta 只处理了 parallax，没有适配镜头相对坐标系。
 	/// </summary>
-	[HarmonyPatch(typeof(scnEditor), "DragDecorations")]
+	[HarmonyPatch(typeof(scnEditor),nameof(scnEditor.DragDecorations))]
 	public static class CameraRelativeDragPatches
 	{
 		private static AccessTools.FieldRef<scnEditor, Dictionary<scrDecoration, Vector2>>? _dragStartPositions;

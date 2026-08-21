@@ -62,7 +62,7 @@ namespace Iridium.Patches
 		/// <summary>
 		/// 1) ResetParticle Postfix: 设 cullingMode = Pause → 离屏自动暂停 CPU 模拟
 		/// </summary>
-		[HarmonyPatch(typeof(scrParticleDecoration), "ResetParticle")]
+		[HarmonyPatch(typeof(scrParticleDecoration), nameof(scrParticleDecoration.ResetParticle))]
 		public static class ParticleCullingModePatch
 		{
 			[HarmonyPostfix]
@@ -117,7 +117,7 @@ namespace Iridium.Patches
 		/// <summary>
 		/// 3) ClearDecorations Prefix: 清场时把粒子 GO 回收进池，避免 DestroyImmediate
 		/// </summary>
-		[HarmonyPatch(typeof(scrDecorationManager), "ClearDecorations")]
+		[HarmonyPatch(typeof(scrDecorationManager), nameof(scrDecorationManager.ClearDecorations))]
 		public static class ParticlePoolOnClearPatch
 		{
 			[HarmonyPrefix]
@@ -145,7 +145,7 @@ namespace Iridium.Patches
 		/// <summary>
 		/// 4) CreateDecoration Postfix: 创建粒子时优先从池取
 		/// </summary>
-		[HarmonyPatch(typeof(scrDecorationManager), "CreateDecoration")]
+		[HarmonyPatch(typeof(scrDecorationManager), nameof(scrDecorationManager.CreateDecoration))]
 		public static class ParticlePoolOnCreatePatch
 		{
 			private static int _oldCount;
