@@ -1,3 +1,4 @@
+using Iridium.Config;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,6 +41,7 @@ namespace Iridium.Patches
 			holder.List = new List<Tween>(tweens);
 		}
 
+		[IriPatch(Path = "optimizer/eventTween", Pre = typeof(OptimizerSettings), Condition = "optimizeEventProcessing")]
 		[HarmonyPatch(typeof(ffxMoveFloorPlus), "eventTweens", MethodType.Getter)]
 		public static class FfxMoveFloorPlusEventTweensPatch
 		{
@@ -64,6 +66,7 @@ namespace Iridium.Patches
 			}
 		}
 
+		[IriPatch(Path = "optimizer/eventTween", Pre = typeof(OptimizerSettings), Condition = "optimizeEventProcessing")]
 		[HarmonyPatch(typeof(ffxMoveDecorationsPlus), "eventTweens", MethodType.Getter)]
 		public static class FfxMoveDecorationsPlusEventTweensPatch
 		{
@@ -88,6 +91,7 @@ namespace Iridium.Patches
 			}
 		}
 
+		[IriPatch(Path = "optimizer/eventTween", Pre = typeof(OptimizerSettings), Condition = "optimizeEventProcessing")]
 		[HarmonyPatch(typeof(ffxRecolorFloorPlus), "eventTweens", MethodType.Getter)]
 		public static class FfxRecolorFloorPlusEventTweensPatch
 		{
@@ -112,6 +116,7 @@ namespace Iridium.Patches
 			}
 		}
 
+		[IriPatch(Path = "optimizer/eventTween", Pre = typeof(OptimizerSettings), Condition = "optimizeEventProcessing")]
 		[HarmonyPatch(typeof(ffxPlusBase), "Kill")]
 		public static class FfxPlusBaseKillCacheInvalidationPatch
 		{

@@ -98,7 +98,7 @@ namespace Iridium
 
                 if (Main.Settings.optimizer.enableOptimizer)
                 {
-                    Iridium.Patches.OptimizerPatches.ResetDecorOptimization(true);
+                    Iridium.Patches.Optimizer.OptimizerShared.ResetDecorOptimization(true);
                     if (Main.Settings.optimizer.optimizeDOTweenGlobal)
                     {
                         Iridium.Patches.DOTweenOptimizationPatches.ApplyRuntimeSettings();

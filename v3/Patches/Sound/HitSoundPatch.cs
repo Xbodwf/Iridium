@@ -1,12 +1,15 @@
+using Iridium.Config;
 using System.Collections.Generic;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using HarmonyLib;
 using UnityEngine;
+using Iridium;
 
-namespace Iridium.Patches
+namespace Iridium.Patches.Sound
 {
 	[HarmonyPatch(typeof(scnGame), "Update")]
+	[IriPatch(Path = "sound/hitSound", Pre = typeof(HitSoundSettings), Condition = "enableHitSoundPitch")]
 	public static class HitSoundPatch
 	{
 		private static Transform? _audioSourceContainer;

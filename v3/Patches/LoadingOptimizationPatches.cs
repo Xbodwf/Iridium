@@ -1,3 +1,4 @@
+using Iridium.Config;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -26,6 +27,7 @@ namespace Iridium.Patches
 
 		#region Event Processing Optimization
 
+		[IriPatch(Path = "optimizer/loading", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer,cacheFloorEvents")]
 		[HarmonyPatch(typeof(scnGame), nameof(scnGame.ApplyEventsToFloors),
 			typeof(List<scrFloor>), typeof(LevelData), typeof(scrLevelMaker), typeof(List<LevelEvent>))]
 		public static class EventPreprocessingPatch
@@ -134,6 +136,7 @@ namespace Iridium.Patches
 
 		#region Frame-Spread Decoration Loading
 
+		[IriPatch(Path = "optimizer/loading", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer,frameSpreadDecorationLoading")]
 		[HarmonyPatch(typeof(scnGame), nameof(scnGame.UpdateDecorationObjects))]
 		public static class FrameSpreadDecorationLoadingPatch
 		{
@@ -155,6 +158,7 @@ namespace Iridium.Patches
 
 			private const float TIME_BUDGET_PER_FRAME = 0.012f;
 
+			[IriPatch(Path = "optimizer/loading", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer,frameSpreadDecorationLoading")]
 			[HarmonyPatch(typeof(scnGame), nameof(scnGame.ReloadAssets))]
 			public static class ReloadAssets_Patch
 			{
@@ -240,7 +244,7 @@ namespace Iridium.Patches
 						// Keep the VRAM notification's raycaster alive so the Stop
 						// button stays clickable during frame-spread loading.
 						if (raycaster == null || !raycaster.enabled) continue;
-						if (raycaster == UI.VRAMNotificationUI.InstanceRaycaster) continue;
+						if (raycaster == Iridium.UI.VRAMNotificationUI.InstanceRaycaster) continue;
 						raycaster.enabled = false;
 						_disabledRaycasters.Add(raycaster);
 					}
@@ -272,7 +276,7 @@ namespace Iridium.Patches
 			public static void Cancel()
 			{
 				_cancelled = true;
-				UI.VRAMNotificationUI.Complete(forceImmediate: true);
+				Iridium.UI.VRAMNotificationUI.Complete(forceImmediate: true);
 			}
 
 			private static System.Collections.IEnumerator FrameSpreadLoadCoroutine(scnGame instance)
@@ -291,7 +295,7 @@ namespace Iridium.Patches
 				int processed = 0;
 				int total = _pendingDecorations.Count;
 
-				UI.VRAMNotificationUI.ShowPersistent(Localization.Get("LoadingDecorationsProgress", 0, total));
+				Iridium.UI.VRAMNotificationUI.ShowPersistent(Localization.Get("LoadingDecorationsProgress", 0, total));
 				Main.Logger?.Log($"[LoadingOptimization] Starting frame-spread loading: {total} decorations");
 
 				while (_pendingDecorations.Count > 0 && !_cancelled)
@@ -326,7 +330,7 @@ namespace Iridium.Patches
 
 					if (_pendingDecorations.Count > 0 && !_cancelled)
 					{
-						UI.VRAMNotificationUI.UpdateProgress(Localization.Get("LoadingDecorationsProgress", processed, total));
+						Iridium.UI.VRAMNotificationUI.UpdateProgress(Localization.Get("LoadingDecorationsProgress", processed, total));
 						yield return null;
 					}
 				}
@@ -372,13 +376,13 @@ namespace Iridium.Patches
 						if (_cancelled)
 						{
 							Main.Logger?.Log($"[LoadingOptimization] Loading cancelled by user");
-							UI.VRAMNotificationUI.Show(Localization.Get("LoadingDecorationsProgress", processed, total));
+							Iridium.UI.VRAMNotificationUI.Show(Localization.Get("LoadingDecorationsProgress", processed, total));
 							_uiCompleted = true;
 							CleanupState();
 							yield break;
 						}
 						var (name, path) = moveDecImages[i];
-						UI.VRAMNotificationUI.UpdateProgress(Localization.Get("LoadingDecorationsProgress", processed, total));
+						Iridium.UI.VRAMNotificationUI.UpdateProgress(Localization.Get("LoadingDecorationsProgress", processed, total));
 						try
 						{
 							LoadResult status;
@@ -399,21 +403,21 @@ namespace Iridium.Patches
 
 				if (!Main.Settings.optimizer.dontShowSavedMemory)
 				{
-					if (OptimizerPatches.savedVRAM_MB > 0.1f)
+					if (Iridium.Patches.Optimizer.OptimizerShared.savedVRAM_MB > 0.1f)
 					{
-						UI.VRAMNotificationUI.Show(Localization.Get("SavedMemoryMsg", OptimizerPatches.savedVRAM_MB.ToString("F2")));
-						Main.Logger?.Log(Localization.Get("SavedMemoryLog", OptimizerPatches.savedVRAM_MB.ToString("F2")));
+						Iridium.UI.VRAMNotificationUI.Show(Localization.Get("SavedMemoryMsg", Iridium.Patches.Optimizer.OptimizerShared.savedVRAM_MB.ToString("F2")));
+						Main.Logger?.Log(Localization.Get("SavedMemoryLog", Iridium.Patches.Optimizer.OptimizerShared.savedVRAM_MB.ToString("F2")));
 					}
 					else
 					{
-						UI.VRAMNotificationUI.Show(Localization.Get("LoadingDecorationsProgress", processed, total));
+						Iridium.UI.VRAMNotificationUI.Show(Localization.Get("LoadingDecorationsProgress", processed, total));
 					}
 					_uiCompleted = true;
-					OptimizerPatches.VRAMNotificationPatch.isFinished = true;
+					Iridium.Patches.Optimizer.VRAMNotificationPatch.isFinished = true;
 				}
 				else
 				{
-					UI.VRAMNotificationUI.Show(Localization.Get("LoadingDecorationsProgress", processed, total));
+					Iridium.UI.VRAMNotificationUI.Show(Localization.Get("LoadingDecorationsProgress", processed, total));
 					_uiCompleted = true;
 				}
 
@@ -424,6 +428,7 @@ namespace Iridium.Patches
 				gameToPlay?.Play();
 			}
 
+			[IriPatch(Path = "optimizer/loading", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer,frameSpreadDecorationLoading")]
 			[HarmonyPatch(typeof(scrDecorationManager), nameof(scrDecorationManager.ResetDecorations))]
 			public static class ResetDecorations_Patch
 			{
@@ -435,6 +440,7 @@ namespace Iridium.Patches
 				}
 			}
 
+			[IriPatch(Path = "optimizer/loading", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer,frameSpreadDecorationLoading")]
 			[HarmonyPatch(typeof(scnGame), nameof(scnGame.Play),
 				new Type[] { typeof(int), typeof(bool) })]
 			public static class Play_Patch
@@ -461,7 +467,7 @@ namespace Iridium.Patches
 				_pendingDecorations.Clear();
 				RestoreUIInput();
 				if (!_uiCompleted)
-					UI.VRAMNotificationUI.Complete();
+					Iridium.UI.VRAMNotificationUI.Complete();
 				_uiCompleted = false;
 			}
 		}
@@ -470,6 +476,7 @@ namespace Iridium.Patches
 
 		#region Cleanup
 
+		[IriPatch(Path = "optimizer/loading", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer")]
 		[HarmonyPatch(typeof(scnGame), "OnDestroy")]
 		public static class LoadingOptimizationCleanupPatch
 		{

@@ -4,6 +4,12 @@ using UnityEngine;
 using Iridium.UI;
 using Iridium.Config;
 using Iridium.Patches;
+using Iridium.Patches.Bugfix;
+using Iridium.Patches.Compatibility;
+using Iridium.Patches.Sound;
+using Iridium.Patches.Editor;
+using Iridium.Patches.Optimizer;
+using Iridium.Patches.UI;
 using System.Linq;
 using static Iridium.UI.IridiumLayout;
 using Iris.Iml;
@@ -168,7 +174,7 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 optimizer.dontCompress = !value;
-                OptimizerPatches.ResetTextureOptimizationState();
+                Iridium.Patches.Optimizer.OptimizerShared.ResetTextureOptimizationState();
                 Save();
             });
 
@@ -183,7 +189,7 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 optimizer.useLossyCompression = value;
-                OptimizerPatches.ResetTextureOptimizationState();
+                Iridium.Patches.Optimizer.OptimizerShared.ResetTextureOptimizationState();
                 Save();
             });
 
@@ -192,7 +198,7 @@ namespace Iridium
                 if (obj is float f)
                 {
                     optimizer.lossyQuality = Mathf.Clamp((int)f, 10, 100);
-                    OptimizerPatches.ResetTextureOptimizationState();
+                    Iridium.Patches.Optimizer.OptimizerShared.ResetTextureOptimizationState();
                     Save();
                 }
             });
@@ -201,7 +207,7 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 optimizer.dontResizeMultipleOf4 = !value;
-                OptimizerPatches.ResetTextureOptimizationState();
+                Iridium.Patches.Optimizer.OptimizerShared.ResetTextureOptimizationState();
                 Save();
             });
 
@@ -210,7 +216,7 @@ namespace Iridium
                 if (obj is float f)
                 {
                     optimizer.divideBy = Mathf.Clamp((int)f, 1, 4);
-                    OptimizerPatches.ResetTextureOptimizationState();
+                    Iridium.Patches.Optimizer.OptimizerShared.ResetTextureOptimizationState();
                     Save();
                 }
             });
@@ -423,7 +429,7 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 optimizer.customLevelReadOptimization = value;
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JsonPatches.PatchGetCustomLevelName));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(PatchGetCustomLevelName));
                 Save();
             });
 
@@ -570,8 +576,8 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 ui.removeNews = value;
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.RemoveNewsPatch));
-                MiscPatches.RemoveNewsPatch.UpdateNews();
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(RemoveNewsPatch));
+                RemoveNewsPatch.UpdateNews();
                 Save();
             });
 
@@ -579,8 +585,8 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 ui.hideBetaWatermark = value;
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.HideBetaWatermarkPatch));
-                MiscPatches.RefreshBetaWatermark();
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(HideBetaWatermarkPatch));
+                HideBetaWatermarkPatch.RefreshBetaWatermark();
                 Save();
             });
 
@@ -588,7 +594,7 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 ui.forceDifficultyUI = value;
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.ForceDifficultyUIPatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(ForceDifficultyUIPatch));
                 Save();
             });
 
@@ -596,7 +602,7 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 ui.alwaysCountdown = value;
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.AlwaysCountdownPatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(AlwaysCountdownPatch));
                 Save();
             });
 
@@ -612,8 +618,8 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 ui.moveAutoplayText = value;
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.AutoplayTextPositionPatch));
-                MiscPatches.RefreshAutoplayTextPosition();
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(AutoplayTextPositionPatch));
+                AutoplayTextPositionPatch.RefreshAutoplayTextPosition();
                 Save();
             });
 
@@ -622,7 +628,7 @@ namespace Iridium
                 if (obj is float f)
                 {
                     ui.autoplayTextX = f;
-                    MiscPatches.RefreshAutoplayTextPosition();
+                    AutoplayTextPositionPatch.RefreshAutoplayTextPosition();
                     Save();
                 }
             });
@@ -632,7 +638,7 @@ namespace Iridium
                 if (obj is float f)
                 {
                     ui.autoplayTextY = f;
-                    MiscPatches.RefreshAutoplayTextPosition();
+                    AutoplayTextPositionPatch.RefreshAutoplayTextPosition();
                     Save();
                 }
             });
@@ -641,7 +647,7 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 ui.showAutoplayHintUI = value;
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.AutoplayHintUIPatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(AutoplayHintUIPatch));
                 Save();
             });
 
@@ -665,7 +671,7 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 ui.enableCircleArc = value;
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.CircleArcPatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CircleArcPatch));
                 Save();
             });
         }
@@ -676,8 +682,8 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 lobbyMusic.enableLobbyMusicPatch = value;
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.LobbyMusicPatch));
-                if (value) MiscPatches.LobbyMusicPatch.ReloadFromSettings();
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(LobbyMusicPatch));
+                if (value) LobbyMusicPatch.ReloadFromSettings();
                 Save();
             });
 
@@ -708,7 +714,7 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 lobbyMusic.customMusic = value;
-                MiscPatches.LobbyMusicPatch.ReloadFromSettings();
+                LobbyMusicPatch.ReloadFromSettings();
                 Save();
             });
 
@@ -723,7 +729,7 @@ namespace Iridium
             _renderer.RegisterHandler("OnApplyDefaultMusic", () =>
             {
                 lobbyMusic.defaultMusicPath = (_defaultLobbyMusicPathCache ?? string.Empty).Trim();
-                MiscPatches.LobbyMusicPatch.StartLoad(true, lobbyMusic.defaultMusicPath);
+                LobbyMusicPatch.StartLoad(true, lobbyMusic.defaultMusicPath);
                 Save();
             });
 
@@ -738,13 +744,13 @@ namespace Iridium
             _renderer.RegisterHandler("OnApplyFastMusic", () =>
             {
                 lobbyMusic.fastMusicPath = (_fastLobbyMusicPathCache ?? string.Empty).Trim();
-                MiscPatches.LobbyMusicPatch.StartLoad(false, lobbyMusic.fastMusicPath);
+                LobbyMusicPatch.StartLoad(false, lobbyMusic.fastMusicPath);
                 Save();
             });
 
             _renderer.RegisterHandler("OnLobbyReloadMusic", () =>
             {
-                MiscPatches.LobbyMusicPatch.ReloadFromSettings();
+                LobbyMusicPatch.ReloadFromSettings();
             });
         }
 
@@ -757,7 +763,7 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 compatibility.enableLegacyPauseFix = value;
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CompatibilityPatches.LegacyPauseFixPatch_Play));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(LegacyPauseFixPatch_Play));
                 Save();
             });
 
@@ -765,7 +771,7 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 compatibility.enableNoFailTooEarly = value;
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CompatibilityPatches.NoFailTooEarlyPatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(NoFailTooEarlyPatch));
                 Save();
             });
 
@@ -773,7 +779,7 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 compatibility.scaleFilterSpeedWithPitch = value;
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CompatibilityPatches.ScaleFilterSpeedWithPitchPatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(ScaleFilterSpeedWithPitchPatch));
                 Save();
             });
 
@@ -803,7 +809,7 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 compatibility.portalTravelFix = value;
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.PortalTravelFixPatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(PortalTravelFixPatch));
                 Save();
             });
 
@@ -811,7 +817,7 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 compatibility.fixEditorPlayResetMistakes = value;
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.EditorPlayResetMistakesPatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(EditorPlayResetMistakesPatch));
                 Save();
             });
 
@@ -819,7 +825,7 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 compatibility.fixTurnaroundCondition = value;
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.TurnaroundConditionFix));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(TurnaroundConditionFix));
                 Save();
             });
 
@@ -835,9 +841,9 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 compatibility.fixCoopPauseLock = value;
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.CoopPauseLockFix));
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.CoopPauseHandleLockFix));
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(BugfixPatches.CoopPlayerHitFix));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CoopPauseLockFix));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CoopPauseHandleLockFix));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CoopPlayerHitFix));
                 Save();
             });
 
@@ -845,7 +851,7 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 compatibility.forceAngleData = value;
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(JsonPatches.ForceAngleDataPatch));
+                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(ForceAngleDataPatch));
                 Save();
             });
 

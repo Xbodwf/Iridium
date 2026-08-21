@@ -1,3 +1,4 @@
+using Iridium.Config;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -62,6 +63,7 @@ namespace Iridium.Patches
 		/// <summary>
 		/// 1) ResetParticle Postfix: 设 cullingMode = Pause → 离屏自动暂停 CPU 模拟
 		/// </summary>
+		[IriPatch(Path = "optimizer/particle", Pre = typeof(OptimizerSettings), Condition = "optimizeParticle,optimizeParticleCulling")]
 		[HarmonyPatch(typeof(scrParticleDecoration), nameof(scrParticleDecoration.ResetParticle))]
 		public static class ParticleCullingModePatch
 		{
@@ -80,6 +82,7 @@ namespace Iridium.Patches
 		///    - 不可见 → 跳过整帧
 		///    - Dirty-flag: scale/speed 没变 → 跳过 Unity API 调用
 		/// </summary>
+		[IriPatch(Path = "optimizer/particle", Pre = typeof(OptimizerSettings), Condition = "optimizeParticle")]
 		[HarmonyPatch(typeof(scrParticleDecoration), "Update")]
 		public static class ParticleUpdateSkipPatch
 		{
@@ -117,6 +120,7 @@ namespace Iridium.Patches
 		/// <summary>
 		/// 3) ClearDecorations Prefix: 清场时把粒子 GO 回收进池，避免 DestroyImmediate
 		/// </summary>
+		[IriPatch(Path = "optimizer/particle", Pre = typeof(OptimizerSettings), Condition = "optimizeParticle")]
 		[HarmonyPatch(typeof(scrDecorationManager), nameof(scrDecorationManager.ClearDecorations))]
 		public static class ParticlePoolOnClearPatch
 		{
@@ -145,6 +149,7 @@ namespace Iridium.Patches
 		/// <summary>
 		/// 4) CreateDecoration Postfix: 创建粒子时优先从池取
 		/// </summary>
+		[IriPatch(Path = "optimizer/particle", Pre = typeof(OptimizerSettings), Condition = "optimizeParticle")]
 		[HarmonyPatch(typeof(scrDecorationManager), nameof(scrDecorationManager.CreateDecoration))]
 		public static class ParticlePoolOnCreatePatch
 		{

@@ -1,11 +1,12 @@
 using System;
 using HarmonyLib;
+using Iridium;
 using Iridium.Config;
 using TMPro;
 using DG.Tweening;
 using UnityEngine;
 
-namespace Iridium.Patches
+namespace Iridium.Patches.Sound
 {
 	public static class JudgeTextPatches
 	{
@@ -30,6 +31,7 @@ namespace Iridium.Patches
 		}
 
 		[HarmonyPatch(typeof(scrHitTextManager), "ShowHitText")]
+		[IriPatch(Path = "sound/judgeTextRotation", AlwaysOn = true)]
 		public static class HitTextManagerShowPatch
 		{
 			public static void Prefix(float missAngle)
@@ -39,6 +41,7 @@ namespace Iridium.Patches
 		}
 
 		[HarmonyPatch(typeof(scrHitTextMesh), "Init")]
+		[IriPatch(Path = "sound/judgeText", Pre = typeof(JudgeTextSettings), Condition = "enableJudgeTextCustomization")]
 		public static class HitTextMeshInitPatch
 		{
 			public static void Postfix(scrHitTextMesh __instance, HitMargin hitMargin, TextMeshPro ___text)
@@ -54,6 +57,7 @@ namespace Iridium.Patches
 		}
 
 		[HarmonyPatch(typeof(scrHitTextMesh), "Show")]
+		[IriPatch(Path = "sound/judgeText", Pre = typeof(JudgeTextSettings), Condition = "enableJudgeTextCustomization")]
 		public static class HitTextMeshShowPatch
 		{
 			public static void Prefix(scrHitTextMesh __instance, TextMeshPro ___text)
@@ -68,6 +72,7 @@ namespace Iridium.Patches
 		}
 
 		[HarmonyPatch(typeof(scrHitTextMesh), "Show")]
+		[IriPatch(Path = "sound/judgeTextRotation", Pre = typeof(CompatibilitySettings), Condition = "fixJudgeRotation")]
 		public static class HitTextMeshShowRotationFixPatch
 		{
 			public static void Postfix(scrHitTextMesh __instance)

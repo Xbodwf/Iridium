@@ -1,3 +1,4 @@
+using Iridium.Config;
 using ADOFAI;
 using DG.Tweening;
 using HarmonyLib;
@@ -17,6 +18,7 @@ namespace Iridium.Patches
 	{
 		// ==================== MoveTrack (ffxMoveFloorPlus) ====================
 
+		[IriPatch(Path = "optimizer/customEasing", Pre = typeof(OptimizerSettings), Condition = "enableCustomEasingEngine")]
 		[HarmonyPatch(typeof(ffxMoveFloorPlus), "StartEffect")]
 		public static class MoveFloorPatch
 		{
@@ -150,6 +152,7 @@ namespace Iridium.Patches
 
 		// ==================== RecolorTrack (ffxRecolorFloorPlus) ====================
 
+		[IriPatch(Path = "optimizer/customEasing", Pre = typeof(OptimizerSettings), Condition = "enableCustomEasingEngine")]
 		[HarmonyPatch(typeof(ffxRecolorFloorPlus), "StartEffect")]
 		public static class RecolorFloorPatch
 		{
@@ -203,6 +206,7 @@ namespace Iridium.Patches
 
 		// ==================== MoveDecoration (ffxMoveDecorationsPlus) ====================
 
+		[IriPatch(Path = "optimizer/customEasing", Pre = typeof(OptimizerSettings), Condition = "enableCustomEasingEngine")]
 		[HarmonyPatch(typeof(ffxMoveDecorationsPlus), "StartEffect")]
 		public static class MoveDecorationPatch
 		{
@@ -429,6 +433,7 @@ namespace Iridium.Patches
 		/// 补丁 DOTween.KillAll：游戏退出播放/倒带/切关时调用 DOTween.KillAll 清理所有 tween。
 		/// 我们在此同步清理自定义缓速引擎的所有 IrTween，确保状态复位。
 		/// </summary>
+		[IriPatch(Path = "optimizer/customEasing", Pre = typeof(OptimizerSettings), Condition = "enableCustomEasingEngine")]
 		[HarmonyPatch(typeof(DOTween), "KillAll", new[] { typeof(bool) })]
 		public static class DotweenKillAllPatch
 		{

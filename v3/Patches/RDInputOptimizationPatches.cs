@@ -1,3 +1,4 @@
+using Iridium.Config;
 using HarmonyLib;
 using System;
 using System.Collections.Generic;
@@ -69,6 +70,9 @@ namespace Iridium.Patches
             return list;
         }
 
+        [IriPatch(Path = "optimizer/rdInput",
+            Pre = typeof(OptimizerSettings),
+            Condition = "optimizeRDInputAllocations")]
         [HarmonyPatch(typeof(RDInput), "GetStateKeys")]
         public static class GetStateKeysPatch
         {

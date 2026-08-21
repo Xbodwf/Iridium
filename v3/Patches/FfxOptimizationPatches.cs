@@ -1,3 +1,4 @@
+using Iridium.Config;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -32,6 +33,7 @@ namespace Iridium.Patches
 			return false;
 		}
 
+		[IriPatch(Path = "optimizer/ffx", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer,optimizeFfxDecorations")]
 		[HarmonyPatch(typeof(scrDecorationManager), "LateUpdate")]
 		public static class OptimizeDecorationManagerLateUpdate
 		{

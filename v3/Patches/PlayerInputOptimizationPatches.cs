@@ -1,3 +1,4 @@
+using Iridium.Config;
 using HarmonyLib;
 using System;
 using UnityEngine;
@@ -49,6 +50,7 @@ namespace Iridium.Patches
             return cache;
         }
 
+        [IriPatch(Path = "optimizer/playerInput", Pre = typeof(OptimizerSettings), Condition = "optimizePlayerInputAllocations")]
         [HarmonyPatch(typeof(scrPlayer), nameof(scrPlayer.Simulated_PlayerControl_Update))]
         public static class SimulatedPlayerControlUpdatePatch
         {

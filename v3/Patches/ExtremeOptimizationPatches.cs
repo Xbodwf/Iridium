@@ -1,3 +1,4 @@
+using Iridium.Config;
 using System;
 using System.Collections.Generic;
 using ADOFAI;
@@ -21,6 +22,7 @@ namespace Iridium.Patches
 
 		#region MoveTrack Extreme Optimization
 
+		[IriPatch(Path = "optimizer/extreme", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer,enableExtremeOptimization")]
 		[HarmonyPatch(typeof(ffxMoveFloorPlus), nameof(ffxMoveFloorPlus.StartEffect))]
 		public static class ExtremeMoveFloorPatch
 		{
@@ -187,6 +189,7 @@ namespace Iridium.Patches
 
 		#region MoveDecoration Extreme Optimization
 
+		[IriPatch(Path = "optimizer/extreme", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer,enableExtremeOptimization")]
 		[HarmonyPatch(typeof(ffxMoveDecorationsPlus), nameof(ffxMoveDecorationsPlus.StartEffect))]
 		public static class ExtremeMoveDecorPatch
 		{

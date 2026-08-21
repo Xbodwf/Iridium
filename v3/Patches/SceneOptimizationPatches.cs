@@ -1,3 +1,4 @@
+using Iridium.Config;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -39,6 +40,7 @@ namespace Iridium.Patches
 		/// <summary>
 		/// 缓存 scnGame 中频繁使用的 GameObject.Find 结果
 		/// </summary>
+		[IriPatch(Path = "optimizer/scene", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer,cacheGameObjectReferences")]
 		[HarmonyPatch(typeof(scnGame), "Awake")]
 		public static class ScnGameCacheReferencesPatch
 		{
@@ -71,6 +73,7 @@ namespace Iridium.Patches
 		/// <summary>
 		/// 优化 scnGame.Update - 只在相机参数变化时更新
 		/// </summary>
+		[IriPatch(Path = "optimizer/scene", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer,optimizeScnGameUpdate")]
 		[HarmonyPatch(typeof(scnGame), "Update")]
 		public static class ScnGameUpdateOptimizationPatch
 		{
@@ -156,6 +159,7 @@ namespace Iridium.Patches
 		/// <summary>
 		/// 优化 ApplyEventsToFloors - 预先分类事件避免多次 FindAll
 		/// </summary>
+		[IriPatch(Path = "optimizer/scene", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer,optimizeEventProcessing")]
 		[HarmonyPatch(typeof(scnGame), nameof(scnGame.ApplyEventsToFloors),
 			typeof(List<scrFloor>), typeof(LevelData), typeof(scrLevelMaker), typeof(List<LevelEvent>))]
 		public static class ApplyEventsOptimizationPatch
@@ -196,6 +200,7 @@ namespace Iridium.Patches
 		/// <summary>
 		/// 清理缓存 - 在场景销毁时
 		/// </summary>
+		[IriPatch(Path = "optimizer/scene", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer")]
 		[HarmonyPatch(typeof(scnGame), "OnDestroy")]
 		public static class ScnGameCleanupPatch
 		{
@@ -221,6 +226,7 @@ namespace Iridium.Patches
 		/// <summary>
 		/// 优化 scnEditor.ObjectsAtMouse - 重用 List 避免 GC
 		/// </summary>
+		[IriPatch(Path = "optimizer/scene", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer,optimizeEditorMouseDetection")]
 		[HarmonyPatch(typeof(scnEditor), "ObjectsAtMouse")]
 		public static class ObjectsAtMouseOptimizationPatch
 		{
@@ -314,6 +320,7 @@ namespace Iridium.Patches
 		/// <summary>
 		/// 优化 scnEditor.DestroyEventIndicators - 维护列表而不是每次 Find
 		/// </summary>
+		[IriPatch(Path = "optimizer/scene", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer,optimizeEditorEventIndicators")]
 		[HarmonyPatch(typeof(scnEditor), "DestroyEventIndicators")]
 		public static class DestroyEventIndicatorsPatch
 		{
@@ -380,6 +387,7 @@ namespace Iridium.Patches
 		/// ToggleFloorNumsEditorAction 不再调用 RemakePath()（重建整个路径很慢），
 		/// 改为只调 DrawFloorNums() 刷新编号标签的可见性。
 		/// </summary>
+		[IriPatch(Path = "optimizer/scene", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer")]
 		[HarmonyPatch(typeof(ToggleFloorNumsEditorAction), nameof(ToggleFloorNumsEditorAction.Execute))]
 		public static class ToggleFloorNumsActionPatch
 		{

@@ -1,3 +1,4 @@
+using Iridium.Config;
 using System.Collections;
 using System.Reflection;
 using DG.Tweening;
@@ -19,6 +20,7 @@ namespace Iridium.Patches
 		/// scrVfxPlus.Reset() 会清理 filterTween，但未清理 pausedTweens。
 		/// 导致过期的 Tween 引用跨关卡累积，在下一次恢复(Play)时对已回收的 Tween 进行操作。
 		/// </summary>
+		[IriPatch(Path = "optimizer/tweenSafety", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer,dotweenDefaultRecyclable")]
 		[HarmonyPatch(typeof(scrVfxPlus), "Reset")]
 		public static class ClearPausedTweensOnReset
 		{
@@ -34,6 +36,7 @@ namespace Iridium.Patches
 		/// scrDecoration.OnDestroy() 遍历 eventTweens 直接调用 Kill(false)，
 		/// 未对可能已回收/无效的 Tween 做安全检查。
 		/// </summary>
+		[IriPatch(Path = "optimizer/tweenSafety", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer,dotweenDefaultRecyclable")]
 		[HarmonyPatch(typeof(scrDecoration), "OnDestroy")]
 		public static class SafeDecorationOnDestroy
 		{
@@ -59,6 +62,7 @@ namespace Iridium.Patches
 		/// 没有 null 检查也没有 IsActive() 检查。
 		/// eventTweens 是 protected 属性，通过 AccessTools 反射读取。
 		/// </summary>
+		[IriPatch(Path = "optimizer/tweenSafety", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer,dotweenDefaultRecyclable")]
 		[HarmonyPatch(typeof(ffxPlusBase),nameof(ffxPlusBase.Kill))]
 		public static class SafeFfxPlusBaseKill
 		{
@@ -89,6 +93,7 @@ namespace Iridium.Patches
 		/// 
 		/// 该补丁完整替换原方法并添加了安全性检查。
 		/// </summary>
+		[IriPatch(Path = "optimizer/tweenSafety", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer,dotweenDefaultRecyclable")]
 		[HarmonyPatch(typeof(ffxPlusBase), nameof(ffxPlusBase.ScrubToTime))]
 		public static class SafeFfxPlusBaseScrubToTime
 		{

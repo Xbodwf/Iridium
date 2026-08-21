@@ -1,9 +1,10 @@
+using Iridium.Config;
 using System;
 using System.Collections.Generic;
 using HarmonyLib;
 using ADOFAI;
 
-namespace Iridium.Patches
+namespace Iridium.Patches.Compatibility
 {
 	/// <summary>
 	/// Third-party required mods handling ("Ignore required third-party mods").
@@ -50,6 +51,7 @@ namespace Iridium.Patches
 		/// and stash the original value for the encode restore.
 		/// </summary>
 		[HarmonyPatch(typeof(LevelData), nameof(LevelData.Decode))]
+		[IriPatch(Path = "compatibility/requiredMods", Pre = typeof(CompatibilitySettings), Condition = "ignoreRequiredMods")]
 		public static class LevelDataClearPatch
 		{
 			[HarmonyPrefix]
@@ -65,6 +67,7 @@ namespace Iridium.Patches
 		/// Empty requiredMods in the level select decode path (LevelDataCLS.Decode).
 		/// </summary>
 		[HarmonyPatch(typeof(LevelDataCLS), nameof(LevelDataCLS.Decode))]
+		[IriPatch(Path = "compatibility/requiredMods", Pre = typeof(CompatibilitySettings), Condition = "ignoreRequiredMods")]
 		public static class LevelDataCLSClearPatch
 		{
 			[HarmonyPrefix]
@@ -81,6 +84,7 @@ namespace Iridium.Patches
 		/// preserved when the level is saved or exported.
 		/// </summary>
 		[HarmonyPatch(typeof(LevelData), nameof(LevelData.EncodeToDictionary))]
+		[IriPatch(Path = "compatibility/requiredMods", Pre = typeof(CompatibilitySettings), Condition = "ignoreRequiredMods")]
 		public static class EncodeRestorePatch
 		{
 			[HarmonyPrefix]
@@ -100,6 +104,7 @@ namespace Iridium.Patches
 		/// player of the ignored missing mods.
 		/// </summary>
 		[HarmonyPatch(typeof(scnGame), nameof(scnGame.LoadLevel))]
+		[IriPatch(Path = "compatibility/requiredMods", Pre = typeof(CompatibilitySettings), Condition = "ignoreRequiredMods")]
 		public static class LevelLoadNotifyPatch
 		{
 			[HarmonyPostfix]
@@ -115,9 +120,9 @@ namespace Iridium.Patches
 					CurrentRequiredMods.Clear();
 
 					if (mods.Length == 1)
-						UI.VRAMNotificationUI.Show(Localization.Get("MissingModsNoticeSingle", mods[0]));
+						Iridium.UI.VRAMNotificationUI.Show(Localization.Get("MissingModsNoticeSingle", mods[0]));
 					else
-						UI.VRAMNotificationUI.Show(Localization.Get("MissingModsNotice", mods[0], mods.Length - 1));
+						Iridium.UI.VRAMNotificationUI.Show(Localization.Get("MissingModsNotice", mods[0], mods.Length - 1));
 				}
 				catch (Exception e)
 				{

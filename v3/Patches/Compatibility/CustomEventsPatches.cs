@@ -1,10 +1,11 @@
+using Iridium.Config;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
 using ADOFAI;
 
-namespace Iridium.Patches
+namespace Iridium.Patches.Compatibility
 {
 	/// <summary>
 	/// Third-party custom events (CustomEvent) support.
@@ -116,6 +117,7 @@ namespace Iridium.Patches
 		/// register fake infos for every unknown event type in this chart.
 		/// </summary>
 		[HarmonyPatch(typeof(LevelData), nameof(LevelData.Decode))]
+		[IriPatch(Path = "compatibility/customEvents", Pre = typeof(CompatibilitySettings), Condition = "ignoreRequiredMods")]
 		public static class ScanRegisterPatch
 		{
 			[HarmonyPrefix]
@@ -138,6 +140,7 @@ namespace Iridium.Patches
 		/// (LevelDataCLS.Decode is used by scnCLS, pause, practice and portals).
 		/// </summary>
 		[HarmonyPatch(typeof(LevelDataCLS), nameof(LevelDataCLS.Decode))]
+		[IriPatch(Path = "compatibility/customEvents", Pre = typeof(CompatibilitySettings), Condition = "ignoreRequiredMods")]
 		public static class ScanRegisterCLSPatch
 		{
 			[HarmonyPrefix]
@@ -160,6 +163,7 @@ namespace Iridium.Patches
 		/// chart loads without crashing on levelEvent.info.taroDLCCheck.
 		/// </summary>
 		[HarmonyPatch(typeof(LevelEvent), nameof(LevelEvent.Decode))]
+		[IriPatch(Path = "compatibility/customEvents", Pre = typeof(CompatibilitySettings), Condition = "ignoreRequiredMods")]
 		public static class FakeEventDecodePatch
 		{
 			private static readonly FieldInfo DataField = AccessTools.Field(typeof(LevelEvent), "data");
@@ -220,6 +224,7 @@ namespace Iridium.Patches
 		/// otherwise serialize as "None" and the event data would be lost).
 		/// </summary>
 		[HarmonyPatch(typeof(LevelEvent), nameof(LevelEvent.Encode))]
+		[IriPatch(Path = "compatibility/customEvents", Pre = typeof(CompatibilitySettings), Condition = "ignoreRequiredMods")]
 		public static class FakeEventEncodePatch
 		{
 			[HarmonyPostfix]
@@ -234,6 +239,7 @@ namespace Iridium.Patches
 		/// The fake event's property panel is read-only: disable every control.
 		/// </summary>
 		[HarmonyPatch(typeof(PropertiesPanel), nameof(PropertiesPanel.Init))]
+		[IriPatch(Path = "compatibility/customEvents", Pre = typeof(CompatibilitySettings), Condition = "ignoreRequiredMods")]
 		public static class ReadOnlyPanelPatch
 		{
 			[HarmonyPostfix]
@@ -257,6 +263,7 @@ namespace Iridium.Patches
 		/// and a generic icon instead of the Flash/fallback icon.
 		/// </summary>
 		[HarmonyPatch(typeof(ListItem_Event), nameof(ListItem_Event.SetEvent))]
+		[IriPatch(Path = "compatibility/customEvents", Pre = typeof(CompatibilitySettings), Condition = "ignoreRequiredMods")]
 		public static class ListItemEventPatch
 		{
 			private static UnityEngine.Sprite _fakeIcon;
@@ -294,6 +301,7 @@ namespace Iridium.Patches
 		/// levelEventIcons[None] (which would crash or show a wrong sprite).
 		/// </summary>
 		[HarmonyPatch(typeof(EventIndicator), nameof(EventIndicator.Init))]
+		[IriPatch(Path = "compatibility/customEvents", Pre = typeof(CompatibilitySettings), Condition = "ignoreRequiredMods")]
 		public static class EventIndicatorPatch
 		{
 			private static UnityEngine.Sprite _fakeIcon;
@@ -322,6 +330,7 @@ namespace Iridium.Patches
 		/// own property panel with the original event name and the read-only notice.
 		/// </summary>
 		[HarmonyPatch(typeof(InspectorPanel), nameof(InspectorPanel.ShowPanel))]
+		[IriPatch(Path = "compatibility/customEvents", Pre = typeof(CompatibilitySettings), Condition = "ignoreRequiredMods")]
 		public static class ShowPanelFakeEventPatch
 		{
 			[HarmonyPrefix]
@@ -453,6 +462,7 @@ namespace Iridium.Patches
 		/// Create/show the fake event tab when the floor has fake events.
 		/// </summary>
 		[HarmonyPatch(typeof(InspectorPanel), nameof(InspectorPanel.ShowTabsForFloor))]
+		[IriPatch(Path = "compatibility/customEvents", Pre = typeof(CompatibilitySettings), Condition = "ignoreRequiredMods")]
 		public static class ShowTabsForFloorPatch
 		{
 			[HarmonyPostfix]
@@ -523,6 +533,7 @@ namespace Iridium.Patches
 		/// ("ghost counter"). Each fake event has its own tab, so hide it always.
 		/// </summary>
 		[HarmonyPatch(typeof(InspectorTab), nameof(InspectorTab.SetSelected))]
+		[IriPatch(Path = "compatibility/customEvents", Pre = typeof(CompatibilitySettings), Condition = "ignoreRequiredMods")]
 		public static class FakeTabSetSelectedPatch
 		{
 			[HarmonyPostfix]
@@ -546,6 +557,7 @@ namespace Iridium.Patches
 		/// Route fake tab clicks directly to ShowPanel(None, eventIndex).
 		/// </summary>
 		[HarmonyPatch(typeof(InspectorTab), nameof(InspectorTab.OnPointerClick))]
+		[IriPatch(Path = "compatibility/customEvents", Pre = typeof(CompatibilitySettings), Condition = "ignoreRequiredMods")]
 		public static class FakeTabClickPatch
 		{
 			[HarmonyPrefix]
@@ -604,6 +616,7 @@ namespace Iridium.Patches
 		/// which would make fake events undeletable. Handle the deletion ourselves.
 		/// </summary>
 		[HarmonyPatch(typeof(scnEditor), "RemoveEventAtSelected")]
+		[IriPatch(Path = "compatibility/customEvents", Pre = typeof(CompatibilitySettings), Condition = "ignoreRequiredMods")]
 		public static class RemoveEventAtSelectedPatch
 		{
 			[HarmonyPrefix]

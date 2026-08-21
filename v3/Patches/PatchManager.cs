@@ -3,33 +3,29 @@ using Iridium.Config;
 using Iridium.Runtime;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
-using static Iridium.Patches.BugfixPatches;
 
 namespace Iridium.Patches
 {
 	public static class PatchManager
 	{
-		// Status
 		private static readonly Dictionary<Type, bool> _activePatches = new();
 
-		// Patch Declaration
-		private class PatchDef
+		private sealed class PatchDef
 		{
 			public Type Type;
 			public object Definition;
 			public Func<bool> Condition;
-			public Type? Parent;
 			public string Name;
 			public RuntimeKind[] SupportedRuntimes;
 
-			public PatchDef(Type type, Func<bool> condition, Type? parent = null)
+			public PatchDef(Type type, object definition, Func<bool> condition)
 			{
 				Type = type;
-				Definition = type;
+				Definition = definition;
 				Condition = condition;
-				Parent = parent;
-				Name = type.Name;
+				Name = type.FullName ?? type.Name;
 				SupportedRuntimes = new[] { RuntimeKind.Mono };
 			}
 		}
@@ -38,286 +34,46 @@ namespace Iridium.Patches
 
 		static PatchManager()
 		{
-			RegisterPatches();
+			DiscoverPatches();
 		}
 
-		/// <summary>
-		/// Registers a backend-owned patch definition without exposing its concrete
-		/// runtime type to Core.
-		/// </summary>
+		// ─────────────────────────────────────────────
+		//  Public API (preserved from old PatchManager)
+		// ─────────────────────────────────────────────
+
 		public static void RegisterPatch(string id, object definition, Func<bool> condition)
 		{
 			if (definition == null) throw new ArgumentNullException(nameof(definition));
-			var def = new PatchDef(definition.GetType(), condition)
-			{
-				Name = id,
-				Definition = definition
-			};
+			var def = new PatchDef(definition.GetType(), definition, condition) { Name = id };
 			if (definition is IPatchDefinition patchDef)
 				def.SupportedRuntimes = patchDef.SupportedRuntimes;
 			_definitions.Add(def);
 		}
 
-		/// <summary>
-		/// registers all nested types of a parent type that are marked with HarmonyPatch attributes, with an optional condition and exclusion list.
-		/// </summary>
-		private static void RegisterNestedPatches(Type parentType, Func<bool> condition, HashSet<Type>? exclude = null)
-		{
-			foreach (var type in parentType.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
-			{
-				bool isPatch;
-				try
-				{
-					isPatch = type.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0;
-				}
-				catch (Exception error)
-				{
-					Main.Logger?.Error($"[PatchManager] Skipping {type.FullName}: cannot read Harmony metadata ({error.Message})");
-					continue;
-				}
-
-				if (isPatch)
-				{
-					if (exclude != null && exclude.Contains(type))
-						continue;
-					_definitions.Add(new PatchDef(type, condition));
-				}
-			}
-		}
-
-		private static void RegisterPatches()
-		{
-			_definitions.Clear();
-
-			// --- Editor Floor Optimization Patches (each with its own sub-condition) ---
-			var editorMaster = () => Main.Settings.optimizer.enableEditorFloorOptimization;
-			_definitions.Add(new PatchDef(typeof(EditorFloorOptimizationPatches.InsertCharFloorOptimizationPatch),
-				() => editorMaster() && Main.Settings.optimizer.incrementalFloorInsert));
-			_definitions.Add(new PatchDef(typeof(EditorFloorOptimizationPatches.InsertFloatFloorOptimizationPatch),
-				() => editorMaster() && Main.Settings.optimizer.incrementalFloorInsert));
-			_definitions.Add(new PatchDef(typeof(EditorFloorOptimizationPatches.InstantiateFloatFloorsOptimizationPatch),
-				() => editorMaster() && Main.Settings.optimizer.incrementalFloorInsert));
-			_definitions.Add(new PatchDef(typeof(EditorFloorOptimizationPatches.DeleteFloorOptimizationPatch),
-				() => editorMaster() && Main.Settings.optimizer.incrementalFloorInsert));
-			_definitions.Add(new PatchDef(typeof(EditorFloorOptimizationPatches.RemakePathRedundancyPatch),
-				() => editorMaster() && Main.Settings.optimizer.incrementalFloorInsert && Main.Settings.optimizer.skipRedundantRemakePath));
-			_definitions.Add(new PatchDef(typeof(EditorFloorOptimizationPatches.GameRemakePathOptimizationPatch),
-				() => editorMaster() && Main.Settings.optimizer.incrementalFloorInsert && Main.Settings.optimizer.skipRedundantRemakePath));
-			_definitions.Add(new PatchDef(typeof(EditorFloorOptimizationPatches.DrawFloorNumsOptimizationPatch),
-				() => editorMaster() && Main.Settings.optimizer.incrementalFloorInsert && Main.Settings.optimizer.rangeBasedRedraw));
-			_definitions.Add(new PatchDef(typeof(EditorFloorOptimizationPatches.DrawFloorOffsetLinesOptimizationPatch),
-				() => editorMaster() && Main.Settings.optimizer.incrementalFloorInsert && Main.Settings.optimizer.skipRedundantRemakePath));
-			_definitions.Add(new PatchDef(typeof(EditorFloorOptimizationPatches.OffsetFloorIDsOptimizationPatch),
-				() => editorMaster() && Main.Settings.optimizer.incrementalFloorInsert && Main.Settings.optimizer.optimizeOffsetFloorEvents));
-			_definitions.Add(new PatchDef(typeof(EditorFloorOptimizationPatches.SkipApplyEventsOnInsertPatch),
-				() => editorMaster() && Main.Settings.optimizer.incrementalFloorInsert && Main.Settings.optimizer.skipApplyEventsOnInsert));
-
-			// --- Optimizer ---
-			var optCond = () => Main.Settings.optimizer.enableOptimizer;
-			RegisterNestedPatches(typeof(OptimizerPatches), optCond);
-			RegisterNestedPatches(typeof(TrackOptimizationPatches), optCond);
-
-			// Adaptive patches — resolve Harmony targets at runtime for cross-version compat
-			RegisterPatch("TextureNameCleanup", new AdaptivePatches.TextureNameCleanup(), optCond);
-			RegisterPatch("DecorationScalingCustomSprite", new AdaptivePatches.DecorationScalingCustomSprite(), optCond);
-			RegisterPatch("DecorationScalingSprite", new AdaptivePatches.DecorationScalingSprite(), optCond);
-
-			// --- Ffx Optimization Patches ---
-			RegisterNestedPatches(typeof(FfxOptimizationPatches), optCond);
-
-			// --- Scene Optimization Patches ---
-			RegisterNestedPatches(typeof(SceneOptimizationPatches), optCond);
-
-			var eventTweenCond = () => Main.Settings.optimizer.optimizeEventProcessing;
-			_definitions.Add(new PatchDef(typeof(EventTweenOptimizationPatches.FfxMoveFloorPlusEventTweensPatch), eventTweenCond));
-			_definitions.Add(new PatchDef(typeof(EventTweenOptimizationPatches.FfxMoveDecorationsPlusEventTweensPatch), eventTweenCond));
-			_definitions.Add(new PatchDef(typeof(EventTweenOptimizationPatches.FfxRecolorFloorPlusEventTweensPatch), eventTweenCond));
-			_definitions.Add(new PatchDef(typeof(EventTweenOptimizationPatches.FfxPlusBaseKillCacheInvalidationPatch), eventTweenCond));
-
-			// --- Loading Optimization Patches ---
-			// exclude FrameSpreadDecorationLoadingPatch from the main optimizer condition, since it has its own sub-condition
-			RegisterNestedPatches(typeof(LoadingOptimizationPatches), optCond,
-				new HashSet<Type> { typeof(LoadingOptimizationPatches.FrameSpreadDecorationLoadingPatch) });
-			// frame-spread decoration loading patches (sub-condition)
-			_definitions.Add(new PatchDef(typeof(LoadingOptimizationPatches.FrameSpreadDecorationLoadingPatch),
-				() => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.frameSpreadDecorationLoading));
-			_definitions.Add(new PatchDef(typeof(LoadingOptimizationPatches.FrameSpreadDecorationLoadingPatch.ReloadAssets_Patch),
-				() => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.frameSpreadDecorationLoading));
-			_definitions.Add(new PatchDef(typeof(LoadingOptimizationPatches.FrameSpreadDecorationLoadingPatch.ResetDecorations_Patch),
-				() => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.frameSpreadDecorationLoading));
-			_definitions.Add(new PatchDef(typeof(LoadingOptimizationPatches.FrameSpreadDecorationLoadingPatch.Play_Patch),
-				() => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.frameSpreadDecorationLoading));
-
-			// --- Extreme Optimization Patches ---
-			RegisterNestedPatches(typeof(ExtremeOptimizationPatches),
-				() => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.enableExtremeOptimization);
-
-			// --- Tween Safety Patches ---
-			var tweenSafetyCond = () => Main.Settings.optimizer.enableOptimizer && Main.Settings.optimizer.dotweenDefaultRecyclable;
-			RegisterNestedPatches(typeof(TweenSafetyPatches), tweenSafetyCond);
-
-			// --- JSON Deserialize Optimization ---
-			var jsonOptCond = () => Main.Settings.optimizer.customLevelReadOptimization;
-			_definitions.Add(new PatchDef(typeof(JsonPatches.PatchGetCustomLevelName), jsonOptCond));
-
-			// --- Bugfix Patches (2.10.0 only) ---
-			_definitions.Add(new PatchDef(typeof(BugfixPatches.PortalTravelFixPatch),
-				() => Main.Settings.compatibility.portalTravelFix));
-			// v2.10.0+: scrPlayer.marginTracker is now a read-only property that
-			// reads directly from scrMistakesManager.marginTrackers[playerID],
-			// so SetPlayerCount and Reset sync are handled by the game natively.
-			// Always-on: snap offsetTick calibration at start of each level
-			_definitions.Add(new PatchDef(typeof(BugfixPatches.AsyncInputPlaySnapPatch), () => true));
-			// Opt-in: eliminate per-frame lambda allocations in player input hot path
-			_definitions.Add(new PatchDef(typeof(PlayerInputOptimizationPatches.SimulatedPlayerControlUpdatePatch),
-				() => Main.Settings.optimizer.optimizePlayerInputAllocations));
-			// Opt-in: reuse List buffers in RDInput.GetStateKeys to avoid per-frame allocations
-			_definitions.Add(new PatchDef(typeof(RDInputOptimizationPatches.GetStateKeysPatch),
-				() => Main.Settings.optimizer.optimizeRDInputAllocations));
-			// Fix: ensures hardestDifficulty is reset when playing from editor
-			_definitions.Add(new PatchDef(typeof(BugfixPatches.EditorPlayResetMistakesPatch),
-				() => Main.Settings.compatibility.fixEditorPlayResetMistakes));
-			// Always-on: fixes turnaround detection matching v2.9.8 behavior
-			_definitions.Add(new PatchDef(typeof(BugfixPatches.TurnaroundConditionFix),
-				() => Main.Settings.compatibility.fixTurnaroundCondition));
-			// Always-on: fixes non-coop missAngle not forwarded to Show (non-Perfect rotation missing)
-			_definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextMeshShowRotationFixPatch), () => Main.Settings.compatibility.fixJudgeRotation));
-			// Pause hotkey in editor auto-play (always applied; CheckPauseKey reads the setting at runtime)
-			_definitions.Add(new PatchDef(typeof(EditorPausePatches), () => true));
-			// Always-on: coop pause beat LockInput shouldn't block other players
-			_definitions.Add(new PatchDef(typeof(BugfixPatches.CoopPauseHandleLockFix), () => Main.Settings.compatibility.fixCoopPauseLock));
-			_definitions.Add(new PatchDef(typeof(BugfixPatches.CoopPlayerHitFix), () => Main.Settings.compatibility.fixCoopPauseLock));
-			_definitions.Add(new PatchDef(typeof(CoopPauseLockFixPlayerPatch),
-				() => Main.Settings.compatibility.fixCoopPauseLock && AccessTools.Method(typeof(scrPlayer), "LockInput") != null));
-			_definitions.Add(new PatchDef(typeof(CoopPauseLockFixControllerPatch),
-				() => Main.Settings.compatibility.fixCoopPauseLock && AccessTools.Method(typeof(scrController), "LockInput") != null));
-
-			// --- UI / Misc ---
-			_definitions.Add(new PatchDef(typeof(MiscPatches.RemoveNewsPatch), () => Main.Settings.ui.removeNews));
-			_definitions.Add(new PatchDef(typeof(MiscPatches.HideBetaWatermarkPatch), () => Main.Settings.ui.hideBetaWatermark));
-			_definitions.Add(new PatchDef(typeof(MiscPatches.ForceDifficultyUIPatch), () => Main.Settings.ui.forceDifficultyUI));
-			_definitions.Add(new PatchDef(typeof(MiscPatches.CircleArcPatch), () => Main.Settings.ui.enableCircleArc));
-			_definitions.Add(new PatchDef(typeof(MiscPatches.AutoplayTextPositionPatch), () => Main.Settings.ui.moveAutoplayText));
-			_definitions.Add(new PatchDef(typeof(MiscPatches.AlwaysCountdownPatch), () => Main.Settings.ui.alwaysCountdown));
-			_definitions.Add(new PatchDef(typeof(MiscPatches.AutoplayHintUIPatch), () => true));
-			_definitions.Add(new PatchDef(typeof(PausePlanetTrailPatch), () => Main.Settings.ui.enablePausePlanetTrail));
-
-			// Lobby music
-			_definitions.Add(new PatchDef(typeof(MiscPatches.LobbyMusicPatch), () => Main.Settings.lobbyMusic.enableLobbyMusicPatch));
-
-            // Compatibility
-			var pauseFixCond = () => Main.Settings.compatibility.enableLegacyPauseFix;
-			_definitions.Add(new PatchDef(typeof(CompatibilityPatches.LegacyPauseFixPatch_Play), pauseFixCond));
-			_definitions.Add(new PatchDef(typeof(CompatibilityPatches.NoFailTooEarlyPatch), () => Main.Settings.compatibility.enableNoFailTooEarly));
-			_definitions.Add(new PatchDef(typeof(CompatibilityPatches.ScaleFilterSpeedWithPitchPatch), () => Main.Settings.compatibility.scaleFilterSpeedWithPitch));
-			_definitions.Add(new PatchDef(typeof(CameraRelativeDragPatches), () => Main.Settings.compatibility.fixCameraRelativeDrag));
-			_definitions.Add(new PatchDef(typeof(JsonPatches.ForceAngleDataPatch), () => Main.Settings.compatibility.forceAngleData));
-			_definitions.Add(new PatchDef(typeof(JsonPatches.LegacyBehaviorPatch), () =>
-				Main.Settings.compatibility.legacyFlashMode != LegacyBehaviorMode.Default ||
-				Main.Settings.compatibility.legacyCamRelativeToMode != LegacyBehaviorMode.Default));
-
-			// Required third-party mods handling (applied on demand via ignoreRequiredMods)
-			var requiredModsCond = () => Main.Settings.compatibility.ignoreRequiredMods;
-			_definitions.Add(new PatchDef(typeof(RequiredModsClearPatches.LevelDataClearPatch), requiredModsCond));
-			_definitions.Add(new PatchDef(typeof(RequiredModsClearPatches.LevelDataCLSClearPatch), requiredModsCond));
-			_definitions.Add(new PatchDef(typeof(RequiredModsClearPatches.EncodeRestorePatch), requiredModsCond));
-			_definitions.Add(new PatchDef(typeof(RequiredModsClearPatches.LevelLoadNotifyPatch), requiredModsCond));
-
-			// Third-party custom events (fake event registration; always-on, runtime-gated)
-						// Third-party custom events (fake event registration; applied on demand
-			// together with the "ignore required third-party mods" toggle)
-			var customEventsCond = () => Main.Settings.compatibility.ignoreRequiredMods;
-_definitions.Add(new PatchDef(typeof(CustomEventsPatches.ScanRegisterPatch), customEventsCond));
-			_definitions.Add(new PatchDef(typeof(CustomEventsPatches.ScanRegisterCLSPatch), customEventsCond));
-			_definitions.Add(new PatchDef(typeof(CustomEventsPatches.FakeEventDecodePatch), customEventsCond));
-			_definitions.Add(new PatchDef(typeof(CustomEventsPatches.FakeEventEncodePatch), customEventsCond));
-			_definitions.Add(new PatchDef(typeof(CustomEventsPatches.ReadOnlyPanelPatch), customEventsCond));
-			_definitions.Add(new PatchDef(typeof(CustomEventsPatches.ListItemEventPatch), customEventsCond));
-			_definitions.Add(new PatchDef(typeof(CustomEventsPatches.EventIndicatorPatch), customEventsCond));
-			_definitions.Add(new PatchDef(typeof(CustomEventsPatches.ShowPanelFakeEventPatch), customEventsCond));
-			_definitions.Add(new PatchDef(typeof(CustomEventsPatches.RemoveEventAtSelectedPatch), customEventsCond));
-			_definitions.Add(new PatchDef(typeof(CustomEventsPatches.ShowTabsForFloorPatch), customEventsCond));
-			_definitions.Add(new PatchDef(typeof(CustomEventsPatches.FakeTabSetSelectedPatch), customEventsCond));
-			_definitions.Add(new PatchDef(typeof(CustomEventsPatches.FakeTabClickPatch), customEventsCond));
-
-			// Hit Sound
-			_definitions.Add(new PatchDef(typeof(HitSoundPatch), () => Main.Settings.hitSound.enableHitSoundPitch));
-
-			// Judge Text
-			// InitPatch: Sets template text (may contain {offset} placeholders)
-			_definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextMeshInitPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization));
-			// HitTextManagerShowPatch: Captures missAngle for Show (game doesn't forward it in non-coop)
-			_definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextManagerShowPatch), () => true));
-			// ShowPatch: Replaces {offset} placeholders with calculated timing
-			_definitions.Add(new PatchDef(typeof(JudgeTextPatches.HitTextMeshShowPatch), () => Main.Settings.judgeText.enableJudgeTextCustomization));
-
-
-			// Editor Shortcuts
-			_definitions.Add(new PatchDef(typeof(EditorShortcutPatches.EditorShortcutUpdatePatch), () => Main.Settings.editorShortcuts.enableEditorShortcuts));
-			_definitions.Add(new PatchDef(typeof(EditorShortcutPatches.FloorSelectCameraJumpPatch), () => Main.Settings.editorShortcuts.enableEditorShortcuts));
-
-			// --- Custom Easing Engine (替代 DOTween) ---
-			var easingCond = () => Main.Settings.optimizer.enableCustomEasingEngine;
-			RegisterNestedPatches(typeof(CustomEasingPatches), easingCond);
-
-			// ModifyMod
-			{
-                // Async Input Optimize
-                _definitions.Add(new PatchDef(typeof(Iridium.Modules.AsyncInputOptimize.Patch.UnityEngine__SceneManagement__SceneManager), () => Iridium.Main.Settings.asyncInput.enableAIO));
-                _definitions.Add(new PatchDef(typeof(Iridium.Modules.AsyncInputOptimize.Patch.__scnGame), () => Iridium.Main.Settings.asyncInput.enableAIO));
-                _definitions.Add(new PatchDef(typeof(Iridium.Modules.AsyncInputOptimize.Patch.__scrConductor), () => Iridium.Main.Settings.asyncInput.enableAIO));
-                _definitions.Add(new PatchDef(typeof(Iridium.Modules.AsyncInputOptimize.Patch.__scrCountdown), () => Iridium.Main.Settings.asyncInput.enableAIO));
-            }
-		}
-
-		private sealed class FailureDetail
-		{
-			public string Name = null!;
-			public string State = null!;
-			public string Message = null!;
-		}
-
-		/// <summary>
-		/// update all patches based on their current conditions and settings
-		/// </summary>
 		public static void UpdateAllPatches()
 		{
 			if (Main.RuntimeHost?.PatchBackend == null) return;
 
-			int total = _definitions.Count;
 			int succeeded = 0;
 			var failures = new List<FailureDetail>();
 			var skipNames = new List<string>();
 
 			foreach (var def in _definitions)
 			{
-				if (!IsRuntimeSupported(def))
-				{
-					skipNames.Add(def.Name);
-					continue;
-				}
-
+				if (!IsRuntimeSupported(def)) { skipNames.Add(def.Name); continue; }
 				var result = UpdateSinglePatch(def);
-				if (result == null)
-				{
-					succeeded++;
-				}
-				else
-				{
-					failures.Add(result);
-				}
+				if (result == null) succeeded++;
+				else failures.Add(result);
 			}
 
 			int applied = succeeded + failures.Count;
-			Main.Logger?.Log($"[PatchManager] {succeeded}/{applied} ok, {failures.Count} failed, {skipNames.Count} skipped — open the log file to see detailed errors");
-
+			Main.Logger?.Log($"[PatchManager] {succeeded}/{applied} ok, {failures.Count} failed, {skipNames.Count} skipped");
 			if (failures.Count > 0)
 			{
 				Main.Logger?.Log("[PatchManager] --- FAILURES ---");
 				foreach (var f in failures)
 					Main.Logger?.Log($"[PatchManager]   {f.Name}: {f.State} ({f.Message})");
 			}
-
 			if (skipNames.Count > 0)
 			{
 				Main.Logger?.Log("[PatchManager] --- SKIPPED (unsupported runtime) ---");
@@ -329,135 +85,273 @@ _definitions.Add(new PatchDef(typeof(CustomEventsPatches.ScanRegisterPatch), cus
 		public static void ReapplyAllPatches()
 		{
 			if (Main.RuntimeHost?.PatchBackend == null) return;
-
 			Main.RuntimeHost.PatchBackend.SetPerformanceMode(Main.Settings.patchMode.useILPatch);
 			Main.RuntimeHost.PatchBackend.RemoveAll();
 			_activePatches.Clear();
 			UpdateAllPatches();
 		}
 
-		/// <summary>
-		/// update a single patch by its type (e.g., when a specific setting changes)
-		/// </summary>
 		public static void UpdatePatchByType(Type patchType)
 		{
 			if (Main.RuntimeHost?.PatchBackend == null) return;
-
 			var def = _definitions.Find(d => d.Type == patchType);
-			if (def != null)
-			{
-				UpdateSinglePatch(def);
-			}
+			if (def != null) UpdateSinglePatch(def);
 		}
 
-		/// <summary>
-		/// update all optimizer-related patches (e.g., when the "enable optimizer" setting changes)
-		/// </summary>
 		public static void UpdateOptimizerPatches()
 		{
 			if (Main.RuntimeHost?.PatchBackend == null) return;
-
-			// optimizer patches collection
-			var optimizerParentTypes = new HashSet<Type>
-			{
-				typeof(OptimizerPatches),
-				typeof(TrackOptimizationPatches),
-				typeof(SceneOptimizationPatches),
-				typeof(LoadingOptimizationPatches),
-				typeof(ExtremeOptimizationPatches),
-				typeof(EditorFloorOptimizationPatches),
-				typeof(PlayerInputOptimizationPatches),
-				typeof(RDInputOptimizationPatches)
-			};
-
 			foreach (var def in _definitions)
 			{
-				// check if the patch is a child of any of the optimizer parent types
-				bool isOptimizerPatch = optimizerParentTypes.Contains(def.Type) ||
-					(def.Type.DeclaringType != null && optimizerParentTypes.Contains(def.Type.DeclaringType));
-
-				if (isOptimizerPatch)
-				{
+				if (def.Type.Namespace == "Iridium.Modules.AsyncInputOptimize") continue;
+				string path = GetIriPatchPath(def.Type);
+				if (path != null && path.StartsWith("optimizer"))
 					UpdateSinglePatch(def);
+			}
+		}
+
+		public static void UpdatePatchesByCondition(Func<Type, bool> predicate)
+		{
+			if (Main.RuntimeHost?.PatchBackend == null) return;
+			foreach (var def in _definitions)
+				if (predicate(def.Type)) UpdateSinglePatch(def);
+		}
+
+		public static void UnpatchAll()
+		{
+			Main.RuntimeHost?.PatchBackend.RemoveAll();
+			_activePatches.Clear();
+			Main.Logger?.Log(Localization.Get("PatchManagerUnpatchedAll"));
+		}
+
+		// ─────────────────────────────────────────────
+		//  Auto-Discovery (two-pass)
+		// ─────────────────────────────────────────────
+
+		/// <summary>Collected patch info from first pass.</summary>
+		private sealed class PatchInfo
+		{
+			public Type Type;
+			public IriPatchAttribute Attr;
+			public PatchInfo(Type type, IriPatchAttribute attr) { Type = type; Attr = attr; }
+		}
+
+		private static void DiscoverPatches()
+		{
+			_definitions.Clear();
+			var assembly = typeof(PatchManager).Assembly;
+
+			// Pass 1: collect all [IriPatch] types
+			var allInfos = assembly.GetTypes()
+				.Select(t => new { Type = t, Attr = t.GetCustomAttribute<IriPatchAttribute>(false) })
+				.Where(x => x.Attr != null)
+				.Select(x => new PatchInfo(x.Type, x.Attr!))
+				.ToList();
+
+			// Build lookup: path → list of infos at that path
+			var pathLookup = new Dictionary<string, List<PatchInfo>>(StringComparer.OrdinalIgnoreCase);
+			foreach (var info in allInfos)
+			{
+				string path = info.Attr.Path ?? "";
+				if (!pathLookup.TryGetValue(path, out var list))
+				{
+					list = new List<PatchInfo>();
+					pathLookup[path] = list;
+				}
+				list.Add(info);
+			}
+
+			// Pass 2: build conditions using ancestor inheritance
+			foreach (var info in allInfos)
+			{
+				var condition = BuildCondition(info.Attr, pathLookup);
+
+				if (typeof(IPatchDefinition).IsAssignableFrom(info.Type))
+				{
+					object? instance = null;
+					try { instance = Activator.CreateInstance(info.Type); }
+					catch { Main.Logger?.Error($"[PatchManager] Failed to create: {info.Type.FullName}"); continue; }
+
+					var def = new PatchDef(info.Type, instance!, condition);
+					if (instance is IPatchDefinition pd)
+						def.SupportedRuntimes = pd.SupportedRuntimes;
+					_definitions.Add(def);
+				}
+				else
+				{
+					_definitions.Add(new PatchDef(info.Type, info.Type, condition));
 				}
 			}
 		}
 
-		/// <summary>
-		/// update all patches that match a given condition (e.g., a specific setting changed)
-		/// </summary>
-		public static void UpdatePatchesByCondition(Func<Type, bool> predicate)
-		{
-			if (Main.RuntimeHost?.PatchBackend == null) return;
+		// ─────────────────────────────────────────────
+		//  Condition Building
+		// ─────────────────────────────────────────────
 
-			foreach (var def in _definitions)
+		/// <summary>
+		/// Build effective condition: ancestor conditions (from patches at ancestor paths)
+		/// AND own condition (from this patch's Pre+Condition).
+		/// <para>
+		/// Rules:<br/>
+		/// - AlwaysOn → always true<br/>
+		/// - No path + no own condition → always true<br/>
+		/// - Has own condition only → own condition<br/>
+		/// - Has ancestor conditions + own → all AND<br/>
+		/// - Has ancestor conditions, no own → ancestors AND<br/>
+		/// </para>
+		/// </summary>
+		private static Func<bool> BuildCondition(IriPatchAttribute attr, Dictionary<string, List<PatchInfo>> pathLookup)
+		{
+			if (attr.AlwaysOn) return () => true;
+
+			// Runtime method existence check
+			if (!string.IsNullOrEmpty(attr.RequireMethod))
 			{
-				if (predicate(def.Type))
+				var parts = attr.RequireMethod.Split('.');
+				if (parts.Length == 2)
 				{
-					UpdateSinglePatch(def);
+					var type = AccessTools.TypeByName(parts[0]);
+					if (type == null || AccessTools.Method(type, parts[1]) == null)
+						return () => false;
 				}
 			}
+
+			var conditions = new List<Func<bool>>();
+
+			// 1) Walk up path hierarchy, collect conditions from ancestor patches.
+			//    For each ancestor level, take the first patch with Pre+Condition.
+			//    If none found at a level, skip it and continue upward.
+			string path = attr.Path ?? "";
+			if (!string.IsNullOrEmpty(path))
+			{
+				var ancestorPaths = PatchNode.GetAncestorPaths(path);
+				ancestorPaths.RemoveAt(ancestorPaths.Count - 1); // remove current
+
+				foreach (var ancestorPath in ancestorPaths)
+				{
+					if (!pathLookup.TryGetValue(ancestorPath, out var ancestorInfos)) continue;
+
+					foreach (var ancestor in ancestorInfos)
+					{
+						if (ancestor.Attr.AlwaysOn) continue;
+						string? resolved = ResolveOwnCondition(ancestor.Attr);
+						if (resolved != null)
+						{
+							conditions.Add(PatchNode.ResolveSetting(resolved));
+							break;
+						}
+					}
+				}
+			}
+
+			// 2) Add own condition from Pre + Condition
+			string? ownCondition = ResolveOwnCondition(attr);
+			if (!string.IsNullOrEmpty(ownCondition))
+			{
+				foreach (var expr in ownCondition.Split(','))
+					conditions.Add(PatchNode.ResolveSetting(expr.Trim()));
+			}
+
+			if (conditions.Count == 0) return () => true;
+			if (conditions.Count == 1) return conditions[0];
+
+			return () =>
+			{
+				for (int i = 0; i < conditions.Count; i++)
+					if (!conditions[i]()) return false;
+				return true;
+			};
+		}
+
+		/// <summary>
+		/// Resolve Pre + Condition into dot-separated setting paths.
+		/// Supports comma-separated Condition for AND, and PreTypes array for cross-class conditions.
+		/// <para>
+		/// Examples:<br/>
+		/// Pre=typeof(A), Condition="x" → "groupA.x"<br/>
+		/// Pre=typeof(A), Condition="x,y" → "groupA.x,groupA.y"<br/>
+		/// PreTypes=[A,B], Condition="x,y" → "groupA.x,groupB.y"<br/>
+		/// </para>
+		/// </summary>
+		private static string? ResolveOwnCondition(IriPatchAttribute attr)
+		{
+			if (attr.Pre == null && attr.PreTypes == null) return null;
+			if (string.IsNullOrEmpty(attr.Condition)) return null;
+
+			var conditions = attr.Condition.Split(',').Select(c => c.Trim()).ToArray();
+			var preTypes = attr.PreTypes;
+
+			// Single Pre type (common case) — all conditions use same group
+			if (preTypes == null || preTypes.Length == 0)
+			{
+				string groupPath = ResolveGroupPath(attr.Pre!) ?? attr.Pre!.Name.ToLower();
+				return string.Join(",",
+					conditions.Select(c => groupPath + "." + c));
+			}
+
+			// Multiple Pre types — pair each condition with its type
+			var parts = new List<string>();
+			for (int i = 0; i < conditions.Length; i++)
+			{
+				Type preType = i < preTypes.Length ? preTypes[i] : attr.Pre!;
+				string groupPath = ResolveGroupPath(preType) ?? preType.Name.ToLower();
+				parts.Add(groupPath + "." + conditions[i]);
+			}
+			return string.Join(",", parts);
+		}
+
+		private static string? ResolveGroupPath(Type preType)
+		{
+			var field = typeof(Settings).GetFields(BindingFlags.Public | BindingFlags.Instance)
+				.FirstOrDefault(f => f.FieldType == preType);
+			return field?.Name;
+		}
+
+		private static string? GetIriPatchPath(Type type)
+		{
+			var attr = type.GetCustomAttribute<IriPatchAttribute>(false);
+			return attr?.Path;
+		}
+
+		// ─────────────────────────────────────────────
+		//  Patch Lifecycle
+		// ─────────────────────────────────────────────
+
+		private sealed class FailureDetail
+		{
+			public string Name = null!;
+			public string State = null!;
+			public string Message = null!;
 		}
 
 		private static bool IsRuntimeSupported(PatchDef def)
 		{
 			var runtime = Main.RuntimeHost?.Runtime;
-			if (runtime == null || def.SupportedRuntimes == null)
-				return true;
-
+			if (runtime == null) return true;
 			foreach (var kind in def.SupportedRuntimes)
-				if (kind == runtime.Value)
-					return true;
+				if (kind == runtime.Value) return true;
 			return false;
 		}
 
-		/// <summary>
-		/// update a single patch definition. Returns null on success, or a FailureDetail on failure.
-		/// </summary>
 		private static FailureDetail? UpdateSinglePatch(PatchDef def)
 		{
-			bool shouldBeActive = CalculateEffectiveStatus(def);
+			bool shouldBeActive = def.Condition();
 			bool trackedActive = _activePatches.TryGetValue(def.Type, out bool currentActive) && currentActive;
 
-			if (trackedActive != shouldBeActive)
+			if (trackedActive == shouldBeActive) return null;
+
+			if (shouldBeActive)
 			{
-				if (shouldBeActive)
-				{
-					var result = ApplyPatch(def);
-					if (result == null)
-					{
-						_activePatches[def.Type] = true;
-						return null;
-					}
-					return result;
-				}
-				else
-				{
-					var result = RemovePatch(def);
-					if (result == null)
-					{
-						_activePatches.Remove(def.Type);
-						return null;
-					}
-					return result;
-				}
+				var result = ApplyPatch(def);
+				if (result == null) _activePatches[def.Type] = true;
+				return result;
 			}
-			return null; // no-op is success
-		}
-
-		private static bool CalculateEffectiveStatus(PatchDef def)
-		{
-			// Condition
-			if (!def.Condition()) return false;
-
-			// Check Parent
-			if (def.Parent != null)
+			else
 			{
-				_activePatches.TryGetValue(def.Parent, out bool parentActive);
-				if (!parentActive) return false;
+				var result = RemovePatch(def);
+				if (result == null) _activePatches.Remove(def.Type);
+				return result;
 			}
-
-			return true;
 		}
 
 		private static FailureDetail? ApplyPatch(PatchDef def)
@@ -465,7 +359,6 @@ _definitions.Add(new PatchDef(typeof(CustomEventsPatches.ScanRegisterPatch), cus
 			var backend = Main.RuntimeHost?.PatchBackend;
 			if (backend == null)
 				return new FailureDetail { Name = def.Name, State = "NoBackend", Message = "Patch backend is null" };
-
 			var result = backend.Apply(def.Name, def.Definition);
 			if (!result.Succeeded)
 				return new FailureDetail { Name = def.Name, State = result.State.ToString(), Message = result.Message };
@@ -477,19 +370,10 @@ _definitions.Add(new PatchDef(typeof(CustomEventsPatches.ScanRegisterPatch), cus
 			var backend = Main.RuntimeHost?.PatchBackend;
 			if (backend == null)
 				return new FailureDetail { Name = def.Name, State = "NoBackend", Message = "Patch backend is null" };
-
 			var result = backend.Remove(def.Name, def.Definition);
 			if (!result.Succeeded)
 				return new FailureDetail { Name = def.Name, State = result.State.ToString(), Message = result.Message };
 			return null;
-		}
-
-		public static void UnpatchAll()
-		{
-			Main.RuntimeHost?.PatchBackend.RemoveAll();
-			_activePatches.Clear();
-
-			Main.Logger?.Log(Localization.Get("PatchManagerUnpatchedAll"));
 		}
 	}
 }

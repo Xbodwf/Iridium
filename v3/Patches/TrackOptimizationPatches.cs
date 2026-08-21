@@ -1,3 +1,4 @@
+using Iridium.Config;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -24,6 +25,7 @@ namespace Iridium.Patches
 			return t;
 		}
 
+		[IriPatch(Path = "optimizer/track", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer,optimizeMoveTrack,!enableCustomEasingEngine")]
 		[HarmonyPatch(typeof(ffxMoveFloorPlus), nameof(ffxMoveFloorPlus.StartEffect))]
 		public static class MoveFloorStartEffectPatch
 		{
@@ -131,6 +133,7 @@ namespace Iridium.Patches
 			}
 		}
 
+		[IriPatch(Path = "optimizer/track", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer,optimizeRecolorTrack,!enableCustomEasingEngine")]
 		[HarmonyPatch(typeof(ffxRecolorFloorPlus), nameof(ffxRecolorFloorPlus.StartEffect))]
 		public static class RecolorFloorStartEffectPatch
 		{

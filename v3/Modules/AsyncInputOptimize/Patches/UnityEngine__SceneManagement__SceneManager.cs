@@ -1,10 +1,14 @@
+using Iridium.Patches;
+using Iridium.Config;
 ﻿using HarmonyLib;
 using System.Collections.Generic;
 using System.Reflection.Emit;
+using Iridium;
 
 namespace Iridium.Modules.AsyncInputOptimize.Patch
 {
     [HarmonyPatch]
+    [IriPatch(Path = "asyncInput", Pre = typeof(AsyncInputSettings), Condition = "enableAIO")]
     public static class UnityEngine__SceneManagement__SceneManager
     {
         [HarmonyPatch(typeof(UnityEngine.SceneManagement.SceneManager), "LoadSceneAsyncNameIndexInternal")]

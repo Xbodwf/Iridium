@@ -1,3 +1,4 @@
+using Iridium.Config;
 using ADOFAI;
 using System;
 using System.Collections.Generic;
@@ -76,6 +77,7 @@ namespace Iridium.Patches
 
 		#region Patch: InsertCharFloor - Incremental
 
+		[IriPatch(Path = "optimizer/editorFloor/insert", Pre = typeof(OptimizerSettings), Condition = "enableEditorFloorOptimization,incrementalFloorInsert")]
 		[HarmonyPatch(typeof(scnEditor), "InsertCharFloor")]
 		public static class InsertCharFloorOptimizationPatch
 		{
@@ -123,6 +125,7 @@ namespace Iridium.Patches
 
 		#region Patch: InsertFloatFloor - Incremental
 
+		[IriPatch(Path = "optimizer/editorFloor/insert", Pre = typeof(OptimizerSettings), Condition = "enableEditorFloorOptimization,incrementalFloorInsert")]
 		[HarmonyPatch(typeof(scnEditor), "InsertFloatFloor")]
 		public static class InsertFloatFloorOptimizationPatch
 		{
@@ -162,6 +165,7 @@ namespace Iridium.Patches
 
 		#region Patch: InstantiateFloatFloors - Reuse floors in editor
 
+		[IriPatch(Path = "optimizer/editorFloor/insert", Pre = typeof(OptimizerSettings), Condition = "enableEditorFloorOptimization,incrementalFloorInsert")]
 		[HarmonyPatch(typeof(scrLevelMaker), "InstantiateFloatFloors")]
 		public static class InstantiateFloatFloorsOptimizationPatch
 		{
@@ -390,6 +394,7 @@ namespace Iridium.Patches
 
 		#region Patch: DeleteFloor - Incremental (via Transpiler replacing RemakePath)
 
+		[IriPatch(Path = "optimizer/editorFloor/insert", Pre = typeof(OptimizerSettings), Condition = "enableEditorFloorOptimization,incrementalFloorInsert")]
 		[HarmonyPatch(typeof(scnEditor), "DeleteFloor",
 			new Type[] { typeof(int), typeof(bool) })]
 		public static class DeleteFloorOptimizationPatch
@@ -464,6 +469,7 @@ namespace Iridium.Patches
 
 		#region Patch: scnEditor.RemakePath - Skip redundant calls
 
+		[IriPatch(Path = "optimizer/editorFloor/insert", Pre = typeof(OptimizerSettings), Condition = "enableEditorFloorOptimization,incrementalFloorInsert,skipRedundantRemakePath")]
 		[HarmonyPatch(typeof(scnEditor), "RemakePath",
 			new Type[] { typeof(bool), typeof(bool) })]
 		public static class RemakePathRedundancyPatch
@@ -492,6 +498,7 @@ namespace Iridium.Patches
 
 		#region Patch: scnGame.RemakePath - Optimize visual-only calls
 
+		[IriPatch(Path = "optimizer/editorFloor/insert", Pre = typeof(OptimizerSettings), Condition = "enableEditorFloorOptimization,incrementalFloorInsert,skipRedundantRemakePath")]
 		[HarmonyPatch(typeof(scnGame), "RemakePath",
 			new Type[] { typeof(bool), typeof(bool) })]
 		public static class GameRemakePathOptimizationPatch
@@ -518,6 +525,7 @@ namespace Iridium.Patches
 
 		#region Patch: DrawFloorNums
 
+		[IriPatch(Path = "optimizer/editorFloor/insert", Pre = typeof(OptimizerSettings), Condition = "enableEditorFloorOptimization,incrementalFloorInsert,rangeBasedRedraw")]
 		[HarmonyPatch(typeof(scnEditor), "DrawFloorNums")]
 		public static class DrawFloorNumsOptimizationPatch
 		{
@@ -544,6 +552,7 @@ namespace Iridium.Patches
 
 		#region Patch: DrawFloorOffsetLines - Skip if no PositionTrack events
 
+		[IriPatch(Path = "optimizer/editorFloor/insert", Pre = typeof(OptimizerSettings), Condition = "enableEditorFloorOptimization,incrementalFloorInsert,skipRedundantRemakePath")]
 		[HarmonyPatch(typeof(scnEditor), "DrawFloorOffsetLines")]
 		public static class DrawFloorOffsetLinesOptimizationPatch
 		{
@@ -564,6 +573,7 @@ namespace Iridium.Patches
 
 		#region Patch: OffsetFloorIDsInEvents
 
+		[IriPatch(Path = "optimizer/editorFloor/insert", Pre = typeof(OptimizerSettings), Condition = "enableEditorFloorOptimization,incrementalFloorInsert,optimizeOffsetFloorEvents")]
 		[HarmonyPatch(typeof(scnEditor), "OffsetFloorIDsInEvents")]
 		public static class OffsetFloorIDsOptimizationPatch
 		{
@@ -599,6 +609,7 @@ namespace Iridium.Patches
 		/// OffsetFloorIDsInEvents 已经处理了事件 floor ID 偏移，
 		/// 全量重新应用事件对百万砖块是灾难性的。
 		/// </summary>
+		[IriPatch(Path = "optimizer/editorFloor/insert", Pre = typeof(OptimizerSettings), Condition = "enableEditorFloorOptimization,incrementalFloorInsert,skipApplyEventsOnInsert")]
 		[HarmonyPatch(typeof(scnGame), "ApplyEventsToFloors",
 			new[] { typeof(List<scrFloor>) })]
 		public static class SkipApplyEventsOnInsertPatch

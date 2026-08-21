@@ -1,11 +1,15 @@
+using Iridium.Patches;
+using Iridium.Config;
 ﻿using HarmonyLib;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
+using Iridium;
 
 namespace Iridium.Modules.AsyncInputOptimize.Patch
 {
     [HarmonyPatch]
+    [IriPatch(Path = "asyncInput", Pre = typeof(AsyncInputSettings), Condition = "enableAIO")]
     public static class __scrConductor
     {
         [HarmonyPatch(typeof(scrConductor), "Start")]

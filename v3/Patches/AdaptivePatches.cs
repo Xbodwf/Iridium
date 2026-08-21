@@ -1,3 +1,4 @@
+using Iridium.Config;
 using HarmonyLib;
 using Iridium.Runtime;
 using System.Reflection;
@@ -11,6 +12,7 @@ namespace Iridium.Patches
     /// </summary>
     internal static class AdaptivePatches
     {
+        [IriPatch(Path = "optimizer/texture", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer")]
         public sealed class TextureNameCleanup : MonoAdaptivePatch
         {
             public override string Id => "TextureNameCleanup";
@@ -33,6 +35,7 @@ namespace Iridium.Patches
             }
         }
 
+        [IriPatch(Path = "optimizer/decor", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer")]
         public sealed class DecorationScalingCustomSprite : MonoAdaptivePatch
         {
             public override string Id => "DecorationScalingCustomSprite";
@@ -50,11 +53,12 @@ namespace Iridium.Patches
                 if (GCS.internalLevelName != null) return;
                 var sprite = __instance.spriteRenderer?.sprite;
                 if (sprite?.texture == null) return;
-                if (OptimizerPatches.TryGetDecorRatioForTexture(sprite.texture, out Vector3 ratio))
+                if (Iridium.Patches.Optimizer.OptimizerShared.TryGetDecorRatioForTexture(sprite.texture, out Vector3 ratio))
                     ApplyRatioInvoke(__instance, ratio);
             }
         }
 
+        [IriPatch(Path = "optimizer/decor", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer")]
         public sealed class DecorationScalingSprite : MonoAdaptivePatch
         {
             public override string Id => "DecorationScalingSprite";
@@ -72,7 +76,7 @@ namespace Iridium.Patches
                 if (GCS.internalLevelName != null) return;
                 var sprite = __instance.spriteRenderer?.sprite;
                 if (sprite?.texture == null) return;
-                if (OptimizerPatches.TryGetDecorRatioForTexture(sprite.texture, out Vector3 ratio))
+                if (Iridium.Patches.Optimizer.OptimizerShared.TryGetDecorRatioForTexture(sprite.texture, out Vector3 ratio))
                     ApplyRatioInvoke(__instance, ratio);
             }
         }
@@ -91,7 +95,7 @@ namespace Iridium.Patches
 
         private static void ApplyRatioInvoke(scrVisualDecoration instance, Vector3 ratio)
         {
-            var method = AccessTools.Method(typeof(OptimizerPatches), "ApplyDecorRatioScaling");
+            var method = AccessTools.Method(typeof(Iridium.Patches.Optimizer.OptimizerShared), "ApplyDecorRatioScaling");
             method?.Invoke(null, new object[] { instance, ratio });
         }
     }

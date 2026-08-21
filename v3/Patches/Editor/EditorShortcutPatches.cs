@@ -1,9 +1,11 @@
+using Iridium.Config;
 using System;
 using DG.Tweening;
 using HarmonyLib;
 using UnityEngine;
+using Iridium;
 
-namespace Iridium.Patches
+namespace Iridium.Patches.Editor
 {
 	/// <summary>
 	/// Editor keyboard shortcuts — ported from ADOFAI.EditorTweaks with additions.
@@ -11,6 +13,7 @@ namespace Iridium.Patches
 	public static class EditorShortcutPatches
 	{
 		[HarmonyPatch(typeof(scnEditor), "Update")]
+		[IriPatch(Path = "editor/shortcuts", Pre = typeof(EditorShortcutSettings), Condition = "enableEditorShortcuts")]
 		public static class EditorShortcutUpdatePatch
 		{
 			[HarmonyPostfix]
@@ -183,6 +186,7 @@ namespace Iridium.Patches
 		/// 阻止 SelectFloor 的附带镜头跟随。不影响 GoToDecoration 等其他路径。
 		/// </summary>
 		[HarmonyPatch(typeof(scnEditor), "SelectFloor")]
+		[IriPatch(Path = "editor/shortcuts", Pre = typeof(EditorShortcutSettings), Condition = "enableEditorShortcuts,cameraFollowOnFloorSelect")]
 		public static class FloorSelectCameraJumpPatch
 		{
 			private static bool _reEntering;

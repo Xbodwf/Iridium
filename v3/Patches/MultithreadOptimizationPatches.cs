@@ -1,3 +1,4 @@
+using Iridium.Config;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -28,7 +29,7 @@ namespace Iridium.Patches
 					int targetW = Mathf.Max(4, (int)(texture.width / divideBy));
 					int targetH = Mathf.Max(4, (int)(texture.height / divideBy));
 
-					var resized = OptimizerPatches.CreateProcessedTexture(texture, targetW, targetH);
+					var resized = Iridium.Patches.Optimizer.OptimizerShared.CreateProcessedTexture(texture, targetW, targetH);
 					if (resized != null)
 					{
 						Main.DestroyImmediate(texture);
@@ -126,6 +127,7 @@ namespace Iridium.Patches
 
 		#region Parallel Event Processing
 
+		[IriPatch(Path = "optimizer/multithread", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer")]
 		[HarmonyPatch(typeof(scnGame), "ApplyEventsToFloors",
 			typeof(List<scrFloor>), typeof(LevelData), typeof(scrLevelMaker), typeof(List<LevelEvent>))]
 		public static class ParallelEventProcessingPatch

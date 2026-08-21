@@ -5,9 +5,10 @@ using HarmonyLib;
 using ADOFAI;
 using UnityEngine;
 
-namespace Iridium.Patches
+namespace Iridium.Patches.Editor
 {
 	[HarmonyPatch(typeof(scnEditor), "Update")]
+	[IriPatch(Path = "editor/pause", AlwaysOn = true)]
 	public static class EditorPausePatches
 	{
 		public static bool CheckPauseKey()
