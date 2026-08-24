@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using ADOFAI;
@@ -60,16 +62,34 @@ namespace Iridium.Patches
         [HarmonyPatch(typeof(FloorMesh), "SmallestAngleBetweenTwoAngles")]
         public static class CircleArcPatch
         {
-            public static bool Prefix(float angleA, float angleB, ref float __result)
+            private static readonly MethodInfo ApplyOverride = AccessTools.Method(typeof(CircleArcPatch), nameof(ApplyCircleArcOverride));
+
+            [HarmonyTranspiler]
+            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+            {
+                var codes = instructions.ToList();
+                var resultLocal = generator.DeclareLocal(typeof(float));
+                for (int i = 0; i < codes.Count; i++)
+                {
+                    if (codes[i].opcode != OpCodes.Ret) continue;
+
+                    codes.Insert(i, new CodeInstruction(OpCodes.Stloc, resultLocal));
+                    codes.Insert(i + 1, new CodeInstruction(OpCodes.Ldloc, resultLocal));
+                    codes.Insert(i + 2, new CodeInstruction(OpCodes.Ldarg_1));
+                    codes.Insert(i + 3, new CodeInstruction(OpCodes.Ldarg_2));
+                    codes.Insert(i + 4, new CodeInstruction(OpCodes.Call, ApplyOverride));
+                    break;
+                }
+                return codes;
+            }
+
+            private static float ApplyCircleArcOverride(float original, float angleA, float angleB)
             {
                 float minDiff = Mathf.Abs(Mathf.DeltaAngle(angleA * Mathf.Rad2Deg, angleB * Mathf.Rad2Deg)) * Mathf.Deg2Rad;
                 float minDiffDeg = minDiff * Mathf.Rad2Deg;
                 if (minDiffDeg >= 89.9f && minDiffDeg <= 105.1f)
-                {
-                    __result = minDiff * 5f / 180f * Mathf.PI;
-                    return false;
-                }
-                return true;
+                    return minDiff * 5f / 180f * Mathf.PI;
+                return original;
             }
         }
 
