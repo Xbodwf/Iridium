@@ -43,15 +43,29 @@ namespace Iridium.Patches.UI
 			// num6 (~0.9) inflates the corner arc into the big rounded OUTER
 			// corner. Vanilla keeps that look exclusively in the 89.9-105.1 band.
 			// The application band is user-configurable (default 90-105, matching
-			// vanilla); 180 must stay excluded so piAngle tiles keep their solid
-			// fill and near-straight turns don't degenerate.
+			// vanilla); the top end is inclusive EXCEPT for exact reversals:
+			// GetPositions detects piAngle tiles solely via shortAngle ~= PI
+			// (its own epsilon is 1e-4 rad), so replacing shortAngle there skips
+			// the piAngle early-return. The generic path then intersects perfectly
+			// parallel edge rays, producing inf/NaN vertices whose triangles get
+			// culled -- the whole floor renders transparent. A true 180-degree
+			// turn must therefore always fall back to the original value; the
+			// cutoff below sits just under 180 so the Rad->Deg->Rad round trip
+			// cannot smuggle a reversal through, while real turns of 179.9 and
+			// below still receive the arc.
 			var ui = Main.Settings?.ui;
 			float min = Mathf.Clamp(ui != null ? ui.circleArcMinAngle : 90f, 0f, 180f);
 			float max = Mathf.Clamp(ui != null ? ui.circleArcMaxAngle : 105f, min, 180f);
-			if (minDiffDeg >= min && minDiffDeg <= max)
+			if (minDiffDeg >= min && minDiffDeg <= max && minDiffDeg < MaxAppliedAngleDeg)
 				return minDiff * 5f / 180f * Mathf.PI;
 			return original;
 		}
+
+		// Hard cutoff just below 180 degrees. Vanilla classifies anything within
+		// 1e-4 rad (~0.0057 deg) of PI as piAngle; 179.99 leaves an order of
+		// magnitude of head room for float conversion noise above while staying
+		// visually indistinguishable from applying the arc all the way to 180.
+		public const float MaxAppliedAngleDeg = 179.99f;
 	}
 
 	// All-angle arc corners. Vanilla FloorMesh.GetPositions draws the corner
