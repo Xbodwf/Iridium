@@ -6,8 +6,10 @@
 
 ### Changes
 
-1. Fixed the Iridium for ADOFAI v3 settings panel not opening under the MelonLoader and BepInEx loaders.
-2. Added two new memory optimization options (disabled by default): "Optimize Player Input Allocations" and "Optimize Input Key List Allocations". These reduce how much extra memory the game uses while playing, which can help on weaker machines and lower the chance of stutters.
-3. The Optimizer settings tab now groups options into collapsible sections so the panel is easier to read.
-4. FerriteCore (https://github.com/adofaiex/FerriteCore-ADOFAI) has been merged into Iridium after being improved, as a standalone memory optimization engine. It is controlled by its own config file (Config/FerriteCore.json) and can be toggled from the Memory Optimization section.
-5. Fixed the style issue with the first-launch window and fixed a bug that could cause a black bar to cover the screen.
+1. Reimplemented the entire patching system with much higher compatibility than before (beta4 was already released for testing). You can now combine Iridium with any other mod, or use it on any version of the game.
+2. Fixed several features that previously required a restart to take effect — they now apply in real time.
+3. Improved CircleArc: the effect can now be applied to floor corners at any angle, and you can adjust the angle range where it applies in the settings.
+4. Added an info hint for every feature — click the information icon next to an option to see what it does.
+
+> [!NOTE]
+> Iridium for ADOFAI 2.9.8 has entered maintenance-only mode. Some of the features above only apply to Iridium for ADOFAI 3.3.1 (I don't have a lot of spare energy these days — if you nag me I'll port them over as soon as I can, ouo).
