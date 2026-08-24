@@ -95,7 +95,15 @@ namespace Iridium.Patches
 		{
 			if (Main.RuntimeHost?.PatchBackend == null) return;
 			var def = _definitions.Find(d => d.Type == patchType);
-			if (def != null) UpdateSinglePatch(def);
+			if (def == null)
+			{
+				Main.Logger?.Warning($"[PatchManager] UpdatePatchByType: no definition for {patchType.Name}");
+				return;
+			}
+			var failure = UpdateSinglePatch(def);
+			if (failure != null)
+				Main.Logger?.Error(
+					$"[PatchManager] {def.Name} update failed: {failure.State} — {failure.Message}");
 		}
 
 		public static void UpdateOptimizerPatches()
