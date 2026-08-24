@@ -628,16 +628,36 @@ namespace Iridium
             body.Add(IridiumPreset.SwitchOption(sizes, ui.enableCircleArc, v =>
             {
                 ui.enableCircleArc = v;
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(MiscPatches.CircleArcPatch));
+                // CircleArcPatch + AllAngleArcCornersPatch form one feature.
+                // Apply synchronously (handler already runs on the main thread)
+                // so the mesh rebuild below sees the new patch state.
+                PatchManager.UpdatePatchByType(typeof(MiscPatches.CircleArcPatch));
+                PatchManager.UpdatePatchByType(typeof(MiscPatches.AllAngleArcCornersPatch));
+                RefreshFloorMeshCache();
             }, "EnableCircleArc"));
-            if (ui.enableCircleArc)
-            {
-                body.Add(Separator());
-                body.Add(IridiumPreset.IconText(sizes, IconStyle.Warning, "RestartRequired"));
-            }
 
             elements.Add(VBox(ContainerStyle.Background, null, WithWidthMax(body.ToArray())));
             return elements.ToArray();
+        }
+
+        // FloorMesh caches built meshes by angle pair, which does not include
+        // mod settings. Drop every cached entry and rebuild so a circle-arc
+        // toggle takes effect immediately on existing tiles.
+        private static void RefreshFloorMeshCache()
+        {
+            try
+            {
+                foreach (var floorMesh in UnityEngine.Object.FindObjectsOfType<FloorMesh>())
+                {
+                    if (floorMesh == null || string.IsNullOrEmpty(floorMesh.cacheKey)) continue;
+                    FloorMesh.cache.Remove(floorMesh.cacheKey);
+                    floorMesh.UpdateMesh();
+                }
+            }
+            catch (Exception ex)
+            {
+                Main.Logger?.Error($"[Settings] RefreshFloorMeshCache failed: {ex}");
+            }
         }
         #endregion
 

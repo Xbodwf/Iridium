@@ -87,9 +87,104 @@ namespace Iridium.Patches
             {
                 float minDiff = Mathf.Abs(Mathf.DeltaAngle(angleA * Mathf.Rad2Deg, angleB * Mathf.Rad2Deg)) * Mathf.Deg2Rad;
                 float minDiffDeg = minDiff * Mathf.Rad2Deg;
-                if (minDiffDeg >= 89.9f && minDiffDeg <= 105.1f)
+                // num6 drives both the arc center (lerped from the corner intersection
+                // toward the tile origin) and the radius (lerped 0..width): only large
+                // num6 (~0.9) inflates the corner arc into the big rounded OUTER
+                // corner. Vanilla keeps that look exclusively in the 89.9-105.1 band,
+                // so claim every obtuse turn below ~170 as well. (Beyond that the arc
+                // sweep degenerates; 180 must stay vanilla so piAngle tiles keep
+                // their solid fill.)
+                if (minDiffDeg >= 89.9f && minDiffDeg <= 170f)
                     return minDiff * 5f / 180f * Mathf.PI;
                 return original;
+            }
+        }
+
+        // All-angle arc corners. Vanilla FloorMesh.GetPositions draws the corner
+        // arc only while angleDifference < 120 degrees; beyond that the corner
+        // renders as a sharp point. GetPositions normalizes its inputs up front
+        // (swapping angles whenever the directed difference exceeds 180 degrees),
+        // which makes angleDifference always <= PI and turns the CCW gate into
+        // dead code — so widening the single CW gate to PI lets CircleArcPatch's
+        // inflated num6 (see ApplyCircleArcOverride) reach obtuse turns too.
+        //
+        // This patch intentionally does NOT touch num6: flooring it only produces
+        // a tiny invisible inner fillet, and any num6 > 0 also shrinks the inner
+        // inset (insetDistance0), which hollows out straight (piAngle) tiles.
+        //
+        // IL anchors verified identical in Assembly-CSharp 2.9.8 and 3.3.0.
+        [HarmonyPatch(typeof(FloorMesh), "GetPositions")]
+        public static class AllAngleArcCornersPatch
+        {
+            [HarmonyTranspiler]
+            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            {
+                var codes = instructions.ToList();
+
+                // Anchor A: "angleDifference = ModAngle360(angle1 - angle0)" is the
+                // only ModAngle360 call whose result lands in the angleDifference
+                // field (the earlier ones store back into arguments via starg).
+                int anchorIdx = -1;
+                for (int i = 0; i < codes.Count - 1; i++)
+                {
+                    if (!IsCallTo(codes[i], "ModAngle360")) continue;
+                    if (codes[i + 1].opcode == OpCodes.Stfld &&
+                        codes[i + 1].operand is FieldInfo stored && stored.Name == "angleDifference")
+                    {
+                        anchorIdx = i;
+                        break;
+                    }
+                }
+
+                // Anchor B: first "ldfld angleDifference; ldc.r4 <not PI>" after the
+                // anchor — that constant is the 120 degree gate threshold.
+                int gateIdx = -1;
+                for (int i = anchorIdx + 2; anchorIdx >= 0 && i < codes.Count - 2; i++)
+                {
+                    if (codes[i].opcode != OpCodes.Ldfld ||
+                        codes[i].operand is not FieldInfo loaded || loaded.Name != "angleDifference")
+                        continue;
+                    if (codes[i + 1].opcode != OpCodes.Ldc_R4 || codes[i + 1].operand is not float threshold)
+                        continue;
+                    if (Mathf.Approximately(threshold, Mathf.PI)) continue;
+                    gateIdx = i + 1;
+                    break;
+                }
+
+                if (anchorIdx < 0 || gateIdx < 0)
+                {
+                    Main.Logger?.Warning(
+                        "[AllAngleArcCorners] GetPositions IL pattern not found; skipping without changes.");
+                    return instructions;
+                }
+
+                Main.Logger?.Log("[AllAngleArcCorners] GetPositions patched: corner-arc gate widened to PI.");
+
+                var result = new List<CodeInstruction>(codes.Count);
+                for (int i = 0; i < codes.Count; i++)
+                {
+                    if (i == gateIdx)
+                    {
+                        var widened = new CodeInstruction(codes[i]) { operand = Mathf.PI };
+                        result.Add(widened);
+                    }
+                    else
+                    {
+                        result.Add(codes[i]);
+                    }
+                }
+                return result;
+            }
+
+            // Match by name: Harmony resolves instruction operands through the
+            // runtime module, so ReferenceEquals against an AccessTools-resolved
+            // MethodInfo is not reliable.
+            private static bool IsCallTo(CodeInstruction instruction, string methodName)
+            {
+                if (instruction.opcode != OpCodes.Call && instruction.opcode != OpCodes.Callvirt) return false;
+                return instruction.operand is MethodInfo m &&
+                       m.DeclaringType == typeof(FloorMesh) &&
+                       m.Name == methodName;
             }
         }
 
