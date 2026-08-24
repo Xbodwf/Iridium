@@ -42,29 +42,31 @@ namespace Iridium.Patches.UI
 			// toward the tile origin) and the radius (lerped 0..width): only large
 			// num6 (~0.9) inflates the corner arc into the big rounded OUTER
 			// corner. Vanilla keeps that look exclusively in the 89.9-105.1 band.
-			// The application band is user-configurable (default 90-105, matching
-			// vanilla); the top end is inclusive EXCEPT for exact reversals:
-			// GetPositions detects piAngle tiles solely via shortAngle ~= PI
-			// (its own epsilon is 1e-4 rad), so replacing shortAngle there skips
-			// the piAngle early-return. The generic path then intersects perfectly
-			// parallel edge rays, producing inf/NaN vertices whose triangles get
-			// culled -- the whole floor renders transparent. A true 180-degree
-			// turn must therefore always fall back to the original value; the
-			// cutoff below sits just under 180 so the Rad->Deg->Rad round trip
-			// cannot smuggle a reversal through, while real turns of 179.9 and
-			// below still receive the arc.
+			// The application interval is user-configurable (default 90-105,
+			// matching vanilla) and is HALF-OPEN: [min, max). The lower bound
+			// stays inclusive so perfect right angles (exactly 90) keep their
+			// arc; the upper bound is exclusive so the slider value reads as
+			// "up to". Exclusivity also keeps 180 unreachable when the range
+			// contains it: GetPositions detects piAngle tiles solely via
+			// shortAngle ~= PI (its own epsilon is 1e-4 rad), so replacing
+			// shortAngle there skips the piAngle early-return and the generic
+			// path intersects perfectly parallel edge rays -- inf/NaN vertices,
+			// culled triangles, a fully transparent floor. MaxAppliedAngleDeg
+			// caps the effective bound just under 180 so the Rad->Deg->Rad
+			// float round trip cannot smuggle a reversal through either.
 			var ui = Main.Settings?.ui;
 			float min = Mathf.Clamp(ui != null ? ui.circleArcMinAngle : 90f, 0f, 180f);
 			float max = Mathf.Clamp(ui != null ? ui.circleArcMaxAngle : 105f, min, 180f);
-			if (minDiffDeg >= min && minDiffDeg <= max && minDiffDeg < MaxAppliedAngleDeg)
+			if (minDiffDeg >= min && minDiffDeg < Mathf.Min(max, MaxAppliedAngleDeg))
 				return minDiff * 5f / 180f * Mathf.PI;
 			return original;
 		}
 
-		// Hard cutoff just below 180 degrees. Vanilla classifies anything within
-		// 1e-4 rad (~0.0057 deg) of PI as piAngle; 179.99 leaves an order of
-		// magnitude of head room for float conversion noise above while staying
-		// visually indistinguishable from applying the arc all the way to 180.
+		// Hard ceiling just below 180 degrees, capping the configured maximum.
+		// Vanilla classifies anything within 1e-4 rad (~0.0057 deg) of PI as
+		// piAngle; 179.99 leaves an order of magnitude of head room for float
+		// conversion noise above while staying visually indistinguishable from
+		// applying the arc all the way to 180.
 		public const float MaxAppliedAngleDeg = 179.99f;
 	}
 
