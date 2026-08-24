@@ -10,7 +10,9 @@
             <Text text={localize('EnableHitSoundPitch')} style="label" />
             <Fill />
             <Switch value={settings.hitSound.enableHitSoundPitch} on-changed="OnEnableHitSoundPitchToggled" />
+            <Icon type="information" on-click="OnInfoToggle('EnableHitSoundPitch')" />
         </HBox>
+        {isInfoExpanded('EnableHitSoundPitch') && <Text text={localize('EnableHitSoundPitchInfo')} style="hint" />}
 
         <Separator />
         <Text text={localize('AsyncInputSettings')} style="subtitle" />
@@ -20,8 +22,9 @@
             <Text text={localize('EnableAsyncInput')} style="label" />
             <Fill />
             <Switch value={settings.asyncInput.enableAIO} on-changed="OnAsyncInputToggled" />
+            <Icon type="information" on-click="OnInfoToggle('EnableAsyncInput')" />
         </HBox>
-        <Text text={localize('AsyncInputHint')} style="secondary" />
+        {isInfoExpanded('EnableAsyncInput') && <Text text={localize('EnableAsyncInputInfo')} style="hint" />}
         <Text text={localize('AsyncInputWarning')} style="secondary" />
 
         <Separator />
@@ -32,14 +35,18 @@
             <Text text={localize('EnableLobbyMusicPatch')} style="label" />
             <Fill />
             <Switch value={settings.lobbyMusic.enableLobbyMusicPatch} on-changed="OnLobbyMusicPatchToggled" />
+            <Icon type="information" on-click="OnInfoToggle('EnableLobbyMusicPatch')" />
         </HBox>
+        {isInfoExpanded('EnableLobbyMusicPatch') && <Text text={localize('EnableLobbyMusicPatchInfo')} style="hint" />}
 
         {settings.lobbyMusic.enableLobbyMusicPatch && <>
             <HBox align="center">
                 <Text text={localize('EnableCustomBpm')} style="label" />
                 <Fill />
                 <Switch value={settings.lobbyMusic.enableCustomBpm} on-changed="OnEnableCustomBpmToggled" />
+                <Icon type="information" on-click="OnInfoToggle('EnableCustomBpm')" />
             </HBox>
+            {isInfoExpanded('EnableCustomBpm') && <Text text={localize('EnableCustomBpmInfo')} style="hint" />}
 
             {settings.lobbyMusic.enableCustomBpm && <>
                 <HBox align="center">
@@ -53,13 +60,17 @@
                 <Text text={localize('LobbyFastMusic')} style="label" />
                 <Fill />
                 <Switch value={settings.lobbyMusic.fastMusic} on-changed="OnLobbyFastMusicToggled" />
+                <Icon type="information" on-click="OnInfoToggle('LobbyFastMusic')" />
             </HBox>
+            {isInfoExpanded('LobbyFastMusic') && <Text text={localize('LobbyFastMusicInfo')} style="hint" />}
 
             <HBox align="center">
                 <Text text={localize('LobbyCustomMusic')} style="label" />
                 <Fill />
                 <Switch value={settings.lobbyMusic.customMusic} on-changed="OnLobbyCustomMusicToggled" />
+                <Icon type="information" on-click="OnInfoToggle('LobbyCustomMusic')" />
             </HBox>
+            {isInfoExpanded('LobbyCustomMusic') && <Text text={localize('LobbyCustomMusicInfo')} style="hint" />}
 
             {settings.lobbyMusic.customMusic && <>
                 <HBox align="center">

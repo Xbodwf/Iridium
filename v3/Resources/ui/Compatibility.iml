@@ -9,22 +9,30 @@
         <HBox align="center">
             <Text text={localize('EnableLegacyPauseFix')} style="label" />
             <Switch value={settings.compatibility.enableLegacyPauseFix} on-changed="OnEnableLegacyPauseFixToggled" />
+            <Icon type="information" on-click="OnInfoToggle('EnableLegacyPauseFix')" />
         </HBox>
+        {isInfoExpanded('EnableLegacyPauseFix') && <Text text={localize('EnableLegacyPauseFixInfo')} style="hint" />}
 
         <HBox align="center">
             <Text text={localize('EnableNoFailTooEarly')} style="label" />
             <Switch value={settings.compatibility.enableNoFailTooEarly} on-changed="OnEnableNoFailTooEarlyToggled" />
+            <Icon type="information" on-click="OnInfoToggle('EnableNoFailTooEarly')" />
         </HBox>
+        {isInfoExpanded('EnableNoFailTooEarly') && <Text text={localize('EnableNoFailTooEarlyInfo')} style="hint" />}
 
         <HBox align="center">
             <Text text={localize('ScaleFilterSpeedWithPitch')} style="label" />
             <Switch value={settings.compatibility.scaleFilterSpeedWithPitch} on-changed="OnScaleFilterSpeedWithPitchToggled" />
+            <Icon type="information" on-click="OnInfoToggle('ScaleFilterSpeedWithPitch')" />
         </HBox>
+        {isInfoExpanded('ScaleFilterSpeedWithPitch') && <Text text={localize('ScaleFilterSpeedWithPitchInfo')} style="hint" />}
 
         <HBox align="center">
             <Text text={localize('FixCameraRelativeDrag')} style="label" />
             <Switch value={settings.compatibility.fixCameraRelativeDrag} on-changed="OnFixCameraRelativeDragToggled" />
+            <Icon type="information" on-click="OnInfoToggle('FixCameraRelativeDrag')" />
         </HBox>
+        {isInfoExpanded('FixCameraRelativeDrag') && <Text text={localize('FixCameraRelativeDragInfo')} style="hint" />}
 
         <Separator />
         <Text text={localize('BugFixes')} style="subtitle" />
@@ -33,27 +41,37 @@
         <HBox align="center">
             <Text text={localize('PortalTravelFix')} style="label" />
             <Switch value={settings.compatibility.portalTravelFix} on-changed="OnPortalTravelFixToggled" />
+            <Icon type="information" on-click="OnInfoToggle('PortalTravelFix')" />
         </HBox>
+        {isInfoExpanded('PortalTravelFix') && <Text text={localize('PortalTravelFixInfo')} style="hint" />}
 
         <HBox align="center">
             <Text text={localize('FixEditorPlayResetMistakes')} style="label" />
             <Switch value={settings.compatibility.fixEditorPlayResetMistakes} on-changed="OnFixEditorPlayResetMistakesToggled" />
+            <Icon type="information" on-click="OnInfoToggle('FixEditorPlayResetMistakes')" />
         </HBox>
+        {isInfoExpanded('FixEditorPlayResetMistakes') && <Text text={localize('FixEditorPlayResetMistakesInfo')} style="hint" />}
 
         <HBox align="center">
             <Text text={localize('FixTurnaroundCondition')} style="label" />
             <Switch value={settings.compatibility.fixTurnaroundCondition} on-changed="OnFixTurnaroundConditionToggled" />
+            <Icon type="information" on-click="OnInfoToggle('FixTurnaroundCondition')" />
         </HBox>
+        {isInfoExpanded('FixTurnaroundCondition') && <Text text={localize('FixTurnaroundConditionInfo')} style="hint" />}
 
         <HBox align="center">
             <Text text={localize('FixJudgeRotation')} style="label" />
             <Switch value={settings.compatibility.fixJudgeRotation} on-changed="OnFixJudgeRotationToggled" />
+            <Icon type="information" on-click="OnInfoToggle('FixJudgeRotation')" />
         </HBox>
+        {isInfoExpanded('FixJudgeRotation') && <Text text={localize('FixJudgeRotationInfo')} style="hint" />}
 
         <HBox align="center">
             <Text text={localize('FixCoopPauseLock')} style="label" />
             <Switch value={settings.compatibility.fixCoopPauseLock} on-changed="OnFixCoopPauseLockToggled" />
+            <Icon type="information" on-click="OnInfoToggle('FixCoopPauseLock')" />
         </HBox>
+        {isInfoExpanded('FixCoopPauseLock') && <Text text={localize('FixCoopPauseLockInfo')} style="hint" />}
 
         <Separator />
         <Text text={localize('LegacyLevelBehavior')} style="subtitle" />
@@ -62,7 +80,9 @@
         <HBox align="center">
             <Text text={localize('ForceAngleData')} style="label" />
             <Switch value={settings.compatibility.forceAngleData} on-changed="OnForceAngleDataToggled" />
+            <Icon type="information" on-click="OnInfoToggle('ForceAngleData')" />
         </HBox>
+        {isInfoExpanded('ForceAngleData') && <Text text={localize('ForceAngleDataInfo')} style="hint" />}
 
         <Separator />
         <Text text={localize('PatchMode')} style="subtitle" />
@@ -71,7 +91,9 @@
         <HBox align="center">
             <Text text={localize('UseILPatch')} style="label" />
             <Switch value={settings.patchMode.useILPatch} on-changed="OnUseILPatchToggled" />
+            <Icon type="information" on-click="OnInfoToggle('UseILPatch')" />
         </HBox>
+        {isInfoExpanded('UseILPatch') && <Text text={localize('UseILPatchInfo')} style="hint" />}
 
         <Separator />
         <Text text={localize('ThirdPartyMods')} style="subtitle" />
@@ -80,7 +102,9 @@
         <HBox align="center">
             <Text text={localize('IgnoreRequiredMods')} style="label" />
             <Checkbox value={settings.compatibility.ignoreRequiredMods} on-changed="OnIgnoreRequiredModsToggled" />
+            <Icon type="information" on-click="OnInfoToggle('IgnoreRequiredMods')" />
         </HBox>
+        {isInfoExpanded('IgnoreRequiredMods') && <Text text={localize('IgnoreRequiredModsInfo')} style="hint" />}
 
         {settings.compatibility.ignoreRequiredMods && <>
             <HBox gap="8">

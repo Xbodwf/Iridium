@@ -7,7 +7,9 @@
             <Text text={localize('EnableEditorShortcuts')} style="label" />
             <Fill />
             <Switch value={settings.editorShortcuts.enableEditorShortcuts} on-changed="OnEnableEditorShortcutsToggled" />
+            <Icon type="information" on-click="OnInfoToggle('EnableEditorShortcuts')" />
         </HBox>
+        {isInfoExpanded('EnableEditorShortcuts') && <Text text={localize('EnableEditorShortcutsInfo')} style="hint" />}
 
         {settings.editorShortcuts.enableEditorShortcuts && <>
             <Separator />
@@ -58,7 +60,9 @@
                 <Text text={localize('CameraFollowOnFloorSelect')} style="label" />
                 <Fill />
                 <Checkbox value={settings.editorShortcuts.cameraFollowOnFloorSelect} on-changed="OnCameraFollowOnFloorSelectToggled" />
+                <Icon type="information" on-click="OnInfoToggle('CameraFollowOnFloorSelect')" />
             </HBox>
+            {isInfoExpanded('CameraFollowOnFloorSelect') && <Text text={localize('CameraFollowOnFloorSelectInfo')} style="hint" />}
 
             <Separator />
             <Text text={localize('EditorShortcutsPopup')} style="subtitle" />
@@ -85,20 +89,25 @@
             <Text text={localize('EditorPauseAllowed')} style="label" />
             <Fill />
             <Switch value={settings.compatibility.editorPauseAllowed} on-changed="OnEditorPauseAllowedToggled" />
+            <Icon type="information" on-click="OnInfoToggle('EditorPauseAllowed')" />
         </HBox>
+        {isInfoExpanded('EditorPauseAllowed') && <Text text={localize('EditorPauseAllowedInfo')} style="hint" />}
 
         {settings.compatibility.editorPauseAllowed && <>
             <HBox align="center">
                 <Text text={localize('EditorPauseEnabled')} style="label" />
                 <Fill />
                 <Checkbox value={settings.compatibility.editorPauseEnabled} on-changed="OnEditorPauseEnabledToggled" />
+                <Icon type="information" on-click="OnInfoToggle('EditorPauseEnabled')" />
             </HBox>
+            {isInfoExpanded('EditorPauseEnabled') && <Text text={localize('EditorPauseEnabledInfo')} style="hint" />}
             {settings.compatibility.editorPauseEnabled && <>
                 <HBox align="center">
                     <Text text={localize('EditorPauseKey')} style="label" />
                     <Fill />
                     <Button text={getShortcutDisplay(settings.compatibility.editorPauseKey, settings.compatibility.editorPauseModifiers)} on-click="OnBindEditorPauseKey" />
                 </HBox>
+                <Text text={localize('EditorPauseKeyHint')} style="hint" />
             </>}
         </>}
 
@@ -110,33 +119,43 @@
             <Text text={localize('EnableEditorFloorOptimization')} style="label" />
             <Fill />
             <Switch value={settings.optimizer.enableEditorFloorOptimization} on-changed="OnEditorFloorOptimizationToggled" />
+            <Icon type="information" on-click="OnInfoToggle('EnableEditorFloorOptimization')" />
         </HBox>
+        {isInfoExpanded('EnableEditorFloorOptimization') && <Text text={localize('EnableEditorFloorOptimizationInfo')} style="hint" />}
 
         {settings.optimizer.enableEditorFloorOptimization && <>
             <HBox align="center">
                 <Text text={localize('IncrementalFloorInsert')} style="label" />
                 <Fill />
                 <Switch value={settings.optimizer.incrementalFloorInsert} on-changed="OnIncrementalFloorInsertToggled" />
+                <Icon type="information" on-click="OnInfoToggle('IncrementalFloorInsert')" />
             </HBox>
+            {isInfoExpanded('IncrementalFloorInsert') && <Text text={localize('IncrementalFloorInsertInfo')} style="hint" />}
 
             {settings.optimizer.incrementalFloorInsert && <>
                 <HBox align="center">
                     <Text text={localize('RangeBasedRedraw')} style="label" />
                     <Fill />
                     <Checkbox value={settings.optimizer.rangeBasedRedraw} on-changed="OnRangeBasedRedrawToggled" />
+                    <Icon type="information" on-click="OnInfoToggle('RangeBasedRedraw')" />
                 </HBox>
+                {isInfoExpanded('RangeBasedRedraw') && <Text text={localize('RangeBasedRedrawInfo')} style="hint" />}
 
                 <HBox align="center">
                     <Text text={localize('SkipRedundantRemakePath')} style="label" />
                     <Fill />
                     <Checkbox value={settings.optimizer.skipRedundantRemakePath} on-changed="OnSkipRedundantRemakePathToggled" />
+                    <Icon type="information" on-click="OnInfoToggle('SkipRedundantRemakePath')" />
                 </HBox>
+                {isInfoExpanded('SkipRedundantRemakePath') && <Text text={localize('SkipRedundantRemakePathInfo')} style="hint" />}
 
                 <HBox align="center">
                     <Text text={localize('OptimizeOffsetFloorEvents')} style="label" />
                     <Fill />
                     <Checkbox value={settings.optimizer.optimizeOffsetFloorEvents} on-changed="OnOptimizeOffsetFloorEventsToggled" />
+                    <Icon type="information" on-click="OnInfoToggle('OptimizeOffsetFloorEvents')" />
                 </HBox>
+                {isInfoExpanded('OptimizeOffsetFloorEvents') && <Text text={localize('OptimizeOffsetFloorEventsInfo')} style="hint" />}
             </>}
         </>}
     </VBox>

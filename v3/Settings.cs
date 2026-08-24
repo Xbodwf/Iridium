@@ -62,6 +62,16 @@ namespace Iridium
             _sectionExpanded[key] = !IsSectionExpanded(key);
         }
 
+        // Per-option info explanations: clicking the ⓘ icon next to an option
+        // toggles a localized description rendered below the row.
+        private readonly HashSet<string> _infoExpanded = new();
+        public bool IsInfoExpanded(string key) => _infoExpanded.Contains(key);
+
+        private void ToggleInfo(string key)
+        {
+            if (!_infoExpanded.Remove(key)) _infoExpanded.Add(key);
+        }
+
         public string GetSectionHeader(string key, string labelKey)
         {
             return (IsSectionExpanded(key) ? "▾ " : "▸ ") + Localization.Get(labelKey);
@@ -135,6 +145,9 @@ namespace Iridium
             _renderer.RegisterHandler<string>("OnTabClick", key => { _currentTab = key; });
             _renderer.RegisterHandler<string>("OnSectionToggle", key => ToggleSection(key));
             _renderer.RegisterHandler<string>("OnLanguageClick", lang => { language = lang; Save(); });
+            _renderer.RegisterHandler<string>("OnInfoToggle", key => ToggleInfo(key));
+            _renderer.RegisterFunction("isInfoExpanded", args =>
+                args.Length > 0 && args[0] is string key && IsInfoExpanded(key));
 
             RegisterShortcutHandlers();
 
@@ -671,9 +684,34 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 ui.enableCircleArc = value;
-                AsyncPatchManager.UpdatePatchByTypeAsync(typeof(CircleArcPatch));
+                // CircleArcPatch + AllAngleArcCornersPatch form one feature.
+                // Apply synchronously (handler already runs on the main thread)
+                // so the mesh rebuild below sees the new patch state.
+                PatchManager.UpdatePatchByType(typeof(CircleArcPatch));
+                PatchManager.UpdatePatchByType(typeof(AllAngleArcCornersPatch));
+                RefreshFloorMeshCache();
                 Save();
             });
+        }
+
+        // FloorMesh caches built meshes by angle pair, which does not include
+        // mod settings. Drop every cached entry and rebuild so a circle-arc
+        // toggle takes effect immediately on existing tiles.
+        private static void RefreshFloorMeshCache()
+        {
+            try
+            {
+                foreach (var floorMesh in UnityEngine.Object.FindObjectsOfType<FloorMesh>())
+                {
+                    if (floorMesh == null || string.IsNullOrEmpty(floorMesh.cacheKey)) continue;
+                    FloorMesh.cache.Remove(floorMesh.cacheKey);
+                    floorMesh.UpdateMesh();
+                }
+            }
+            catch (Exception ex)
+            {
+                Main.Logger?.Error($"[Settings] RefreshFloorMeshCache failed: {ex}");
+            }
         }
 
         private void RegisterLevelSelectHandlers()
