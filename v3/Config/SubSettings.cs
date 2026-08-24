@@ -85,6 +85,11 @@ namespace Iridium.Config
         public float autoplayTextY = 0f;
         public bool forceDifficultyUI = false;
         public bool enableCircleArc = false;
+        // Turn-angle band (degrees) where CircleArcPatch applies the big arc.
+        // Defaults keep old configs (missing these fields) behaving as a
+        // right-angle-only feature.
+        public float circleArcMinAngle = 90f;
+        public float circleArcMaxAngle = 105f;
         public bool alwaysCountdown = false;
         public bool enablePausePlanetTrail = false;
         public bool showAutoplayHintUI = true;

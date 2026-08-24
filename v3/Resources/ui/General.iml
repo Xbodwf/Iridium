@@ -16,51 +16,63 @@
 
         <HBox align="center">
             <Text text={localize('RemoveNews')} style="label" />
+            <Icon type="information" on-click="OnInfoToggle('RemoveNews')" />
             <Fill />
             <Switch value={settings.ui.removeNews} on-changed="OnRemoveNewsToggled" />
-            <Icon type="information" on-click="OnInfoToggle('RemoveNews')" />
         </HBox>
         {isInfoExpanded('RemoveNews') && <Text text={localize('RemoveNewsInfo')} style="hint" />}
 
         <HBox align="center">
             <Text text={localize('HideBetaWatermark')} style="label" />
+            <Icon type="information" on-click="OnInfoToggle('HideBetaWatermark')" />
             <Fill />
             <Switch value={settings.ui.hideBetaWatermark} on-changed="OnHideBetaWatermarkToggled" />
-            <Icon type="information" on-click="OnInfoToggle('HideBetaWatermark')" />
         </HBox>
         {isInfoExpanded('HideBetaWatermark') && <Text text={localize('HideBetaWatermarkInfo')} style="hint" />}
 
         <HBox align="center">
             <Text text={localize('ForceDifficultyUI')} style="label" />
+            <Icon type="information" on-click="OnInfoToggle('ForceDifficultyUI')" />
             <Fill />
             <Checkbox value={settings.ui.forceDifficultyUI} on-changed="OnForceDifficultyUIToggled" />
-            <Icon type="information" on-click="OnInfoToggle('ForceDifficultyUI')" />
         </HBox>
         {isInfoExpanded('ForceDifficultyUI') && <Text text={localize('ForceDifficultyUIInfo')} style="hint" />}
 
         <HBox align="center">
             <Text text={localize('AlwaysCountdown')} style="label" />
+            <Icon type="information" on-click="OnInfoToggle('AlwaysCountdown')" />
             <Fill />
             <Switch value={settings.ui.alwaysCountdown} on-changed="OnAlwaysCountdownToggled" />
-            <Icon type="information" on-click="OnInfoToggle('AlwaysCountdown')" />
         </HBox>
         {isInfoExpanded('AlwaysCountdown') && <Text text={localize('AlwaysCountdownInfo')} style="hint" />}
 
         <HBox align="center">
             <Text text={localize('EnablePausePlanetTrail')} style="label" />
+            <Icon type="information" on-click="OnInfoToggle('EnablePausePlanetTrail')" />
             <Fill />
             <Switch value={settings.ui.enablePausePlanetTrail} on-changed="OnEnablePausePlanetTrailToggled" />
-            <Icon type="information" on-click="OnInfoToggle('EnablePausePlanetTrail')" />
         </HBox>
         {isInfoExpanded('EnablePausePlanetTrail') && <Text text={localize('EnablePausePlanetTrailInfo')} style="hint" />}
 
         <HBox align="center">
             <Text text={localize('EnableCircleArc')} style="label" />
+            <Icon type="information" on-click="OnInfoToggle('EnableCircleArc')" />
             <Fill />
             <Switch value={settings.ui.enableCircleArc} on-changed="OnEnableCircleArcToggled" />
-            <Icon type="information" on-click="OnInfoToggle('EnableCircleArc')" />
         </HBox>
         {isInfoExpanded('EnableCircleArc') && <Text text={localize('EnableCircleArcInfo')} style="hint" />}
+        {settings.ui.enableCircleArc && <>
+            <HBox align="center">
+                <Text text={localize('CircleArcMinAngle')} style="label" />
+                <Fill />
+                <Slider value={settings.ui.circleArcMinAngle} min="0" max="180" step="1" showValue="true" on-changed="OnCircleArcMinAngleChanged" />
+            </HBox>
+            <HBox align="center">
+                <Text text={localize('CircleArcMaxAngle')} style="label" />
+                <Fill />
+                <Slider value={settings.ui.circleArcMaxAngle} min="0" max="180" step="1" showValue="true" on-changed="OnCircleArcMaxAngleChanged" />
+            </HBox>
+        </>}
 
         <Separator />
         <Text text={localize('AutoplayDisplay')} style="subtitle" />
@@ -68,18 +80,18 @@
 
         <HBox align="center">
             <Text text={localize('ShowAutoplayHintUI')} style="label" />
+            <Icon type="information" on-click="OnInfoToggle('ShowAutoplayHintUI')" />
             <Fill />
             <Switch value={settings.ui.showAutoplayHintUI} on-changed="OnShowAutoplayHintUIToggled" />
-            <Icon type="information" on-click="OnInfoToggle('ShowAutoplayHintUI')" />
         </HBox>
         {isInfoExpanded('ShowAutoplayHintUI') && <Text text={localize('ShowAutoplayHintUIInfo')} style="hint" />}
 
         {settings.ui.showAutoplayHintUI && <>
             <HBox align="center">
                 <Text text={localize('CustomAutoplayHint')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('CustomAutoplayHint')" />
                 <Fill />
                 <Checkbox value={settings.ui.customAutoplayHint} on-changed="OnCustomAutoplayHintToggled" />
-                <Icon type="information" on-click="OnInfoToggle('CustomAutoplayHint')" />
             </HBox>
             {isInfoExpanded('CustomAutoplayHint') && <Text text={localize('CustomAutoplayHintInfo')} style="hint" />}
             {settings.ui.customAutoplayHint && <>
@@ -90,9 +102,9 @@
 
         <HBox align="center">
             <Text text={localize('MoveAutoplayText')} style="label" />
+            <Icon type="information" on-click="OnInfoToggle('MoveAutoplayText')" />
             <Fill />
             <Switch value={settings.ui.moveAutoplayText} on-changed="OnMoveAutoplayTextToggled" />
-            <Icon type="information" on-click="OnInfoToggle('MoveAutoplayText')" />
         </HBox>
         {isInfoExpanded('MoveAutoplayText') && <Text text={localize('MoveAutoplayTextInfo')} style="hint" />}
 
@@ -113,9 +125,9 @@
 
         <HBox align="center">
             <Text text={localize('EnableJudgeTextCustomization')} style="label" />
+            <Icon type="information" on-click="OnInfoToggle('EnableJudgeTextCustomization')" />
             <Fill />
             <Switch value={settings.judgeText.enableJudgeTextCustomization} on-changed="OnJudgeTextCustomizationToggled" />
-            <Icon type="information" on-click="OnInfoToggle('EnableJudgeTextCustomization')" />
         </HBox>
         {isInfoExpanded('EnableJudgeTextCustomization') && <Text text={localize('EnableJudgeTextCustomizationInfo')} style="hint" />}
 

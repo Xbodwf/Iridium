@@ -4,9 +4,9 @@
         <Separator />
         <HBox align="center">
             <Text text={localize('EnableOptimizer')} style="label" />
+            <Icon type="information" on-click="OnInfoToggle('EnableOptimizer')" />
             <Fill />
             <Switch value={settings.optimizer.enableOptimizer} on-changed="OnOptimizerToggled" />
-            <Icon type="information" on-click="OnInfoToggle('EnableOptimizer')" />
         </HBox>
         {isInfoExpanded('EnableOptimizer') && <Text text={localize('EnableOptimizerInfo')} style="hint" />}
 
@@ -20,60 +20,60 @@
 
             <HBox align="center">
                 <Text text={localize('CompressImage')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('CompressImage')" />
                 <Fill />
                 <Switch value={!settings.optimizer.dontCompress} on-changed="OnCompressToggled" />
-                <Icon type="information" on-click="OnInfoToggle('CompressImage')" />
             </HBox>
             {isInfoExpanded('CompressImage') && <Text text={localize('CompressImageInfo')} style="hint" />}
 
             {!settings.optimizer.dontCompress && <>
                 <HBox align="center">
                     <Text text={localize('ShowSavedMemory')} style="label" />
+                    <Icon type="information" on-click="OnInfoToggle('ShowSavedMemory')" />
                     <Fill />
                     <Checkbox value={!settings.optimizer.dontShowSavedMemory} on-changed="OnShowSavedMemoryToggled" />
-                    <Icon type="information" on-click="OnInfoToggle('ShowSavedMemory')" />
                 </HBox>
                 {isInfoExpanded('ShowSavedMemory') && <Text text={localize('ShowSavedMemoryInfo')} style="hint" />}
 
                 <HBox align="center">
                     <Text text={localize('UseLossyCompression')} style="label" />
+                    <Icon type="information" on-click="OnInfoToggle('UseLossyCompression')" />
                     <Fill />
                     <Switch value={settings.optimizer.useLossyCompression} on-changed="OnLossyCompressionToggled" />
-                    <Icon type="information" on-click="OnInfoToggle('UseLossyCompression')" />
                 </HBox>
                 {isInfoExpanded('UseLossyCompression') && <Text text={localize('UseLossyCompressionInfo')} style="hint" />}
 
                 {settings.optimizer.useLossyCompression && <>
                     <HBox align="center">
                         <Text text={localize('LossyQuality')} style="label" />
+                        <Icon type="information" on-click="OnInfoToggle('LossyQuality')" />
                         <Fill />
                         <Slider value={settings.optimizer.lossyQuality} min="10" max="100" showValue="true" on-changed="OnLossyQualityChanged" />
-                        <Icon type="information" on-click="OnInfoToggle('LossyQuality')" />
                     </HBox>
                     {isInfoExpanded('LossyQuality') && <Text text={localize('LossyQualityInfo')} style="hint" />}
                 </>}
 
                 <HBox align="center">
                     <Text text={localize('MultipleOf4')} style="label" />
+                    <Icon type="information" on-click="OnInfoToggle('MultipleOf4')" />
                     <Fill />
                     <Checkbox value={!settings.optimizer.dontResizeMultipleOf4} on-changed="OnMultipleOf4Toggled" />
-                    <Icon type="information" on-click="OnInfoToggle('MultipleOf4')" />
                 </HBox>
                 {isInfoExpanded('MultipleOf4') && <Text text={localize('MultipleOf4Info')} style="hint" />}
 
                 <HBox align="center">
                     <Text text={localize('DivideImageBy')} style="label" />
+                    <Icon type="information" on-click="OnInfoToggle('DivideImageBy')" />
                     <Fill />
                     <Slider value={settings.optimizer.divideBy} min="1" max="4" showValue="true" on-changed="OnDivideByChanged" />
-                    <Icon type="information" on-click="OnInfoToggle('DivideImageBy')" />
                 </HBox>
                 {isInfoExpanded('DivideImageBy') && <Text text={localize('DivideImageByInfo')} style="hint" />}
 
                 <HBox align="center">
                     <Text text={localize('DontResizeCollider')} style="label" />
+                    <Icon type="information" on-click="OnInfoToggle('DontResizeCollider')" />
                     <Fill />
                     <Checkbox value={settings.optimizer.dontResizeCollider} on-changed="OnDontResizeColliderToggled" />
-                    <Icon type="information" on-click="OnInfoToggle('DontResizeCollider')" />
                 </HBox>
                 {isInfoExpanded('DontResizeCollider') && <Text text={localize('DontResizeColliderInfo')} style="hint" />}
             </>}
@@ -88,105 +88,105 @@
 
             <HBox align="center">
                 <Text text={localize('DisableShadows')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('DisableShadows')" />
                 <Fill />
                 <Switch value={settings.optimizer.disableShadows} on-changed="OnDisableShadowsToggled" />
-                <Icon type="information" on-click="OnInfoToggle('DisableShadows')" />
             </HBox>
             {isInfoExpanded('DisableShadows') && <Text text={localize('DisableShadowsInfo')} style="hint" />}
 
             <HBox align="center">
                 <Text text={localize('OptimizeDecorationUpdate')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('OptimizeDecorationUpdate')" />
                 <Fill />
                 <Switch value={settings.optimizer.optimizeDecorationUpdate} on-changed="OnOptimizeDecorationUpdateToggled" />
-                <Icon type="information" on-click="OnInfoToggle('OptimizeDecorationUpdate')" />
             </HBox>
             {isInfoExpanded('OptimizeDecorationUpdate') && <Text text={localize('OptimizeDecorationUpdateInfo')} style="hint" />}
 
             <HBox align="center">
                 <Text text={localize('OptimizeTileUpdate')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('OptimizeTileUpdate')" />
                 <Fill />
                 <Switch value={settings.optimizer.optimizeTileUpdate} on-changed="OnOptimizeTileUpdateToggled" />
-                <Icon type="information" on-click="OnInfoToggle('OptimizeTileUpdate')" />
             </HBox>
             {isInfoExpanded('OptimizeTileUpdate') && <Text text={localize('OptimizeTileUpdateInfo')} style="hint" />}
 
             <HBox align="center">
                 <Text text={localize('OptimizeMoveTrack')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('OptimizeMoveTrack')" />
                 <Fill />
                 <Switch value={settings.optimizer.optimizeMoveTrack} on-changed="OnOptimizeMoveTrackToggled" />
-                <Icon type="information" on-click="OnInfoToggle('OptimizeMoveTrack')" />
             </HBox>
             {isInfoExpanded('OptimizeMoveTrack') && <Text text={localize('OptimizeMoveTrackInfo')} style="hint" />}
 
             <HBox align="center">
                 <Text text={localize('OptimizeRecolorTrack')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('OptimizeRecolorTrack')" />
                 <Fill />
                 <Switch value={settings.optimizer.optimizeRecolorTrack} on-changed="OnOptimizeRecolorTrackToggled" />
-                <Icon type="information" on-click="OnInfoToggle('OptimizeRecolorTrack')" />
             </HBox>
             {isInfoExpanded('OptimizeRecolorTrack') && <Text text={localize('OptimizeRecolorTrackInfo')} style="hint" />}
 
             <HBox align="center">
                 <Text text={localize('SkipEventIfPaused')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('SkipEventIfPaused')" />
                 <Fill />
                 <Switch value={settings.optimizer.skipEventIfPaused} on-changed="OnSkipEventIfPausedToggled" />
-                <Icon type="information" on-click="OnInfoToggle('SkipEventIfPaused')" />
             </HBox>
             {isInfoExpanded('SkipEventIfPaused') && <Text text={localize('SkipEventIfPausedInfo')} style="hint" />}
 
             <HBox align="center">
                 <Text text={localize('OptimizeEventIcons')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('OptimizeEventIcons')" />
                 <Fill />
                 <Switch value={settings.optimizer.optimizeEventIcons} on-changed="OnOptimizeEventIconsToggled" />
-                <Icon type="information" on-click="OnInfoToggle('OptimizeEventIcons')" />
             </HBox>
             {isInfoExpanded('OptimizeEventIcons') && <Text text={localize('OptimizeEventIconsInfo')} style="hint" />}
 
             <HBox align="center">
                 <Text text={localize('OptimizeScnGameUpdate')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('OptimizeScnGameUpdate')" />
                 <Fill />
                 <Switch value={settings.optimizer.optimizeScnGameUpdate} on-changed="OnOptimizeScnGameUpdateToggled" />
-                <Icon type="information" on-click="OnInfoToggle('OptimizeScnGameUpdate')" />
             </HBox>
             {isInfoExpanded('OptimizeScnGameUpdate') && <Text text={localize('OptimizeScnGameUpdateInfo')} style="hint" />}
 
             <HBox align="center">
                 <Text text={localize('OptimizeMoveDecorations')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('OptimizeMoveDecorations')" />
                 <Fill />
                 <Switch value={settings.optimizer.optimizeMoveDecorations} on-changed="OnOptimizeMoveDecorationsToggled" />
-                <Icon type="information" on-click="OnInfoToggle('OptimizeMoveDecorations')" />
             </HBox>
             {isInfoExpanded('OptimizeMoveDecorations') && <Text text={localize('OptimizeMoveDecorationsInfo')} style="hint" />}
 
             <HBox align="center">
                 <Text text={localize('OptimizeFfxDecorations')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('OptimizeFfxDecorations')" />
                 <Fill />
                 <Switch value={settings.optimizer.optimizeFfxDecorations} on-changed="OnOptimizeFfxDecorationsToggled" />
-                <Icon type="information" on-click="OnInfoToggle('OptimizeFfxDecorations')" />
             </HBox>
             {isInfoExpanded('OptimizeFfxDecorations') && <Text text={localize('OptimizeFfxDecorationsInfo')} style="hint" />}
 
             <HBox align="center">
                 <Text text={localize('OptimizeFloorMesh')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('OptimizeFloorMesh')" />
                 <Fill />
                 <Switch value={settings.optimizer.optimizeFloorMesh} on-changed="OnOptimizeFloorMeshToggled" />
-                <Icon type="information" on-click="OnInfoToggle('OptimizeFloorMesh')" />
             </HBox>
             {isInfoExpanded('OptimizeFloorMesh') && <Text text={localize('OptimizeFloorMeshInfo')} style="hint" />}
 
             <HBox align="center">
                 <Text text={localize('OptimizeFilters')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('OptimizeFilters')" />
                 <Fill />
                 <Switch value={settings.optimizer.optimizeFilters} on-changed="OnOptimizeFiltersToggled" />
-                <Icon type="information" on-click="OnInfoToggle('OptimizeFilters')" />
             </HBox>
             {isInfoExpanded('OptimizeFilters') && <Text text={localize('OptimizeFiltersInfo')} style="hint" />}
 
             <HBox align="center">
                 <Text text={localize('FastLoading')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('FastLoading')" />
                 <Fill />
                 <Switch value={settings.optimizer.fastLoading} on-changed="OnFastLoadingToggled" />
-                <Icon type="information" on-click="OnInfoToggle('FastLoading')" />
             </HBox>
             {isInfoExpanded('FastLoading') && <Text text={localize('FastLoadingInfo')} style="hint" />}
             </View>}
@@ -199,9 +199,9 @@
             {settings.expandEasingOpts && <View class="background">
             <HBox align="center">
                 <Text text={localize('EnableCustomEasingEngine')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('EnableCustomEasingEngine')" />
                 <Fill />
                 <Switch value={settings.optimizer.enableCustomEasingEngine} on-changed="OnCustomEasingEngineToggled" />
-                <Icon type="information" on-click="OnInfoToggle('EnableCustomEasingEngine')" />
             </HBox>
             {isInfoExpanded('EnableCustomEasingEngine') && <Text text={localize('EnableCustomEasingEngineInfo')} style="hint" />}
             </View>}
@@ -215,34 +215,34 @@
 
             <HBox align="center">
                 <Text text={localize('OptimizeParticle')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('OptimizeParticle')" />
                 <Fill />
                 <Switch value={settings.optimizer.optimizeParticle} on-changed="OnOptimizeParticleToggled" />
-                <Icon type="information" on-click="OnInfoToggle('OptimizeParticle')" />
             </HBox>
             {isInfoExpanded('OptimizeParticle') && <Text text={localize('OptimizeParticleInfo')} style="hint" />}
 
             {settings.optimizer.optimizeParticle && <>
                 <HBox align="center">
                     <Text text={localize('OptimizeParticleInactive')} style="label" />
+                    <Icon type="information" on-click="OnInfoToggle('OptimizeParticleInactive')" />
                     <Fill />
                     <Checkbox value={settings.optimizer.optimizeParticleInactive} on-changed="OnOptimizeParticleInactiveToggled" />
-                    <Icon type="information" on-click="OnInfoToggle('OptimizeParticleInactive')" />
                 </HBox>
                 {isInfoExpanded('OptimizeParticleInactive') && <Text text={localize('OptimizeParticleInactiveInfo')} style="hint" />}
 
                 <HBox align="center">
                     <Text text={localize('OptimizeParticleCulling')} style="label" />
+                    <Icon type="information" on-click="OnInfoToggle('OptimizeParticleCulling')" />
                     <Fill />
                     <Checkbox value={settings.optimizer.optimizeParticleCulling} on-changed="OnOptimizeParticleCullingToggled" />
-                    <Icon type="information" on-click="OnInfoToggle('OptimizeParticleCulling')" />
                 </HBox>
                 {isInfoExpanded('OptimizeParticleCulling') && <Text text={localize('OptimizeParticleCullingInfo')} style="hint" />}
 
                 <HBox align="center">
                     <Text text={localize('OptimizeParticleLod')} style="label" />
+                    <Icon type="information" on-click="OnInfoToggle('OptimizeParticleLod')" />
                     <Fill />
                     <Checkbox value={settings.optimizer.optimizeParticleLod} on-changed="OnOptimizeParticleLodToggled" />
-                    <Icon type="information" on-click="OnInfoToggle('OptimizeParticleLod')" />
                 </HBox>
                 {isInfoExpanded('OptimizeParticleLod') && <Text text={localize('OptimizeParticleLodInfo')} style="hint" />}
             </>}
@@ -257,33 +257,33 @@
 
             <HBox align="center">
                 <Text text={localize('CacheGameObjectReferences')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('CacheGameObjectReferences')" />
                 <Fill />
                 <Switch value={settings.optimizer.cacheGameObjectReferences} on-changed="OnCacheGameObjectReferencesToggled" />
-                <Icon type="information" on-click="OnInfoToggle('CacheGameObjectReferences')" />
             </HBox>
             {isInfoExpanded('CacheGameObjectReferences') && <Text text={localize('CacheGameObjectReferencesInfo')} style="hint" />}
 
             <HBox align="center">
                 <Text text={localize('OptimizeEventProcessing')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('OptimizeEventProcessing')" />
                 <Fill />
                 <Switch value={settings.optimizer.optimizeEventProcessing} on-changed="OnOptimizeEventProcessingToggled" />
-                <Icon type="information" on-click="OnInfoToggle('OptimizeEventProcessing')" />
             </HBox>
             {isInfoExpanded('OptimizeEventProcessing') && <Text text={localize('OptimizeEventProcessingInfo')} style="hint" />}
 
             <HBox align="center">
                 <Text text={localize('OptimizeEditorMouseDetection')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('OptimizeEditorMouseDetection')" />
                 <Fill />
                 <Switch value={settings.optimizer.optimizeEditorMouseDetection} on-changed="OnOptimizeEditorMouseDetectionToggled" />
-                <Icon type="information" on-click="OnInfoToggle('OptimizeEditorMouseDetection')" />
             </HBox>
             {isInfoExpanded('OptimizeEditorMouseDetection') && <Text text={localize('OptimizeEditorMouseDetectionInfo')} style="hint" />}
 
             <HBox align="center">
                 <Text text={localize('OptimizeEditorEventIndicators')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('OptimizeEditorEventIndicators')" />
                 <Fill />
                 <Switch value={settings.optimizer.optimizeEditorEventIndicators} on-changed="OnOptimizeEditorEventIndicatorsToggled" />
-                <Icon type="information" on-click="OnInfoToggle('OptimizeEditorEventIndicators')" />
             </HBox>
             {isInfoExpanded('OptimizeEditorEventIndicators') && <Text text={localize('OptimizeEditorEventIndicatorsInfo')} style="hint" />}
             </View>}
@@ -297,50 +297,50 @@
 
             <HBox align="center">
                 <Text text={localize('CacheFloorEvents')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('CacheFloorEvents')" />
                 <Fill />
                 <Switch value={settings.optimizer.cacheFloorEvents} on-changed="OnCacheFloorEventsToggled" />
-                <Icon type="information" on-click="OnInfoToggle('CacheFloorEvents')" />
             </HBox>
             {isInfoExpanded('CacheFloorEvents') && <Text text={localize('CacheFloorEventsInfo')} style="hint" />}
 
             <HBox align="center">
                 <Text text={localize('OptimizeMoveTrackTweens')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('OptimizeMoveTrackTweens')" />
                 <Fill />
                 <Switch value={settings.optimizer.optimizeMoveTrackTweens} on-changed="OnOptimizeMoveTrackTweensToggled" />
-                <Icon type="information" on-click="OnInfoToggle('OptimizeMoveTrackTweens')" />
             </HBox>
             {isInfoExpanded('OptimizeMoveTrackTweens') && <Text text={localize('OptimizeMoveTrackTweensInfo')} style="hint" />}
 
             <HBox align="center">
                 <Text text={localize('BatchMoveDecorations')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('BatchMoveDecorations')" />
                 <Fill />
                 <Switch value={settings.optimizer.batchMoveDecorations} on-changed="OnBatchMoveDecorationsToggled" />
-                <Icon type="information" on-click="OnInfoToggle('BatchMoveDecorations')" />
             </HBox>
             {isInfoExpanded('BatchMoveDecorations') && <Text text={localize('BatchMoveDecorationsInfo')} style="hint" />}
 
             <HBox align="center">
                 <Text text={localize('CustomLevelReadOptimization')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('CustomLevelReadOptimization')" />
                 <Fill />
                 <Switch value={settings.optimizer.customLevelReadOptimization} on-changed="OnCustomLevelReadOptimizationToggled" />
-                <Icon type="information" on-click="OnInfoToggle('CustomLevelReadOptimization')" />
             </HBox>
             {isInfoExpanded('CustomLevelReadOptimization') && <Text text={localize('CustomLevelReadOptimizationInfo')} style="hint" />}
 
             <HBox align="center">
                 <Text text={localize('FrameSpreadDecorationLoading')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('FrameSpreadDecorationLoading')" />
                 <Fill />
                 <Switch value={settings.optimizer.frameSpreadDecorationLoading} on-changed="OnFrameSpreadDecorationLoadingToggled" />
-                <Icon type="information" on-click="OnInfoToggle('FrameSpreadDecorationLoading')" />
             </HBox>
             {isInfoExpanded('FrameSpreadDecorationLoading') && <Text text={localize('FrameSpreadDecorationLoadingInfo')} style="hint" />}
 
             {settings.optimizer.frameSpreadDecorationLoading && <>
                 <HBox align="center">
                     <Text text={localize('DecorationsPerFrame')} style="label" />
+                    <Icon type="information" on-click="OnInfoToggle('DecorationsPerFrame')" />
                     <Fill />
                     <Slider value={settings.optimizer.decorationsPerFrame} min="10" max="500" showValue="true" on-changed="OnDecorationsPerFrameChanged" />
-                    <Icon type="information" on-click="OnInfoToggle('DecorationsPerFrame')" />
                 </HBox>
                 {isInfoExpanded('DecorationsPerFrame') && <Text text={localize('DecorationsPerFrameInfo')} style="hint" />}
             </>}
@@ -355,42 +355,42 @@
 
             <HBox align="center">
                 <Text text={localize('EnableDOTweenOptimization')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('EnableDOTweenOptimization')" />
                 <Fill />
                 <Switch value={settings.optimizer.optimizeDOTweenGlobal} on-changed="OnDOTweenGlobalToggled" />
-                <Icon type="information" on-click="OnInfoToggle('EnableDOTweenOptimization')" />
             </HBox>
             {isInfoExpanded('EnableDOTweenOptimization') && <Text text={localize('EnableDOTweenOptimizationInfo')} style="hint" />}
 
             {settings.optimizer.optimizeDOTweenGlobal && <>
                 <HBox align="center">
                     <Text text={localize('TweenerCapacity')} style="label" />
+                    <Icon type="information" on-click="OnInfoToggle('TweenerCapacity')" />
                     <Fill />
                     <Slider value={settings.optimizer.dotweenTweenerCapacity} min="200" max="2000" showValue="true" on-changed="OnTweenerCapacityChanged" />
-                    <Icon type="information" on-click="OnInfoToggle('TweenerCapacity')" />
                 </HBox>
                 {isInfoExpanded('TweenerCapacity') && <Text text={localize('TweenerCapacityInfo')} style="hint" />}
 
                 <HBox align="center">
                     <Text text={localize('SequenceCapacity')} style="label" />
+                    <Icon type="information" on-click="OnInfoToggle('SequenceCapacity')" />
                     <Fill />
                     <Slider value={settings.optimizer.dotweenSequenceCapacity} min="50" max="500" showValue="true" on-changed="OnSequenceCapacityChanged" />
-                    <Icon type="information" on-click="OnInfoToggle('SequenceCapacity')" />
                 </HBox>
                 {isInfoExpanded('SequenceCapacity') && <Text text={localize('SequenceCapacityInfo')} style="hint" />}
 
                 <HBox align="center">
                     <Text text={localize('DOTweenDefaultRecyclable')} style="label" />
+                    <Icon type="information" on-click="OnInfoToggle('DOTweenDefaultRecyclable')" />
                     <Fill />
                     <Checkbox value={settings.optimizer.dotweenDefaultRecyclable} on-changed="OnDOTweenDefaultRecyclableToggled" />
-                    <Icon type="information" on-click="OnInfoToggle('DOTweenDefaultRecyclable')" />
                 </HBox>
                 {isInfoExpanded('DOTweenDefaultRecyclable') && <Text text={localize('DOTweenDefaultRecyclableInfo')} style="hint" />}
 
                 <HBox align="center">
                     <Text text={localize('DOTweenDisableSafeMode')} style="label" />
+                    <Icon type="information" on-click="OnInfoToggle('DOTweenDisableSafeMode')" />
                     <Fill />
                     <Checkbox value={settings.optimizer.dotweenDisableSafeMode} on-changed="OnDOTweenDisableSafeModeToggled" />
-                    <Icon type="information" on-click="OnInfoToggle('DOTweenDisableSafeMode')" />
                 </HBox>
                 {isInfoExpanded('DOTweenDisableSafeMode') && <Text text={localize('DOTweenDisableSafeModeInfo')} style="hint" />}
             </>}
@@ -405,18 +405,18 @@
 
             <HBox align="center">
                 <Text text={localize('EnableExtremeOptimization')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('EnableExtremeOptimization')" />
                 <Fill />
                 <Switch value={settings.optimizer.enableExtremeOptimization} on-changed="OnExtremeOptimizationToggled" />
-                <Icon type="information" on-click="OnInfoToggle('EnableExtremeOptimization')" />
             </HBox>
             {isInfoExpanded('EnableExtremeOptimization') && <Text text={localize('EnableExtremeOptimizationInfo')} style="hint" />}
 
             {settings.optimizer.enableExtremeOptimization && <>
                 <HBox align="center">
                     <Text text={localize('MaxTweensPerFrame')} style="label" />
+                    <Icon type="information" on-click="OnInfoToggle('MaxTweensPerFrame')" />
                     <Fill />
                     <Slider value={settings.optimizer.maxTweensPerFrame} min="50" max="500" showValue="true" on-changed="OnMaxTweensPerFrameChanged" />
-                    <Icon type="information" on-click="OnInfoToggle('MaxTweensPerFrame')" />
                 </HBox>
                 {isInfoExpanded('MaxTweensPerFrame') && <Text text={localize('MaxTweensPerFrameInfo')} style="hint" />}
             </>}
@@ -431,33 +431,33 @@
 
             <HBox align="center">
                 <Text text={localize('EnableMemoryOptimization')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('EnableMemoryOptimization')" />
                 <Fill />
                 <Switch value={settings.memory.enableMemoryOptimization} on-changed="OnMemoryOptimizationToggled" />
-                <Icon type="information" on-click="OnInfoToggle('EnableMemoryOptimization')" />
             </HBox>
             {isInfoExpanded('EnableMemoryOptimization') && <Text text={localize('EnableMemoryOptimizationInfo')} style="hint" />}
 
             <HBox align="center">
                 <Text text={localize('FerriteCore')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('FerriteCore')" />
                 <Fill />
                 <Switch value={settings.memory.enableFerriteCore} on-changed="OnFerriteCoreToggled" />
-                <Icon type="information" on-click="OnInfoToggle('FerriteCore')" />
             </HBox>
             {isInfoExpanded('FerriteCore') && <Text text={localize('FerriteCoreInfo')} style="hint" />}
 
             <HBox align="center">
                 <Text text={localize('OptimizePlayerInputAllocations')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('OptimizePlayerInputAllocations')" />
                 <Fill />
                 <Switch value={settings.optimizer.optimizePlayerInputAllocations} on-changed="OnOptimizePlayerInputAllocationsToggled" />
-                <Icon type="information" on-click="OnInfoToggle('OptimizePlayerInputAllocations')" />
             </HBox>
             {isInfoExpanded('OptimizePlayerInputAllocations') && <Text text={localize('OptimizePlayerInputAllocationsInfo')} style="hint" />}
 
             <HBox align="center">
                 <Text text={localize('OptimizeRDInputAllocations')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('OptimizeRDInputAllocations')" />
                 <Fill />
                 <Switch value={settings.optimizer.optimizeRDInputAllocations} on-changed="OnOptimizeRDInputAllocationsToggled" />
-                <Icon type="information" on-click="OnInfoToggle('OptimizeRDInputAllocations')" />
             </HBox>
             {isInfoExpanded('OptimizeRDInputAllocations') && <Text text={localize('OptimizeRDInputAllocationsInfo')} style="hint" />}
             </View>}

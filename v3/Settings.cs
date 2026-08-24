@@ -692,6 +692,30 @@ namespace Iridium
                 RefreshFloorMeshCache();
                 Save();
             });
+
+            _renderer.RegisterHandler("OnCircleArcMinAngleChanged", (obj) =>
+            {
+                if (obj is float f)
+                {
+                    ui.circleArcMinAngle = Mathf.Clamp(f, 0f, 180f);
+                    if (ui.circleArcMaxAngle < ui.circleArcMinAngle)
+                        ui.circleArcMaxAngle = ui.circleArcMinAngle;
+                    RefreshFloorMeshCache();
+                    Save();
+                }
+            });
+
+            _renderer.RegisterHandler("OnCircleArcMaxAngleChanged", (obj) =>
+            {
+                if (obj is float f)
+                {
+                    ui.circleArcMaxAngle = Mathf.Clamp(f, 0f, 180f);
+                    if (ui.circleArcMaxAngle < ui.circleArcMinAngle)
+                        ui.circleArcMinAngle = ui.circleArcMaxAngle;
+                    RefreshFloorMeshCache();
+                    Save();
+                }
+            });
         }
 
         // FloorMesh caches built meshes by angle pair, which does not include

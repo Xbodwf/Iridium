@@ -41,11 +41,14 @@ namespace Iridium.Patches.UI
 			// num6 drives both the arc center (lerped from the corner intersection
 			// toward the tile origin) and the radius (lerped 0..width): only large
 			// num6 (~0.9) inflates the corner arc into the big rounded OUTER
-			// corner. Vanilla keeps that look exclusively in the 89.9-105.1 band,
-			// so claim every obtuse turn below ~170 as well. (Beyond that the arc
-			// sweep degenerates; 180 must stay vanilla so piAngle tiles keep
-			// their solid fill.)
-			if (minDiffDeg >= 89.9f && minDiffDeg <= 170f)
+			// corner. Vanilla keeps that look exclusively in the 89.9-105.1 band.
+			// The application band is user-configurable (default 90-105, matching
+			// vanilla); 180 must stay excluded so piAngle tiles keep their solid
+			// fill and near-straight turns don't degenerate.
+			var ui = Main.Settings?.ui;
+			float min = Mathf.Clamp(ui != null ? ui.circleArcMinAngle : 90f, 0f, 180f);
+			float max = Mathf.Clamp(ui != null ? ui.circleArcMaxAngle : 105f, min, 180f);
+			if (minDiffDeg >= min && minDiffDeg <= max)
 				return minDiff * 5f / 180f * Mathf.PI;
 			return original;
 		}
@@ -119,12 +122,8 @@ namespace Iridium.Patches.UI
 
 			if (anchorIdx < 0 || gateIdx < 0)
 			{
-				Main.Logger?.Warning(
-					"[AllAngleArcCorners] GetPositions IL pattern not found; skipping without changes.");
 				return instructions;
 			}
-
-			Main.Logger?.Log("[AllAngleArcCorners] GetPositions patched: corner-arc gate widened to PI.");
 
 			var result = new List<CodeInstruction>(codes.Count);
 			for (int i = 0; i < codes.Count; i++)
