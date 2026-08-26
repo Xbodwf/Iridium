@@ -16,11 +16,22 @@ namespace Iridium.Patches.Editor
 		[IriPatch(Path = "editor/shortcuts", Pre = typeof(EditorShortcutSettings), Condition = "enableEditorShortcuts")]
 		public static class EditorShortcutUpdatePatch
 		{
+			private static bool _attachLogged;
+
 			[HarmonyPostfix]
 			public static void Postfix(scnEditor __instance)
 			{
-
 				var s = Main.Settings.editorShortcuts;
+
+				if (!_attachLogged)
+				{
+					_attachLogged = true;
+					Main.Logger?.Log(
+						$"[EditorShortcuts] postfix attached. enabled={s.enableEditorShortcuts}, " +
+						$"selectAll={s.selectAllKey}/{s.selectAllModifiers}, deselect={s.deselectAllKey}/{s.deselectAllModifiers}, " +
+						 $"toggle={s.toggleVisibilityKey}/{s.toggleVisibilityModifiers}, focus={s.focusDecorationKey}/{s.focusDecorationModifiers}, " +
+						$"goto={s.goToFloorKey}/{s.goToFloorModifiers}, allFloors={s.selectAllFloorsKey}/{s.selectAllFloorsModifiers}");
+				}
 
 				// Popup shortcuts (highest priority)
 				if (__instance.popupPanel != null && __instance.popupPanel.activeSelf)
@@ -32,7 +43,31 @@ namespace Iridium.Patches.Editor
 				// Don't fire shortcuts while editing an input field
 				if (__instance.userIsEditingAnInputField) return;
 
+				ProbeConfiguredKeys(s);
 				HandleEditorShortcuts(__instance, s);
+			}
+
+			// Diagnostics: whenever one of the configured keys registers a press,
+			// dump the raw key plus modifier state so a failed binding can be
+			// told apart from a blocked one (input field / popup gating).
+			private static void ProbeConfiguredKeys(Config.EditorShortcutSettings s)
+			{
+				ProbeKey("selectAll", s.selectAllKey, s.selectAllModifiers);
+				ProbeKey("deselect", s.deselectAllKey, s.deselectAllModifiers);
+				ProbeKey("toggleVis", s.toggleVisibilityKey, s.toggleVisibilityModifiers);
+				ProbeKey("focus", s.focusDecorationKey, s.focusDecorationModifiers);
+				ProbeKey("goto", s.goToFloorKey, s.goToFloorModifiers);
+				ProbeKey("allFloors", s.selectAllFloorsKey, s.selectAllFloorsModifiers);
+			}
+
+			private static void ProbeKey(string name, int key, int modifiers)
+			{
+				if (!Input.GetKeyDown((KeyCode)key)) return;
+				Main.Logger?.Log(
+					$"[EditorShortcuts] {name}: {(KeyCode)key}({key}) down; mods=0x{modifiers:X} " +
+					$"ctrl={Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)} " +
+					$"shift={Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)} " +
+					$"alt={Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt)}");
 			}
 		}
 

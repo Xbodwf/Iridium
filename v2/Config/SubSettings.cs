@@ -195,32 +195,35 @@ namespace Iridium.Config
         public bool enableEditorShortcuts = false;
 
         // --- Decoration shortcuts ---
+        // NOTE: key codes must be UnityEngine.KeyCode values, NOT ASCII.
+        // Unity letter keys start at A=97 (lowercase ASCII); 65..90 are
+        // undefined holes that Input.GetKeyDown can never match.
 
         // Select All Decorations (default: Ctrl+Shift+A)
-        public int selectAllKey = 65; // KeyCode.A
+        public int selectAllKey = 97; // KeyCode.A
         public int selectAllModifiers = 5; // Ctrl+Shift
 
         // Deselect All (default: Ctrl+Shift+D)
-        public int deselectAllKey = 68; // KeyCode.D
+        public int deselectAllKey = 100; // KeyCode.D
         public int deselectAllModifiers = 5; // Ctrl+Shift
 
         // Toggle Visibility (default: Ctrl+E)
-        public int toggleVisibilityKey = 69; // KeyCode.E
+        public int toggleVisibilityKey = 101; // KeyCode.E
         public int toggleVisibilityModifiers = 1; // Ctrl
 
         // Focus Decoration (default: Ctrl+G)
-        public int focusDecorationKey = 71; // KeyCode.G
+        public int focusDecorationKey = 103; // KeyCode.G
         public int focusDecorationModifiers = 1; // Ctrl
 
         // --- Navigation shortcuts ---
 
         // Go To Selected Floor (default: Ctrl+Shift+N)
-        public int goToFloorKey = 78; // KeyCode.N
+        public int goToFloorKey = 110; // KeyCode.N
         public int goToFloorModifiers = 5; // Ctrl+Shift
         public bool cameraFollowOnFloorSelect = true; // SelectFloor 附带镜头跟随
 
         // Select All Floors (default: Ctrl+Shift+W)
-        public int selectAllFloorsKey = 87; // KeyCode.W
+        public int selectAllFloorsKey = 119; // KeyCode.W
         public int selectAllFloorsModifiers = 5; // Ctrl+Shift
 
         // --- Popup shortcuts ---
@@ -230,8 +233,25 @@ namespace Iridium.Config
         public int popupSaveModifiers = 0;
 
         // Popup Discard (default: D)
-        public int popupDiscardKey = 68; // KeyCode.D
+        public int popupDiscardKey = 100; // KeyCode.D
         public int popupDiscardModifiers = 0;
+
+        /// <summary>
+        /// 早期版本的默认键码误用 ASCII 大写字母（'A'=65 等）。这些值不是有效的
+        /// Unity KeyCode，永远不会触发，且会随设置一起被序列化进用户配置。
+        /// 加载时把已知的无效遗留值迁移为正确的键码；由于这些数值不对应任何
+        /// 物理键，用户不可能有意绑定它们，无条件迁移是安全的。
+        /// </summary>
+        public void MigrateLegacyAsciiKeyCodes()
+        {
+            if (selectAllKey == 65) selectAllKey = 97;          // 'A' -> A
+            if (deselectAllKey == 68) deselectAllKey = 100;     // 'D' -> D
+            if (toggleVisibilityKey == 69) toggleVisibilityKey = 101; // 'E' -> E
+            if (focusDecorationKey == 71) focusDecorationKey = 103;   // 'G' -> G
+            if (goToFloorKey == 78) goToFloorKey = 110;         // 'N' -> N
+            if (selectAllFloorsKey == 87) selectAllFloorsKey = 119;   // 'W' -> W
+            if (popupDiscardKey == 68) popupDiscardKey = 100;   // 'D' -> D
+        }
     }
 
     public class AsyncInputSettings

@@ -1089,14 +1089,16 @@ namespace Iridium
 
         private static string ShortcutDisplay(int key, int modifiers)
         {
+            // Modifier bit layout MUST match EditorShortcutPatches.MOD_*:
+            // 1=Ctrl, 2=Alt, 4=Shift, 8=Win (also used by the pause-key check).
             var modStr = "";
             if ((modifiers & 1) != 0) modStr += "Ctrl+";
-            if ((modifiers & 2) != 0) modStr += "Shift+";
-            if ((modifiers & 4) != 0) modStr += "Alt+";
+            if ((modifiers & 2) != 0) modStr += "Alt+";
+            if ((modifiers & 4) != 0) modStr += "Shift+";
             if ((modifiers & 8) != 0) modStr += "Win+";
             if (key == 0 && modStr != "") return modStr.TrimEnd('+');
             if (key == 0) return "…";
-            var keyName = key >= 32 && key <= 126 ? ((char)key).ToString() : 
+            var keyName = key >= 32 && key <= 126 ? ((char)key).ToString() :
                           Enum.IsDefined(typeof(KeyCode), key) ? ((KeyCode)key).ToString() : "?";
             return modStr + keyName;
         }
@@ -1148,8 +1150,10 @@ namespace Iridium
 
                         int mods = 0;
                         if (ev.control) mods |= 1;
-                        if (ev.shift) mods |= 2;
-                        if (ev.alt) mods |= 4;
+                        // Bit layout must match EditorShortcutPatches.MOD_*:
+                        // 2=Alt, 4=Shift (NOT Unity's Event field order).
+                        if (ev.shift) mods |= 4;
+                        if (ev.alt) mods |= 2;
                         if (ev.command) mods |= 8;
 
                         if (isMod)

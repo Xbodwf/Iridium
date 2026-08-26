@@ -26,6 +26,9 @@ namespace Iridium
             Settings = handler.LoadSettings<Settings>();
             Localization.Load();
             Settings.ValidateCustomEasingConflict(Settings);
+            // Heal shortcut keys saved by builds whose defaults used ASCII
+            // letter codes instead of Unity KeyCode values (never triggerable).
+            Settings.editorShortcuts.MigrateLegacyAsciiKeyCodes();
 
             handler.OnToggle += OnToggle;
             handler.OnGUI += () => Settings.OnGUI();
