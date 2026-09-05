@@ -328,6 +328,20 @@
 		<AutoLaunchGame>true</AutoLaunchGame>
 		<Loader></Loader>
 	</PropertyGroup>
+	<!-- Game exe path resolved from v2/.env (see ..\GamePath.props): the key
+	     matching -p:Loader= wins, then the shared ADOFAI_GAME_PATH default.
+	     A -p:GameExePath=... global property overrides all of this.
+	     When no path resolves, DeployAndLaunch is skipped (build still succeeds). -->
+	<Import Project="$(MSBuildThisFileDirectory)..\GamePath.props" />
+	<PropertyGroup>
+		<GameExePath Condition="'$(Loader)' == 'UMM'">$(GameExePath_UMMFinal)</GameExePath>
+		<GameExePath Condition="'$(Loader)' == 'ML'">$(GameExePath_MLFinal)</GameExePath>
+		<GameExePath Condition="'$(Loader)' == 'BepInEx'">$(GameExePath_BEPINEXFinal)</GameExePath>
+		<GameExePath Condition="'$(GameExePath)' == ''">$(GameExePath_DefaultFinal)</GameExePath>
+	</PropertyGroup>
+	<Target Name="SkipDeployNotice" AfterTargets="DeployAndLaunch" Condition="'$(Loader)' != '' AND ('$(GameExePath)' == '' OR !Exists('$(GameExePath)'))">
+		<Message Text="GameExePath is not set or not found — deploy skipped. Set ADOFAI_GAME_PATH in v2/.env (see v2/.env.example) to enable deploy+launch." Importance="high" />
+	</Target>
 	<Target Name="ValidateLoader" BeforeTargets="DeployAndLaunch" Condition="'$(Loader)' != '' AND '$(Loader)' != 'ML' AND '$(Loader)' != 'UMM' AND '$(Loader)' != 'BepInEx'">
 		<Error Text="Invalid Loader value '$(Loader)'. Use -p:Loader=ML, -p:Loader=UMM, or -p:Loader=BepInEx" />
 	</Target>

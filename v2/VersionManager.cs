@@ -7,13 +7,13 @@ namespace Iridium
         Hotfix,
         Release,
         Beta,
-        Nightly,
+        Snapshot,
         Prerelease
     }
 
     public static class VersionManager
     {
-        public static VersionType Type => VersionType.Hotfix;
+        public static VersionType Type => VersionType.Snapshot;
         public const int MinorVersion = 1;
 
         public static string GetFullVersionString()

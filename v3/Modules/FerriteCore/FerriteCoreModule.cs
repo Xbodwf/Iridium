@@ -12,7 +12,8 @@ namespace Iridium.Modules.FerriteCore
     ///
     /// Configuration lives in a standalone <c>Config/FerriteCore.json</c>
     /// next to the mod — it deliberately does NOT participate in Settings.xml.
-    /// Settings.xml only carries the master switch (<see cref="Config.MemorySettings.enableFerriteCore"/>).
+    /// Settings.xml only carries the 基础优化 master switch
+    /// (<see cref="Config.MemorySettings.enableBasicOptimization"/>).
     ///
     /// The module is fully optional: when the switch is off, nothing is applied
     /// and no Harmony patches are installed.
@@ -24,6 +25,7 @@ namespace Iridium.Modules.FerriteCore
         public static bool IsActive { get; private set; }
 
         private static Harmony? _harmony;
+        private static Harmony? _coreHarmony;
         private static bool _originalsCaptured;
         private static int _origFrameRate;
         private static int _origVsync;
@@ -32,7 +34,6 @@ namespace Iridium.Modules.FerriteCore
         private static float _origFixedDT;
         private static float _origMaxDT;
         private static System.Runtime.GCLatencyMode _origGCMode;
-        private static SimulationMode2D _origPhysicsMode;
 
         public static string ConfigPath => Path.Combine(
             Main.Handler?.ModPath ?? ".",
@@ -47,7 +48,11 @@ namespace Iridium.Modules.FerriteCore
                 {
                     var json = File.ReadAllText(ConfigPath);
                     var parsed = JsonConvert.DeserializeObject<FerriteConfig>(json);
-                    if (parsed != null) Config = parsed;
+                    if (parsed != null)
+                    {
+                        Config = parsed;
+                        MigrateConfig();
+                    }
                 }
                 else
                 {
@@ -60,6 +65,21 @@ namespace Iridium.Modules.FerriteCore
             {
                 Main.Logger?.Error($"[FerriteCore] Failed to load config: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Bring pre-rework config files up to the basic profile: the three
+        /// safe defaults the 基础优化 switch promises were all opt-in before.
+        /// </summary>
+        private static void MigrateConfig()
+        {
+            if (Config.configVersion >= 2) return;
+            Config.L0.enableIncrementalGC = true;
+            Config.L0.gcOnSceneSwitch = true;
+            Config.L0.limitShadowDistance = true;
+            Config.configVersion = 2;
+            EnsureDefaultConfig();
+            Main.Logger?.Log("[FerriteCore] migrated config to basic profile (v2)");
         }
 
         private static void EnsureDefaultConfig()
@@ -126,13 +146,13 @@ namespace Iridium.Modules.FerriteCore
             Time.fixedDeltaTime = s.limitFixedTimestep ? s.fixedTimestep : _origFixedDT;
             Time.maximumDeltaTime = s.limitMaxAllowedTimestep ? s.maxAllowedTimestep : _origMaxDT;
 
-            if (s.reducePhysicsQueries)
-                Physics2D.simulationMode = SimulationMode2D.Script;
-
             if (s.tuneAudioBuffer)
                 ApplyAudioBuffer(s.audioBufferSize);
 
-            // L1 Harmony patches
+            // Core Harmony patch (scene-switch GC) — independent of L1
+            ApplyCorePatches();
+
+            // L1 Harmony patches (renderer sleep)
             if (Config.L1.enableL1)
                 ApplyL1Patches();
         }
@@ -147,8 +167,8 @@ namespace Iridium.Modules.FerriteCore
             System.Runtime.GCSettings.LatencyMode = _origGCMode;
             Time.fixedDeltaTime = _origFixedDT;
             Time.maximumDeltaTime = _origMaxDT;
-            Physics2D.simulationMode = _origPhysicsMode;
 
+            RemoveCorePatches();
             RemoveL1Patches();
         }
 
@@ -162,7 +182,6 @@ namespace Iridium.Modules.FerriteCore
             _origGCMode = System.Runtime.GCSettings.LatencyMode;
             _origFixedDT = Time.fixedDeltaTime;
             _origMaxDT = Time.maximumDeltaTime;
-            _origPhysicsMode = Physics2D.simulationMode;
             _originalsCaptured = true;
         }
 
@@ -223,6 +242,30 @@ namespace Iridium.Modules.FerriteCore
             }
         }
 
+        // ── Core patch: scene-switch GC ────────────────────────────────────
+
+        private static void ApplyCorePatches()
+        {
+            if (_coreHarmony != null) return;
+            _coreHarmony = new Harmony("Iridium.FerriteCore.Core");
+            try
+            {
+                _coreHarmony.CreateClassProcessor(typeof(ScnGameDestroyGC)).Patch();
+            }
+            catch (Exception ex)
+            {
+                Main.Logger?.Error($"[FerriteCore] Failed to apply core patches: {ex.Message}");
+            }
+        }
+
+        private static void RemoveCorePatches()
+        {
+            if (_coreHarmony == null) return;
+            try { _coreHarmony.UnpatchAll("Iridium.FerriteCore.Core"); }
+            catch { /* ignore */ }
+            _coreHarmony = null;
+        }
+
         // ── L1: soft optimizations ─────────────────────────────────────────
 
         private static void ApplyL1Patches()
@@ -234,7 +277,6 @@ namespace Iridium.Modules.FerriteCore
                 _harmony.CreateClassProcessor(typeof(PlanetRendererSleep)).Patch();
                 _harmony.CreateClassProcessor(typeof(FloorRendererSleep)).Patch();
                 _harmony.CreateClassProcessor(typeof(DecorationRendererSleep)).Patch();
-                _harmony.CreateClassProcessor(typeof(ScnGameDestroyGC)).Patch();
             }
             catch (Exception ex)
             {
@@ -309,7 +351,7 @@ namespace Iridium.Modules.FerriteCore
         {
             public static void Postfix()
             {
-                if (!L1Active) return;
+                if (!Config.L0.gcOnSceneSwitch) return;
                 TriggerSceneGC();
             }
         }

@@ -782,12 +782,25 @@ public static class IridiumLayout
 
     public static void EnsureTexturesAlive()
     {
+        // 设置界面 (Iris.Iml) 的分区箭头按钮改用本引擎的 DrawArrow 渲染链，
+        // 且背景+边框+箭头烘焙为单张纹理，替代内置的逐像素实心三角 + 叠加绘制。
+        Iris.Iml.GuiTextureFactory.ExternalArrowButtonRenderer = RenderArrowButtonTexture;
+
         if (Resolution.Textures.Any(x => x == null))
         {
             var oldResources = ResolutionTrigger.ResetWithOld();
             if (oldResources != null)
                 oldResources.DestroyTextures();
         }
+    }
+
+    /// <summary>
+    /// 箭头按钮合成纹理：圆角方块背景 + 边框 + DrawArrow 描边三角，
+    /// 单张纹理一次绘制。dir: 0=Right 1=Down 2=Left 3=Up（Iris.Iml ArrowDir）。
+    /// </summary>
+    public static Texture2D RenderArrowButtonTexture(int size, int dir, Color fill, Color border, int borderWidth, int radius, Color strokeColor)
+    {
+        return Resolution.RenderArrowButtonOnly(size, dir, fill, border, borderWidth, radius, strokeColor);
     }
 
     public static GUILayoutOption WidthMin => GUILayout.ExpandWidth(false);
@@ -1834,6 +1847,37 @@ public static class IridiumLayout
             texture.Apply();
             Textures.Add(texture);
             return texture;
+        }
+
+        /// <summary>
+        /// 箭头按钮单纹理合成：边框色填充外圆角矩形、背景色填充内圆角矩形，
+        /// 再用 DrawArrow 画描边三角——与 <see cref="RenderSquareGlyph"/> 同一管线。
+        /// dir: 0=Right 1=Down 2=Left 3=Up（Iris.Iml ArrowDir）。
+        /// </summary>
+        public Texture2D RenderArrowButtonOnly(int size, int dir, Color fill, Color borderCol, int borderWidth, int radius, Color strokeColor)
+        {
+            return RenderImage(size, size, graphics =>
+            {
+                using (var path = new GraphicsPath())
+                {
+                    AppendRoundRect(path, 0, 0, size, size, radius);
+                    using var brush = new SolidBrush(DrawingColor(borderCol));
+                    graphics.FillPath(brush, path);
+                }
+                using (var path = new GraphicsPath())
+                {
+                    AppendRoundRect(path, borderWidth, borderWidth, size - borderWidth * 2, size - borderWidth * 2, radius - borderWidth);
+                    using var brush = new SolidBrush(DrawingColor(fill));
+                    graphics.FillPath(brush, path);
+                }
+                switch (dir)
+                {
+                    case 1: DrawDownArrow(graphics, size, strokeColor); break;
+                    case 2: DrawLeftArrow(graphics, size, strokeColor); break;
+                    case 3: DrawUpArrow(graphics, size, strokeColor); break;
+                    default: DrawRightArrow(graphics, size, strokeColor); break;
+                }
+            });
         }
 
         private static void AppendRoundRect(

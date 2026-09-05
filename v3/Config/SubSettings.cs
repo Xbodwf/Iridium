@@ -26,6 +26,7 @@ namespace Iridium.Config
         public bool optimizeScnGameUpdate = false;
         public bool optimizePlayerInputAllocations = false;
         public bool optimizeRDInputAllocations = false;
+        public bool optimizeGameplayAllocations = false;
         public bool optimizeMoveDecorations = false;
         public bool optimizeFloorMesh = false;
         public bool optimizeFfxDecorations = false; // 新增：优化 ffx 装饰物更新
@@ -110,12 +111,22 @@ namespace Iridium.Config
 
     public class MemorySettings
     {
-        public bool enableMemoryOptimization = false;
-        public bool cleanOnSceneSwitch = true;
+        /// <summary>
+        /// 基础优化：整合旧“内存优化”系列与 FerriteCore 引擎调优的单一开关。
+        /// 具体调优项在 FerriteCore 的 Config/FerriteCore.json 中微调。
+        /// </summary>
+        public bool enableBasicOptimization = false;
 
-        // Master switch for the embedded FerriteCore module. Individual
-        // options are read from the standalone FerriteCore/Config/FerriteCore.json
-        // — NOT from Settings.xml.
+        /// <summary>
+        /// 进阶优化：虚拟内存优化（原理同 PCL2）。仅在 Windows 上执行
+        /// 工作集裁剪；其他平台自动降级为仅托管侧清理。
+        /// </summary>
+        public bool enableVirtualMemoryOptimization = false;
+        public bool vmTrimOnLevelLoad = false;
+        public bool vmTrimOnEditorEnter = false;
+
+        // Legacy: pre-rework master switch, kept only to migrate old
+        // Settings.xml files. No longer shown in the UI.
         public bool enableFerriteCore = false;
     }
 

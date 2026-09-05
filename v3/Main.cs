@@ -23,6 +23,13 @@ namespace Iridium
             Logger = new Logger();
             Settings = handler.LoadSettings<Settings>();
             Localization.Load();
+            // Migrate pre-rework memory settings: the old FerriteCore master
+            // switch folds into the unified basic-optimization switch.
+            if (Settings.memory.enableFerriteCore)
+            {
+                Settings.memory.enableBasicOptimization = true;
+                Settings.memory.enableFerriteCore = false;
+            }
             Settings.ValidateCustomEasingConflict(Settings);
             // Heal shortcut keys saved by builds whose defaults used ASCII
             // letter codes instead of Unity KeyCode values (never triggerable).
@@ -96,8 +103,10 @@ namespace Iridium
                 if (Main.Settings.asyncInput.enableAIO)
                     Modules.AsyncInputOptimize.Main.Enable();
 
-                if (Main.Settings.memory.enableFerriteCore)
+                if (Main.Settings.memory.enableBasicOptimization)
                     Modules.FerriteCore.FerriteCoreModule.Enable();
+                Modules.FerriteCore.VirtualMemoryOptimizer.SetEnabled(
+                    Main.Settings.memory.enableVirtualMemoryOptimization);
 
                 if (Main.Settings.optimizer.enableOptimizer)
                 {
@@ -124,6 +133,7 @@ namespace Iridium
                 Logger?.Log(Localization.Get("ModDisabled"));
 
                 Modules.FerriteCore.FerriteCoreModule.Disable();
+                Modules.FerriteCore.VirtualMemoryOptimizer.SetEnabled(false);
                 Modules.AsyncInputOptimize.Main.Disable();
                 Iridium.Patches.AsyncPatchManager.Stop();
                 Iridium.Patches.PatchManager.UnpatchAll();

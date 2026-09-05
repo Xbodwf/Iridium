@@ -253,7 +253,7 @@ jobs:
             }
           }
 
-    - name: Update Repository.json on mod-update repo
+    - name: Update Repository jsons on mod-update repo
       shell: bash
       run: |
         git clone https://x-access-token:${{ secrets.LIBS_PAT }}@github.com/adofaiex/mod-update.git /tmp/mod-update
@@ -264,28 +264,22 @@ jobs:
         baseTag="${{ steps.version_info.outputs.BASE_TAG }}"
         tagName="${{ steps.version_info.outputs.TAG_NAME }}"
 
+        # v2 and v3 use separate manifests: the v2 client reads Iridium/Repository_v2.json
+        # (see v2/Info.json), the v3 client reads Iridium/Repository.json (see v3/Info.json).
         mkdir -p Iridium
         node -e "
           const fs = require('fs');
-          const repo = {
-            Releases: [
-              {
-                Id: 'Iridium',
-                Version: '$baseTag',
-                DownloadUrl: 'https://github.com/adofaiex/Iridium/releases/download/$tagName/Iridium_${v3Tag}.zip'
-              },
-              {
-                Id: 'Iridium',
-                Version: '$baseTag',
-                DownloadUrl: 'https://github.com/adofaiex/Iridium/releases/download/$tagName/Iridium_${v2Tag}.zip'
-              }
-            ]
-          };
-          fs.writeFileSync('Iridium/Repository.json', JSON.stringify(repo, null, 2) + '\n');
+          const entry = (zipTag) => ({
+            Id: 'Iridium',
+            Version: '$baseTag',
+            DownloadUrl: 'https://github.com/adofaiex/Iridium/releases/download/$tagName/Iridium_' + zipTag + '.zip'
+          });
+          fs.writeFileSync('Iridium/Repository.json', JSON.stringify({ Releases: [entry('$v3Tag')] }, null, 2) + '\n');
+          fs.writeFileSync('Iridium/Repository_v2.json', JSON.stringify({ Releases: [entry('$v2Tag')] }, null, 2) + '\n');
         "
 
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git add Iridium/Repository.json
-        git commit -m "auto-update Repository.json for $baseTag" || true
+        git add Iridium/Repository.json Iridium/Repository_v2.json
+        git commit -m "auto-update Repository.json / Repository_v2.json for $baseTag" || true
         git push origin main

@@ -331,10 +331,23 @@
 		<Message Text="Files copied to: $(OutDir)" Importance="high" />
 	</Target>
 	<PropertyGroup>
-		<GameExePath>/home/xbouo/.local/share/Steam/steamapps/common/A Dance of Fire and Ice/ADanceOfFireAndIce</GameExePath>
 		<AutoLaunchGame>true</AutoLaunchGame>
 		<Loader></Loader>
 	</PropertyGroup>
+	<!-- Game exe path resolved from v3/.env (see ..\GamePath.props): the key
+	     matching -p:Loader= wins, then the shared ADOFAI_GAME_PATH default.
+	     A -p:GameExePath=... global property overrides all of this.
+	     When no path resolves, DeployAndLaunch is skipped (build still succeeds). -->
+	<Import Project="$(MSBuildThisFileDirectory)..\GamePath.props" />
+	<PropertyGroup>
+		<GameExePath Condition="'$(Loader)' == 'UMM'">$(GameExePath_UMMFinal)</GameExePath>
+		<GameExePath Condition="'$(Loader)' == 'ML'">$(GameExePath_MLFinal)</GameExePath>
+		<GameExePath Condition="'$(Loader)' == 'BepInEx'">$(GameExePath_BEPINEXFinal)</GameExePath>
+		<GameExePath Condition="'$(GameExePath)' == ''">$(GameExePath_DefaultFinal)</GameExePath>
+	</PropertyGroup>
+	<Target Name="SkipDeployNotice" AfterTargets="DeployAndLaunch" Condition="'$(Loader)' != '' AND ('$(GameExePath)' == '' OR !Exists('$(GameExePath)'))">
+		<Message Text="GameExePath is not set or not found — deploy skipped. Set ADOFAI_GAME_PATH in v3/.env (see v3/.env.example) to enable deploy+launch." Importance="high" />
+	</Target>
 	<Target Name="ValidateLoader" BeforeTargets="DeployAndLaunch" Condition="'$(Loader)' != '' AND '$(Loader)' != 'ML' AND '$(Loader)' != 'UMM' AND '$(Loader)' != 'BepInEx'">
 		<Error Text="Invalid Loader value '$(Loader)'. Use -p:Loader=ML, -p:Loader=UMM, or -p:Loader=BepInEx" />
 	</Target>

@@ -1,0 +1,48 @@
+<Project>
+  <!--
+    Game executable path for the importing project (Iridium v2/v3).
+
+    Paths are read from a .env file next to the importing .csproj
+    (v2/.env for the v2 build, v3/.env for the v3 build; git-ignored,
+    so your machine-specific game installs never end up in version control).
+    v2 and v3 are separate game installs, so each keeps its own .env:
+
+        # v2/.env or v3/.env
+        ADOFAI_GAME_PATH=C:\Games\ADOFAI\ADanceOfFireAndIce.exe   # default (all loaders)
+        ADOFAI_GAME_PATH_UMM=...\ADanceOfFireAndIce.exe           # UMM loader override
+        ADOFAI_GAME_PATH_ML=...\ADanceOfFireAndIce.exe            # MelonLoader override
+        ADOFAI_GAME_PATH_BEPINEX=...\ADanceOfFireAndIce.exe       # BepInEx override
+
+    Resolution: the -p:Loader=<L> key, then the ADOFAI_GAME_PATH_<L>
+    environment variable, then ADOFAI_GAME_PATH (then its env var).
+    A -p:GameExePath=... global property overrides everything.
+  -->
+  <PropertyGroup>
+    <GameExePathEnvContent Condition="Exists('$(MSBuildProjectDirectory)\.env')">$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\.env'))</GameExePathEnvContent>
+
+    <!-- Extract a value for KEY from the .env content (empty if absent). -->
+    <GameExePath_Default>$([System.Text.RegularExpressions.Regex]::Match('$(GameExePathEnvContent)', '(?m)^[ \t]*ADOFAI_GAME_PATH[ \t]*=[ \t]*([^\r\n]+)').Groups[1].Value.Trim())</GameExePath_Default>
+    <GameExePath_UMM>$([System.Text.RegularExpressions.Regex]::Match('$(GameExePathEnvContent)', '(?m)^[ \t]*ADOFAI_GAME_PATH_UMM[ \t]*=[ \t]*([^\r\n]+)').Groups[1].Value.Trim())</GameExePath_UMM>
+    <GameExePath_ML>$([System.Text.RegularExpressions.Regex]::Match('$(GameExePathEnvContent)', '(?m)^[ \t]*ADOFAI_GAME_PATH_ML[ \t]*=[ \t]*([^\r\n]+)').Groups[1].Value.Trim())</GameExePath_ML>
+    <GameExePath_BEPINEX>$([System.Text.RegularExpressions.Regex]::Match('$(GameExePathEnvContent)', '(?m)^[ \t]*ADOFAI_GAME_PATH_BEPINEX[ \t]*=[ \t]*([^\r\n]+)').Groups[1].Value.Trim())</GameExePath_BEPINEX>
+
+    <!-- Per-loader resolution: <loader key> -> loader env var -> default key -> default env var. -->
+    <GameExePath_UMMFinal Condition="'$(GameExePath_UMM)' != ''">$(GameExePath_UMM)</GameExePath_UMMFinal>
+    <GameExePath_UMMFinal Condition="'$(GameExePath_UMMFinal)' == ''">$(ADOFAI_GAME_PATH_UMM)</GameExePath_UMMFinal>
+    <GameExePath_UMMFinal Condition="'$(GameExePath_UMMFinal)' == ''">$(GameExePath_Default)</GameExePath_UMMFinal>
+    <GameExePath_UMMFinal Condition="'$(GameExePath_UMMFinal)' == ''">$(ADOFAI_GAME_PATH)</GameExePath_UMMFinal>
+
+    <GameExePath_MLFinal Condition="'$(GameExePath_ML)' != ''">$(GameExePath_ML)</GameExePath_MLFinal>
+    <GameExePath_MLFinal Condition="'$(GameExePath_MLFinal)' == ''">$(ADOFAI_GAME_PATH_ML)</GameExePath_MLFinal>
+    <GameExePath_MLFinal Condition="'$(GameExePath_MLFinal)' == ''">$(GameExePath_Default)</GameExePath_MLFinal>
+    <GameExePath_MLFinal Condition="'$(GameExePath_MLFinal)' == ''">$(ADOFAI_GAME_PATH)</GameExePath_MLFinal>
+
+    <GameExePath_BEPINEXFinal Condition="'$(GameExePath_BEPINEX)' != ''">$(GameExePath_BEPINEX)</GameExePath_BEPINEXFinal>
+    <GameExePath_BEPINEXFinal Condition="'$(GameExePath_BEPINEXFinal)' == ''">$(ADOFAI_GAME_PATH_BEPINEX)</GameExePath_BEPINEXFinal>
+    <GameExePath_BEPINEXFinal Condition="'$(GameExePath_BEPINEXFinal)' == ''">$(GameExePath_Default)</GameExePath_BEPINEXFinal>
+    <GameExePath_BEPINEXFinal Condition="'$(GameExePath_BEPINEXFinal)' == ''">$(ADOFAI_GAME_PATH)</GameExePath_BEPINEXFinal>
+
+    <GameExePath_DefaultFinal Condition="'$(GameExePath_Default)' != ''">$(GameExePath_Default)</GameExePath_DefaultFinal>
+    <GameExePath_DefaultFinal Condition="'$(GameExePath_DefaultFinal)' == ''">$(ADOFAI_GAME_PATH)</GameExePath_DefaultFinal>
+  </PropertyGroup>
+</Project>

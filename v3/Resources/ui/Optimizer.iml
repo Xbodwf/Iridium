@@ -430,20 +430,46 @@
             {settings.expandMemoryOpts && <View class="background">
 
             <HBox align="center">
-                <Text text={localize('EnableMemoryOptimization')} style="label" />
-                <Icon type="information" on-click="OnInfoToggle('EnableMemoryOptimization')" />
+                <Text text={localize('BasicMemoryOptimization')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('BasicMemoryOptimization')" />
                 <Fill />
-                <Switch value={settings.memory.enableMemoryOptimization} on-changed="OnMemoryOptimizationToggled" />
+                <Switch value={settings.memory.enableBasicOptimization} on-changed="OnBasicMemoryOptimizationToggled" />
             </HBox>
-            {isInfoExpanded('EnableMemoryOptimization') && <Text text={localize('EnableMemoryOptimizationInfo')} style="hint" />}
+            {isInfoExpanded('BasicMemoryOptimization') && <Text text={localize('BasicMemoryOptimizationInfo')} style="hint" />}
 
             <HBox align="center">
-                <Text text={localize('FerriteCore')} style="label" />
-                <Icon type="information" on-click="OnInfoToggle('FerriteCore')" />
-                <Fill />
-                <Switch value={settings.memory.enableFerriteCore} on-changed="OnFerriteCoreToggled" />
+                <ArrowButton direction={settings.expandAdvancedMemoryOpts ? 'down' : 'right'} on-click="OnSectionToggle('advancedMemory')" />
+                <Text text={localize('AdvancedMemoryOptimization')} style="subtitle" />
             </HBox>
-            {isInfoExpanded('FerriteCore') && <Text text={localize('FerriteCoreInfo')} style="hint" />}
+            {settings.expandAdvancedMemoryOpts && <View class="background">
+
+            <HBox align="center">
+                <Text text={localize('EnableVirtualMemoryOptimization')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('EnableVirtualMemoryOptimization')" />
+                <Fill />
+                <Switch value={settings.memory.enableVirtualMemoryOptimization} on-changed="OnVirtualMemoryOptimizationToggled" />
+            </HBox>
+            {isInfoExpanded('EnableVirtualMemoryOptimization') && <Text text={localize('EnableVirtualMemoryOptimizationInfo')} style="hint" />}
+            {settings.memory.enableVirtualMemoryOptimization && <Text text={localize('VmTrimWindowsOnlyHint')} style="hint" />}
+
+            {settings.memory.enableVirtualMemoryOptimization && <>
+                <HBox align="center">
+                    <Text text={localize('VmTrimOnLevelLoad')} style="label" />
+                    <Icon type="information" on-click="OnInfoToggle('VmTrimOnLevelLoad')" />
+                    <Fill />
+                    <Switch value={settings.memory.vmTrimOnLevelLoad} on-changed="OnVmTrimOnLevelLoadToggled" />
+                </HBox>
+                {isInfoExpanded('VmTrimOnLevelLoad') && <Text text={localize('VmTrimOnLevelLoadInfo')} style="hint" />}
+
+                <HBox align="center">
+                    <Text text={localize('VmTrimOnEditorEnter')} style="label" />
+                    <Icon type="information" on-click="OnInfoToggle('VmTrimOnEditorEnter')" />
+                    <Fill />
+                    <Switch value={settings.memory.vmTrimOnEditorEnter} on-changed="OnVmTrimOnEditorEnterToggled" />
+                </HBox>
+                {isInfoExpanded('VmTrimOnEditorEnter') && <Text text={localize('VmTrimOnEditorEnterInfo')} style="hint" />}
+            </>}
+            </View>}
 
             <HBox align="center">
                 <Text text={localize('OptimizePlayerInputAllocations')} style="label" />
@@ -460,6 +486,14 @@
                 <Switch value={settings.optimizer.optimizeRDInputAllocations} on-changed="OnOptimizeRDInputAllocationsToggled" />
             </HBox>
             {isInfoExpanded('OptimizeRDInputAllocations') && <Text text={localize('OptimizeRDInputAllocationsInfo')} style="hint" />}
+
+            <HBox align="center">
+                <Text text={localize('OptimizeGameplayAllocations')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('OptimizeGameplayAllocations')" />
+                <Fill />
+                <Switch value={settings.optimizer.optimizeGameplayAllocations} on-changed="OnOptimizeGameplayAllocationsToggled" />
+            </HBox>
+            {isInfoExpanded('OptimizeGameplayAllocations') && <Text text={localize('OptimizeGameplayAllocationsInfo')} style="hint" />}
             </View>}
         </>}
     </VBox>

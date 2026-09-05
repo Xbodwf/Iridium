@@ -54,6 +54,7 @@ namespace Iridium
         public bool expandTweenOpts => IsSectionExpanded("tween");
         public bool expandExtremeOpts => IsSectionExpanded("extreme");
         public bool expandMemoryOpts => IsSectionExpanded("memory");
+        public bool expandAdvancedMemoryOpts => IsSectionExpanded("advancedMemory");
 
         private bool IsSectionExpanded(string key) => _sectionExpanded.TryGetValue(key, out var v) && v;
 
@@ -528,21 +529,44 @@ namespace Iridium
                 }
             });
 
-            _renderer.RegisterHandler("OnMemoryOptimizationToggled", (obj) =>
+            _renderer.RegisterHandler("OnBasicMemoryOptimizationToggled", (obj) =>
             {
                 bool value = obj is bool b ? b : false;
-                memory.enableMemoryOptimization = value;
-                Save();
-            });
-
-            _renderer.RegisterHandler("OnFerriteCoreToggled", (obj) =>
-            {
-                bool value = obj is bool b ? b : false;
-                memory.enableFerriteCore = value;
+                memory.enableBasicOptimization = value;
                 if (value)
                     Modules.FerriteCore.FerriteCoreModule.Enable();
                 else
                     Modules.FerriteCore.FerriteCoreModule.Disable();
+                Save();
+            });
+
+            _renderer.RegisterHandler("OnVirtualMemoryOptimizationToggled", (obj) =>
+            {
+                bool value = obj is bool b ? b : false;
+                memory.enableVirtualMemoryOptimization = value;
+                Modules.FerriteCore.VirtualMemoryOptimizer.SetEnabled(value);
+                Save();
+            });
+
+            _renderer.RegisterHandler("OnVmTrimOnLevelLoadToggled", (obj) =>
+            {
+                bool value = obj is bool b ? b : false;
+                memory.vmTrimOnLevelLoad = value;
+                Save();
+            });
+
+            _renderer.RegisterHandler("OnVmTrimOnEditorEnterToggled", (obj) =>
+            {
+                bool value = obj is bool b ? b : false;
+                memory.vmTrimOnEditorEnter = value;
+                Save();
+            });
+
+            _renderer.RegisterHandler("OnOptimizeGameplayAllocationsToggled", (obj) =>
+            {
+                bool value = obj is bool b ? b : false;
+                optimizer.optimizeGameplayAllocations = value;
+                AsyncPatchManager.UpdateOptimizerPatchesAsync();
                 Save();
             });
 

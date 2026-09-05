@@ -2,11 +2,11 @@
   "Id": "Iridium",
   "DisplayName": "Iridium",
   "Author": "Xbodwf",
-  "Version": "2.0.0",
+  "Version": "2.0.1",
   "Requirements": [],
   "ManagerVersion": "0.27.0.0",
   "AssemblyName": "Iridium.Loader.UMM.dll",
   "EntryMethod": "Iridium.Loader.UmmEntry.Load",
-  "HomePage": "https://github.com/adofaiex",
+  "HomePage": "https://github.com/adofaiex/Iridium",
   "Repository": "https://raw.githubusercontent.com/adofaiex/mod-update/refs/heads/main/Iridium/Repository.json"
 }
