@@ -206,7 +206,8 @@ jobs:
               name: finalReleaseName,
               body: releaseBody,
               draft: false,
-              prerelease: versionTag.includes('beta') || versionTag.includes('prerelease') || versionTag.includes('nightly')
+              // 测试版类型（snapshot/nightly/beta）一律标记为 prerelease，避免抢占 Latest
+              prerelease: ['beta', 'prerelease', 'nightly', 'snapshot'].some(t => versionTag.includes(t))
             });
 
             core.setOutput('release_id', release.data.id);
@@ -264,22 +265,43 @@ jobs:
         baseTag="${{ steps.version_info.outputs.BASE_TAG }}"
         tagName="${{ steps.version_info.outputs.TAG_NAME }}"
 
+        # 测试版（snapshot/nightly/beta）不得覆盖正式更新清单，
+        # 否则游戏内更新检查会把 snapshot 当作 latest 推给所有用户。
+        is_test=false
+        for t in beta prerelease nightly snapshot; do
+          if [[ "$baseTag" == *"$t"* ]]; then is_test=true; fi
+        done
+
         # v2 and v3 use separate manifests: the v2 client reads Iridium/Repository_v2.json
         # (see v2/Info.json), the v3 client reads Iridium/Repository.json (see v3/Info.json).
         mkdir -p Iridium
-        node -e "
-          const fs = require('fs');
-          const entry = (zipTag) => ({
-            Id: 'Iridium',
-            Version: '$baseTag',
-            DownloadUrl: 'https://github.com/adofaiex/Iridium/releases/download/$tagName/Iridium_' + zipTag + '.zip'
-          });
-          fs.writeFileSync('Iridium/Repository.json', JSON.stringify({ Releases: [entry('$v3Tag')] }, null, 2) + '\n');
-          fs.writeFileSync('Iridium/Repository_v2.json', JSON.stringify({ Releases: [entry('$v2Tag')] }, null, 2) + '\n');
-        "
-
+        if [[ "$is_test" == "true" ]]; then
+          # 测试版写入独立清单，正式清单保持不动
+          node -e "
+            const fs = require('fs');
+            const entry = (zipTag) => ({
+              Id: 'Iridium',
+              Version: '$baseTag',
+              DownloadUrl: 'https://github.com/adofaiex/Iridium/releases/download/$tagName/Iridium_' + zipTag + '.zip'
+            });
+            fs.writeFileSync('Iridium/Repository_snapshot.json', JSON.stringify({ Releases: [entry('$v3Tag')] }, null, 2) + '\n');
+            fs.writeFileSync('Iridium/Repository_snapshot_v2.json', JSON.stringify({ Releases: [entry('$v2Tag')] }, null, 2) + '\n');
+          "
+          git add Iridium/Repository_snapshot.json Iridium/Repository_snapshot_v2.json
+        else
+          node -e "
+            const fs = require('fs');
+            const entry = (zipTag) => ({
+              Id: 'Iridium',
+              Version: '$baseTag',
+              DownloadUrl: 'https://github.com/adofaiex/Iridium/releases/download/$tagName/Iridium_' + zipTag + '.zip'
+            });
+            fs.writeFileSync('Iridium/Repository.json', JSON.stringify({ Releases: [entry('$v3Tag')] }, null, 2) + '\n');
+            fs.writeFileSync('Iridium/Repository_v2.json', JSON.stringify({ Releases: [entry('$v2Tag')] }, null, 2) + '\n');
+          "
+          git add Iridium/Repository.json Iridium/Repository_v2.json
+        fi
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git add Iridium/Repository.json Iridium/Repository_v2.json
         git commit -m "auto-update Repository.json / Repository_v2.json for $baseTag" || true
         git push origin main
