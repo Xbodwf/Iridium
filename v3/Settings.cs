@@ -335,7 +335,29 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 optimizer.optimizeDecorationShaderCache = value;
+                if (!value) optimizer.optimizeDecorationFilterCache = false;
                 AsyncPatchManager.UpdateOptimizerPatchesAsync();
+                Save();
+            });
+
+            _renderer.RegisterHandler("OnDecorationFilterCacheToggled", (obj) =>
+            {
+                bool value = obj is bool b ? b : false;
+                optimizer.optimizeDecorationFilterCache = value;
+                AsyncPatchManager.UpdateOptimizerPatchesAsync();
+                Save();
+            });
+
+            _renderer.RegisterHandler("OnStaticDecorationBatchingToggled", (obj) =>
+            {
+                bool value = obj is bool b ? b : false;
+                optimizer.enableStaticDecorationBatching = value;
+                if (value && !optimizer.enableCustomEasingEngine)
+                {
+                    optimizer.enableCustomEasingEngine = true; // 合批的 tween 感知依赖缓速引擎
+                }
+                Patches.Optimizer.StaticDecorationBatcher.SetEnabled(
+                    optimizer.enableStaticDecorationBatching && optimizer.enableCustomEasingEngine);
                 Save();
             });
 
@@ -365,6 +387,12 @@ namespace Iridium
                 bool value = obj is bool b ? b : false;
                 optimizer.enableCustomEasingEngine = value;
                 ApplyCustomEasingMutualExclusion(optimizer);
+                // 合批渲染依赖缓速引擎的 tween 感知，引擎关闭时联动关闭
+                if (!value && optimizer.enableStaticDecorationBatching)
+                {
+                    optimizer.enableStaticDecorationBatching = false;
+                    Patches.Optimizer.StaticDecorationBatcher.SetEnabled(false);
+                }
                 AsyncPatchManager.UpdateOptimizerPatchesAsync();
                 Save();
             });

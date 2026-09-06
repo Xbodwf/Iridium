@@ -517,6 +517,43 @@ namespace Iridium.Core
 
         public static int ActiveCount => _active.Count;
 
+        /// <summary>某目标出现首个存活引擎 tween（供合批渲染器摘除该目标）。</summary>
+        public static event Action<object>? TargetTweensBecameActive;
+
+        /// <summary>某目标的全部引擎 tween 死亡（供合批渲染器回收该目标）。</summary>
+        public static event Action<object>? TargetTweensAllDead;
+
+        private static void NotifyTargetActive(object target)
+        {
+            if (_byTarget.TryGetValue(target, out var list) && list.Exists(t => t.IsAlive))
+                TargetTweensBecameActive?.Invoke(target);
+        }
+
+        /// <summary>Update 末尾对账：没有任何存活 tween 的目标移出索引并通知。</summary>
+        private static void ReconcileDeadTargets()
+        {
+            if (_byTarget.Count == 0) return;
+            List<object>? dead = null;
+            foreach (var kvp in _byTarget)
+            {
+                bool alive = false;
+                foreach (var t in kvp.Value)
+                {
+                    if (t.IsAlive) { alive = true; break; }
+                }
+                if (!alive)
+                {
+                    (dead ??= new List<object>()).Add(kvp.Key);
+                }
+            }
+            if (dead == null) return;
+            foreach (var target in dead)
+            {
+                _byTarget.Remove(target);
+                TargetTweensAllDead?.Invoke(target);
+            }
+        }
+
         public static void Initialize()
         {
             _initialized = true;
@@ -553,6 +590,8 @@ namespace Iridium.Core
             }
             if (write < count)
                 _active.RemoveRange(write, count - write);
+
+            ReconcileDeadTargets();
         }
 
         // ==================== 创建 API ====================
@@ -655,6 +694,7 @@ namespace Iridium.Core
                 _byTarget[tween.Target] = targetList;
             }
             targetList.Add(tween);
+            TargetTweensBecameActive?.Invoke(tween.Target);
         }
 
         // ==================== Kill / Goto ====================

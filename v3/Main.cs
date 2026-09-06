@@ -90,6 +90,11 @@ namespace Iridium
             // （补丁已卸载不会再创建新的），避免精灵卡在中间状态。
             if (Settings.optimizer.enableCustomEasingEngine || Iridium.Core.CustomEasingEngine.ActiveCount > 0)
                 Iridium.Core.CustomEasingEngine.Update(dt);
+
+            // 静态装饰物合批渲染（每帧提交）
+            if (Settings.optimizer.enableStaticDecorationBatching
+                && Settings.optimizer.enableCustomEasingEngine)
+                Patches.Optimizer.StaticDecorationBatcher.FrameRender();
         }
 
         private static void OnToggle(bool value)
@@ -135,6 +140,7 @@ namespace Iridium
 
                 Modules.FerriteCore.FerriteCoreModule.Disable();
                 Modules.FerriteCore.VirtualMemoryOptimizer.SetEnabled(false);
+                Patches.Optimizer.StaticDecorationBatcher.SetEnabled(false);
                 Modules.AsyncInputOptimize.Main.Disable();
                 Iridium.Patches.AsyncPatchManager.Stop();
                 Iridium.Patches.PatchManager.UnpatchAll();
