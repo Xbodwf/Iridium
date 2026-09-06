@@ -17,11 +17,6 @@ namespace Iridium.Patches
 	{
 		#region Shared Caches
 
-		// GameObject.Find 缓存
-		private static GameObject? _cachedFlash;
-		private static scrDecorationManager? _cachedDecorationManager;
-		private static scrCamera? _cachedCameraComponent;
-
 		// 组件缓存
 		private static readonly ConditionalWeakTable<scrFloor, FloorMesh> _floorMeshCache = new();
 
@@ -30,45 +25,9 @@ namespace Iridium.Patches
 		private static readonly List<GameObject> _reusableGameObjectList = new(100);
 		private static readonly List<ffxPlusBase> _reusableEffectList = new(50);
 
-		// 事件分类缓存
-		private static readonly Dictionary<LevelEventType, List<LevelEvent>> _eventsByType = new();
-
 		#endregion
 
 		#region scnGame Optimizations
-
-		/// <summary>
-		/// 缓存 scnGame 中频繁使用的 GameObject.Find 结果
-		/// </summary>
-		[IriPatch(Path = "optimizer/scene", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer,cacheGameObjectReferences")]
-		[HarmonyPatch(typeof(scnGame), "Awake")]
-		public static class ScnGameCacheReferencesPatch
-		{
-			[HarmonyPostfix]
-			public static void Postfix()
-			{
-				if (!Main.Settings.optimizer.cacheGameObjectReferences) return;
-
-				try
-				{
-					_cachedFlash = GameObject.Find("Flash");
-
-					var decorContainer = GameObject.Find("Decoration Container");
-					if (decorContainer != null)
-						_cachedDecorationManager = decorContainer.GetComponent<scrDecorationManager>();
-
-					var cameraObj = GameObject.Find("Camera");
-					if (cameraObj != null)
-						_cachedCameraComponent = cameraObj.GetComponent<scrCamera>();
-
-					Main.Logger?.Log("[SceneOptimization] Cached GameObject references");
-				}
-				catch (Exception e)
-				{
-					Main.Logger?.Error($"[SceneOptimization] Failed to cache references: {e}");
-				}
-			}
-		}
 
 		/// <summary>
 		/// 优化 scnGame.Update - 只在相机参数变化时更新
@@ -153,69 +112,6 @@ namespace Iridium.Patches
 				}
 
 				return false;
-			}
-		}
-
-		/// <summary>
-		/// 优化 ApplyEventsToFloors - 预先分类事件避免多次 FindAll
-		/// </summary>
-		[IriPatch(Path = "optimizer/scene", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer,optimizeEventProcessing")]
-		[HarmonyPatch(typeof(scnGame), nameof(scnGame.ApplyEventsToFloors),
-			typeof(List<scrFloor>), typeof(LevelData), typeof(scrLevelMaker), typeof(List<LevelEvent>))]
-		public static class ApplyEventsOptimizationPatch
-		{
-			[HarmonyPrefix]
-			public static void Prefix(List<LevelEvent> events)
-			{
-				if (!Main.Settings.optimizer.optimizeEventProcessing) return;
-
-				try
-				{
-					// 清空并重新分类事件
-					_eventsByType.Clear();
-
-					foreach (var evt in events)
-					{
-						if (!_eventsByType.TryGetValue(evt.eventType, out var list))
-						{
-							list = new List<LevelEvent>();
-							_eventsByType[evt.eventType] = list;
-						}
-						list.Add(evt);
-					}
-				}
-				catch (Exception e)
-				{
-					Main.Logger?.Error($"[SceneOptimization] Event classification failed: {e}");
-				}
-			}
-
-			// 提供静态方法供其他代码使用分类后的事件
-			public static List<LevelEvent>? GetEventsByType(LevelEventType type)
-			{
-				return _eventsByType.TryGetValue(type, out var list) ? list : null;
-			}
-		}
-
-		/// <summary>
-		/// 清理缓存 - 在场景销毁时
-		/// </summary>
-		[IriPatch(Path = "optimizer/scene", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer")]
-		[HarmonyPatch(typeof(scnGame), "OnDestroy")]
-		public static class ScnGameCleanupPatch
-		{
-			[HarmonyPostfix]
-			public static void Postfix()
-			{
-				// 只在启用优化时才清理
-				if (!Main.Settings.optimizer.enableOptimizer) return;
-
-				_cachedFlash = null;
-				_cachedDecorationManager = null;
-				_cachedCameraComponent = null;
-				_eventsByType.Clear();
-
-				Main.Logger?.Log("[SceneOptimization] Cleaned up scnGame caches");
 			}
 		}
 
@@ -354,36 +250,6 @@ namespace Iridium.Patches
 		}
 
 		/// <summary>
-		/// 优化 scnEditor.Update 中的 ScrollRect 查找
-		/// </summary>
-		public static class EditorUpdateScrollRectCachePatch
-		{
-			private static readonly ConditionalWeakTable<GameObject, ScrollRect> _scrollRectCache = new();
-
-			// 提供缓存查找方法
-			public static ScrollRect? FindScrollRect(GameObject obj)
-			{
-				if (obj == null) return null;
-
-				if (_scrollRectCache.TryGetValue(obj, out var cached))
-					return cached;
-
-				Transform current = obj.transform;
-				while (current != null)
-				{
-					if (current.TryGetComponent<ScrollRect>(out var scrollRect))
-					{
-						_scrollRectCache.Add(obj, scrollRect);
-						return scrollRect;
-					}
-					current = current.parent;
-				}
-
-				return null;
-			}
-		}
-
-		/// <summary>
 		/// ToggleFloorNumsEditorAction 不再调用 RemakePath()（重建整个路径很慢），
 		/// 改为只调 DrawFloorNums() 刷新编号标签的可见性。
 		/// </summary>
@@ -439,10 +305,6 @@ namespace Iridium.Patches
 		/// </summary>
 		public static void ClearAllCaches()
 		{
-			_cachedFlash = null;
-			_cachedDecorationManager = null;
-			_cachedCameraComponent = null;
-			_eventsByType.Clear();
 			_reusableColliderList.Clear();
 			_reusableGameObjectList.Clear();
 			_reusableEffectList.Clear();

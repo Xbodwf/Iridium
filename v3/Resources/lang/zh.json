@@ -103,12 +103,10 @@
   "JudgeText_FailMiss": "失败(错过)",
   "JudgeText_FailOverload": "失败(过载)",
   "SceneOptimizations": "场景优化",
-  "CacheGameObjectReferences": "缓存 GameObject 引用",
   "OptimizeEventProcessing": "优化事件处理 (预分类事件)",
   "OptimizeEditorMouseDetection": "优化编辑器鼠标检测",
   "OptimizeEditorEventIndicators": "优化编辑器事件指示器",
   "LoadingOptimizations": "加载优化 (实验性)",
-  "CacheFloorEvents": "缓存地板事件 (加快事件处理)",
   "OptimizeMoveTrackTweens": "优化 MoveTrack 动画 (减少 GC)",
   "BatchMoveDecorations": "批量移动装饰物 (提升性能)",
   "CorePerformanceOptimizations": "核心性能优化 (实验性)",
@@ -238,6 +236,7 @@
   "MissingModsNoticeSingle": "有{0} Mod缺失",
   "CustomEventReadOnlyNotice": "这些事件仅在安装了第三方Mod的情况下才能生效，你只能禁用和移除，不能修改它们。",
   "GeneralSettings": "通用",
+  "TutorialHint": "图文教程与各功能说明：",
   "EditorSettings": "编辑器",
   "AudioSettings": "音频",
   "UIBehavior": "界面行为",
@@ -252,7 +251,6 @@
   "EnableVirtualMemoryOptimization": "启用虚拟内存优化",
   "VmTrimOnLevelLoad": "在加载谱面时优化",
   "VmTrimOnEditorEnter": "在进入编辑器时优化",
-
   "EnableOptimizerInfo": "Iridium 优化的总开关。关闭后以下所有选项均不生效，游戏按原版逻辑运行。",
   "CompressImageInfo": "在加载自定义关卡时压缩贴图（背景、装饰物）以减少显存占用。若画面明显劣化可关闭。",
   "ShowSavedMemoryInfo": "关卡加载时显示贴图压缩节省了多少显存。",
@@ -279,11 +277,9 @@
   "OptimizeParticleInactiveInfo": "跳过非活跃粒子系统的模拟，并将其放入对象池复用而非 Instantiate/Destroy。",
   "OptimizeParticleCullingInfo": "发射器在可视区域外时暂停粒子模拟。",
   "OptimizeParticleLodInfo": "多个粒子系统同时发射时自动降低粒子数量 (LOD)。",
-  "CacheGameObjectReferencesInfo": "缓存热点路径的 GetComponent 结果，避免每帧重复查询。",
   "OptimizeEventProcessingInfo": "加载时预先将谱面事件分桶，运行时快速跳过无关事件。",
   "OptimizeEditorMouseDetectionInfo": "编辑器鼠标拾取使用空间划分，而不是逐个检测砖块和装饰物。",
   "OptimizeEditorEventIndicatorsInfo": "仅当选区实际变化时才重绘编辑器事件指示 UI。",
-  "CacheFloorEventsInfo": "加载时一次性构建 砖块→事件 字典，避免每个砖块都扫描完整事件列表。",
   "OptimizeMoveTrackTweensInfo": "惰性、批量地创建 MoveTrack 缓速，避免加载数千个缓速时卡顿。",
   "BatchMoveDecorationsInfo": "以批量 Transform 更新方式应用 MoveDecorations，而非逐装饰物协程处理。",
   "CustomLevelReadOptimizationInfo": ".adofai 文件的快速 JSON 反序列化路径：更少装箱、更少临时分配。",
@@ -304,7 +300,6 @@
   "OptimizePlayerInputAllocationsInfo": "消除玩家输入处理的每帧堆分配，避免输入轮询导致的 GC 尖峰。",
   "OptimizeRDInputAllocationsInfo": "消除重建输入按键列表时的每帧堆分配。",
   "OptimizeGameplayAllocationsInfo": "消除游戏每帧产生的内存垃圾（星球物理检测、轨迹颜色动画、滤镜调用），减少卡顿。不影响画面和玩法。",
-
   "RemoveNewsInfo": "隐藏主菜单的新闻面板。",
   "HideBetaWatermarkInfo": "隐藏测试版本水印。",
   "ForceDifficultyUIInfo": "在 CLS 关卡中强制显示难度选择UI，原版可能会在部分关卡中隐藏它们。",
@@ -317,7 +312,6 @@
   "CustomAutoplayHintInfo": "用自定义模板替代内置文本来自动播放提示内容。",
   "MoveAutoplayTextInfo": "解锁自动播放状态文字的位置，可用下方 X/Y 滑条任意移动。",
   "EnableJudgeTextCustomizationInfo": "自定义判定文本 (Perfect、TooEarly...)，支持 {offset} 显示精确偏移。",
-
   "EnableLegacyPauseFixInfo": "(此项已不再适用 但它仍然保留) 恢复 v2.9.3 版本的暂停逻辑，兼容旧谱面与模组。",
   "EnableNoFailTooEarlyInfo": "不死模式下，致死装饰物的碰撞自动转为“太快了”(TooEarly)判定而非直接死亡。",
   "ScaleFilterSpeedWithPitchInfo": "特效动画速度随音高(播放倍速)变化，变速时视觉效果保持同步。",
@@ -330,14 +324,12 @@
   "ForceAngleDataInfo": "旧谱面的角度数据按原样读取，不再自动修正。",
   "UseILPatchInfo": "IL Transpiler 模式：直接 IL 注入，性能最佳。关闭则为 Prefix/Postfix 模式：标准 Harmony 补丁，兼容性最佳。",
   "IgnoreRequiredModsInfo": "跳过必需模组检查，允许未安装全部列出的模组就加入大厅。可能导致功能缺失或崩溃。",
-
   "EnableHitSoundPitchInfo": "打击音效跟随音乐 pitch/速度设置，而不是固定音高播放。",
   "EnableAsyncInputInfo": "通过高精度系统计时器提高音频时间精度、降低输入延迟。建议高 BPM / 高密度谱面开启。",
   "EnableLobbyMusicPatchInfo": "启用下方的大厅音乐自定义。部分更改可能需要重新进入大厅才能完全生效。",
   "EnableCustomBpmInfo": "覆盖大厅音乐同步使用的 BPM。",
   "LobbyFastMusicInfo": "游戏倍速高于 1x 时大厅改用单独的高速音乐。",
   "LobbyCustomMusicInfo": "用下方配置的自定义音频文件替换大厅音乐。",
-
   "EnableEditorShortcutsInfo": "为编辑器添加装饰物选择与导航快捷键（见下方列表）。",
   "CameraFollowOnFloorSelectInfo": "使用 Go To Floor / Select All Floors 时编辑器镜头跟随到所选砖块。",
   "EditorPauseAllowedInfo": "允许在编辑器自动播放时暂停/恢复。",
@@ -346,5 +338,7 @@
   "IncrementalFloorInsertInfo": "插入/删除砖块时只处理附近砖块，而不是重建整个关卡。",
   "RangeBasedRedrawInfo": "编辑后只重绘受影响范围内的长条/星球/数字，而不是全部重绘。",
   "SkipRedundantRemakePathInfo": "视觉无变化时跳过 轨道路径重建 调用。",
-  "OptimizeOffsetFloorEventsInfo": "避免反复全表扫描。"
+  "OptimizeOffsetFloorEventsInfo": "避免反复全表扫描。",
+  "OptimizeDecorationShaderCache": "装饰物渲染缓存",
+  "OptimizeDecorationShaderCacheInfo": "跳过颜色/透明度/平铺/可见性未变化的装饰物的每帧材质写入。对有成百上千个静止装饰物的谱面提升明显。带滤镜或遮罩的装饰物不参与。"
 }

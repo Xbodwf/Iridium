@@ -167,6 +167,14 @@
             {isInfoExpanded('OptimizeFfxDecorations') && <Text text={localize('OptimizeFfxDecorationsInfo')} style="hint" />}
 
             <HBox align="center">
+                <Text text={localize('OptimizeDecorationShaderCache')} style="label" />
+                <Icon type="information" on-click="OnInfoToggle('OptimizeDecorationShaderCache')" />
+                <Fill />
+                <Switch value={settings.optimizer.optimizeDecorationShaderCache} on-changed="OnDecorationShaderCacheToggled" />
+            </HBox>
+            {isInfoExpanded('OptimizeDecorationShaderCache') && <Text text={localize('OptimizeDecorationShaderCacheInfo')} style="hint" />}
+
+            <HBox align="center">
                 <Text text={localize('OptimizeFloorMesh')} style="label" />
                 <Icon type="information" on-click="OnInfoToggle('OptimizeFloorMesh')" />
                 <Fill />
@@ -256,14 +264,6 @@
             {settings.expandSceneOpts && <View class="background">
 
             <HBox align="center">
-                <Text text={localize('CacheGameObjectReferences')} style="label" />
-                <Icon type="information" on-click="OnInfoToggle('CacheGameObjectReferences')" />
-                <Fill />
-                <Switch value={settings.optimizer.cacheGameObjectReferences} on-changed="OnCacheGameObjectReferencesToggled" />
-            </HBox>
-            {isInfoExpanded('CacheGameObjectReferences') && <Text text={localize('CacheGameObjectReferencesInfo')} style="hint" />}
-
-            <HBox align="center">
                 <Text text={localize('OptimizeEventProcessing')} style="label" />
                 <Icon type="information" on-click="OnInfoToggle('OptimizeEventProcessing')" />
                 <Fill />
@@ -294,14 +294,6 @@
                 <Text text={localize('LoadingOptimizations')} style="subtitle" />
             </HBox>
             {settings.expandLoadingOpts && <View class="background">
-
-            <HBox align="center">
-                <Text text={localize('CacheFloorEvents')} style="label" />
-                <Icon type="information" on-click="OnInfoToggle('CacheFloorEvents')" />
-                <Fill />
-                <Switch value={settings.optimizer.cacheFloorEvents} on-changed="OnCacheFloorEventsToggled" />
-            </HBox>
-            {isInfoExpanded('CacheFloorEvents') && <Text text={localize('CacheFloorEventsInfo')} style="hint" />}
 
             <HBox align="center">
                 <Text text={localize('OptimizeMoveTrackTweens')} style="label" />

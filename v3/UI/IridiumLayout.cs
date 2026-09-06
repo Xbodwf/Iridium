@@ -1246,6 +1246,17 @@ public static class IridiumLayout
             return result;
         }
 
+        /// <summary>
+        /// 超链接文字：下划线 + 主题粉，点击返回 true（由调用方负责 OpenURL）。
+        /// </summary>
+        internal static bool Link(string text, params object[] options)
+        {
+            var guiStyle = OffsetStyle(Resolution.LinkText);
+            var result = GUILayout.Button(new GUIContent($"<u>{text}</u>"), guiStyle, BuildOptions(options));
+            UpdateMaxSize();
+            return result;
+        }
+
         internal static bool Button(
             string text,
             ButtonStyle style = ButtonStyle.Primary,
@@ -1531,6 +1542,9 @@ public static class IridiumLayout
 
         private static readonly ColorGroup PrimaryColors = LoadShadeGroup("primary", "background", 0xD973A5, 0.89, 0.72);
 
+        // 超链接文字：常态主题粉、悬停提亮、按下加深
+        private static readonly ColorGroup LinkTextColors = LoadShadeGroup("primary", "background", 0xD973A5, 1.18, 0.89);
+
         private static readonly ColorGroup ElementColors = LoadShadeGroup("element", "background", 0x313338, 1.12, 1.0);
 
         private static readonly ColorGroup ElementBorderColors = LoadSolidGroup("bg-element-border", "background", 0x494F5C);
@@ -1629,6 +1643,8 @@ public static class IridiumLayout
 
             NormalText = BuildText("Iridium Normal Text", ScaledInt(BaseTextSize), NormalTextColors);
 
+            LinkText = BuildLinkText("Iridium Link Text", ScaledInt(BaseTextSize), LinkTextColors);
+
             var subtitleMargin = (int)Scaled(SubtitleAdditionalMargin);
 
             SubtitleText = BuildText("Iridium Subtitle Text", ScaledInt(SubtitleTextSize), SubtitleTextColors, subtitleMargin);
@@ -1703,6 +1719,8 @@ public static class IridiumLayout
         private double Scale { get; }
 
         public GUIStyle Base { get; }
+
+        public GUIStyle LinkText { get; }
 
         public GUIStyle Container { get; }
 
@@ -2530,6 +2548,13 @@ public static class IridiumLayout
             };
             ApplyFontSize(style, fontSize, true);
             ApplyTextPalette(style, textColors);
+            return style;
+        }
+
+        private GUIStyle BuildLinkText(string name, double fontSize, ColorGroup textColors)
+        {
+            var style = BuildText(name, fontSize, textColors);
+            style.richText = true;
             return style;
         }
 

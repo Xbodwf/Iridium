@@ -9,7 +9,6 @@ namespace Iridium.Config
         public bool optimizeMoveTrack = false;
         public bool optimizeRecolorTrack = false;
         public bool optimizeFilters = false;
-        public bool optimizeCLSAsyncScan = false;
 		public int divideBy = 1;
         public bool dontShowSavedMemory = false;
         public bool dontCompress = false;
@@ -30,6 +29,7 @@ namespace Iridium.Config
         public bool optimizeMoveDecorations = false;
         public bool optimizeFloorMesh = false;
         public bool optimizeFfxDecorations = false; // 新增：优化 ffx 装饰物更新
+        public bool optimizeDecorationShaderCache = false; // 装饰物渲染脏检查缓存
 
         // Particle Optimization Patches (粒子优化)
         public bool optimizeParticle = false;             // 主开关
@@ -38,13 +38,11 @@ namespace Iridium.Config
         public bool optimizeParticleLod = false;          // LOD 跳过
 
         // Scene Optimization Patches
-        public bool cacheGameObjectReferences = false;
         public bool optimizeEventProcessing = false;
         public bool optimizeEditorMouseDetection = false;
         public bool optimizeEditorEventIndicators = false;
 
         // Loading Optimization Patches
-        public bool cacheFloorEvents = false;
         public bool optimizeMoveTrackTweens = false;
         public bool batchMoveDecorations = false;
 

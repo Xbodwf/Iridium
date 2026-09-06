@@ -28,11 +28,10 @@ namespace Iridium.Runtime
             if (_target == null)
                 return PatchResult.NotFound($"Target not found for {GetType().Name}.");
 
-            if (useTranspiler)
+            // IL 模式下没有 Transpiler 实现的补丁回退到 Prefix/Postfix，
+            // 保证功能在两种补丁模式下都生效（如纹理压缩的尺寸补偿组）。
+            if (useTranspiler && Transpiler != null)
             {
-                if (Transpiler == null)
-                    return PatchResult.Failed($"{GetType().Name} has no Transpiler implementation.");
-
                 harmony.Patch(_target, transpiler: new HarmonyMethod(Transpiler));
                 _appliedMethods.Add(Transpiler);
             }

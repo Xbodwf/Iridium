@@ -16,121 +16,7 @@ namespace Iridium.Patches
 	{
 		#region Shared State
 
-		private static readonly Stack<Tween> _tweenPool = new(100);
-		private static readonly object _tweenPoolLock = new();
-
 		private static bool _isBatchCreating = false;
-
-		private static Dictionary<int, List<LevelEvent>>? _floorEventsCache = null;
-
-		#endregion
-
-		#region Event Processing Optimization
-
-		[IriPatch(Path = "optimizer/loading", Pre = typeof(OptimizerSettings), Condition = "enableOptimizer,cacheFloorEvents")]
-		[HarmonyPatch(typeof(scnGame), nameof(scnGame.ApplyEventsToFloors),
-			typeof(List<scrFloor>), typeof(LevelData), typeof(scrLevelMaker), typeof(List<LevelEvent>))]
-		public static class EventPreprocessingPatch
-		{
-			[HarmonyPrefix]
-			public static void Prefix(List<scrFloor> floors, List<LevelEvent> events)
-			{
-				if (!Main.Settings.optimizer.cacheFloorEvents) return;
-
-				try
-				{
-					_floorEventsCache = new Dictionary<int, List<LevelEvent>>(floors.Count);
-
-					foreach (var evt in events)
-					{
-						int floorIndex = evt.floor;
-						if (floorIndex < 0 || floorIndex >= floors.Count) continue;
-
-						if (!_floorEventsCache.TryGetValue(floorIndex, out var list))
-						{
-							list = new List<LevelEvent>();
-							_floorEventsCache[floorIndex] = list;
-						}
-
-						list.Add(evt);
-					}
-
-					Main.Logger?.Log($"[LoadingOptimization] Cached events for {_floorEventsCache.Count} floors");
-				}
-				catch (Exception e)
-				{
-					Main.Logger?.Error($"[LoadingOptimization] Event preprocessing failed: {e}");
-					_floorEventsCache = null;
-				}
-			}
-
-			[HarmonyPostfix]
-			public static void Postfix()
-			{
-				if (!Main.Settings.optimizer.cacheFloorEvents) return;
-
-				_floorEventsCache = null;
-			}
-
-			public static List<LevelEvent>? GetCachedEvents(int floorIndex)
-			{
-				return _floorEventsCache?.TryGetValue(floorIndex, out var list) == true ? list : null;
-			}
-		}
-
-		#endregion
-
-		#region Tween Pool
-
-		public static class TweenPoolManager
-		{
-			public static Tween? GetTween()
-			{
-				lock (_tweenPoolLock)
-				{
-					if (_tweenPool.Count > 0)
-					{
-						return _tweenPool.Pop();
-					}
-				}
-
-				return null;
-			}
-
-			public static void ReturnTween(Tween tween)
-			{
-				if (tween == null) return;
-
-				try
-				{
-					tween.Kill(false);
-
-					lock (_tweenPoolLock)
-					{
-						if (_tweenPool.Count < 1000)
-						{
-							_tweenPool.Push(tween);
-						}
-					}
-				}
-				catch (Exception e)
-				{
-					Main.Logger?.Error($"[LoadingOptimization] Failed to return tween: {e}");
-				}
-			}
-
-			public static void ClearPool()
-			{
-				lock (_tweenPoolLock)
-				{
-					while (_tweenPool.Count > 0)
-					{
-						var tween = _tweenPool.Pop();
-						tween?.Kill();
-					}
-				}
-			}
-		}
 
 		#endregion
 
@@ -485,11 +371,7 @@ namespace Iridium.Patches
 			{
 				if (!Main.Settings.optimizer.enableOptimizer) return;
 
-				_floorEventsCache?.Clear();
-				_floorEventsCache = null;
 				_isBatchCreating = false;
-
-				TweenPoolManager.ClearPool();
 
 				Main.Logger?.Log("[LoadingOptimization] Cleaned up caches and pools");
 			}
@@ -500,11 +382,6 @@ namespace Iridium.Patches
 		#region Utility Methods
 
 		public static bool IsBatchCreating => _isBatchCreating;
-
-		public static List<LevelEvent>? GetFloorEvents(int floorIndex)
-		{
-			return EventPreprocessingPatch.GetCachedEvents(floorIndex);
-		}
 
 		#endregion
 	}

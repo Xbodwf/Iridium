@@ -9,6 +9,11 @@
             <ForEach items={getLanguages()} template="LangBtn" />
         </HBox>
         <Text text={localize('IridiumHint')} style="text-secondary" visible={localize('IridiumHint') != ''} />
+        <HBox align="center">
+            <Text text={localize('TutorialHint')} style="text-secondary" />
+            <Fill />
+            <Link text="learn.modrift.org/mods/iridium" url="https://learn.modrift.org/mods/iridium" />
+        </HBox>
 
         <Separator />
         <Text text={localize('UIBehavior')} style="subtitle" />

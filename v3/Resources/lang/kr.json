@@ -103,12 +103,10 @@
   "JudgeText_FailMiss": "실패 (놓침)",
   "JudgeText_FailOverload": "실패 (과부하)",
   "SceneOptimizations": "장면 최적화",
-  "CacheGameObjectReferences": "GameObject 참조 캐시",
   "OptimizeEventProcessing": "이벤트 처리 최적화 (이벤트 사전 분류)",
   "OptimizeEditorMouseDetection": "편집기 마우스 감지 최적화",
   "OptimizeEditorEventIndicators": "편집기 이벤트 표시기 최적화",
   "LoadingOptimizations": "로딩 최적화 (실험적)",
-  "CacheFloorEvents": "바닥 이벤트 캐시 (더 빠른 이벤트 처리)",
   "OptimizeMoveTrackTweens": "MoveTrack 트윈 최적화 (GC 감소)",
   "BatchMoveDecorations": "MoveDecorations 일괄 처리 (성능 향상)",
   "CorePerformanceOptimizations": "핵심 성능 최적화 (실험적)",
@@ -238,6 +236,7 @@
   "MissingModsNoticeSingle": "누락된 모드: {0}",
   "CustomEventReadOnlyNotice": "이 이벤트는 서드파티 모드가 설치된 경우에만 작동합니다. 비활성화하거나 제거만 할 수 있습니다.",
   "GeneralSettings": "일반",
+  "TutorialHint": "튜토리얼 및 기능 설명:",
   "EditorSettings": "편집기",
   "AudioSettings": "오디오",
   "UIBehavior": "UI 동작",
@@ -252,7 +251,6 @@
   "EnableVirtualMemoryOptimization": "가상 메모리 최적화 활성화",
   "VmTrimOnLevelLoad": "레벨 로드 시 최적화",
   "VmTrimOnEditorEnter": "에디터 진입 시 최적화",
-
   "EnableOptimizerInfo": "Iridium 최적화의 메인 스위치입니다. 비활성화하면 아래의 모든 옵션이 무시되고 게임은 원본과 동일하게 실행됩니다.",
   "CompressImageInfo": "커스텀 레벨 텍스처(배경, 장식물)를 로드할 때 압축하여 그래픽 메모리 사용량을 줄입니다. 화질이 눈에 띄게 나빠지면 끄세요.",
   "ShowSavedMemoryInfo": "레벨 로드 시 텍스처 압축으로 절약된 그래픽 메모리 양을 표시합니다.",
@@ -279,11 +277,9 @@
   "OptimizeParticleInactiveInfo": "비활성 파티클 시스템 시뮬레이션을 건너뛰고, 파괴 후 다시 만드는 대신 저장해 두었다가 재사용합니다.",
   "OptimizeParticleCullingInfo": "방출기가 화면 밖에 있는 동안 파티클 시뮬레이션을 일시정지합니다.",
   "OptimizeParticleLodInfo": "여러 파티클 시스템이 동시에 방출될 때 파티클 수를 자동으로 줄입니다.",
-  "CacheGameObjectReferencesInfo": "자주 쓰는 컴포넌트를 한 번만 찾아 기억해 두므로 매 프레임 다시 찾지 않습니다.",
   "OptimizeEventProcessingInfo": "로드 시점에 채보 이벤트를 그룹별로 묶어 두어, 실행 중 필요 없는 이벤트를 빠르게 건너뛰게 합니다.",
   "OptimizeEditorMouseDetectionInfo": "에디터에서 마우스 아래의 대상을 찾을 때 모든 블록과 장식물을 하나씩 검사하지 않도록 합니다.",
   "OptimizeEditorEventIndicatorsInfo": "선택 영역이 실제로 바뀔 때만 에디터 이벤트 인디케이터 UI를 다시 그립니다.",
-  "CacheFloorEventsInfo": "로드 시점에 블록별 이벤트 목록을 한 번 만들어 두어, 각 블록이 전체 이벤트 목록을 일일이 훑지 않도록 합니다.",
   "OptimizeMoveTrackTweensInfo": "MoveTrack 트윈을 필요할 때 한꺼번에 만들어, 수천 개의 트윈 때문에 로딩이 멈추지 않게 합니다.",
   "BatchMoveDecorationsInfo": "장식물을 하나씩 처리하는 대신 여러 개를 한 번에 이동시킵니다.",
   "CustomLevelReadOptimizationInfo": ".adofai 레벨 파일을 읽을 때 불필요한 중간 과정을 줄여 더 빠르게 읽어 들입니다.",
@@ -304,7 +300,6 @@
   "OptimizePlayerInputAllocationsInfo": "플레이어 입력 처리의 반복 메모리 할당을 제거하여, 입력 확인으로 인한 렉 스파이크를 막습니다.",
   "OptimizeRDInputAllocationsInfo": "입력 키 목록을 다시 만들 때의 반복 메모리 할당을 제거합니다.",
   "OptimizeGameplayAllocationsInfo": "게임이 매 프레임 만드는 메모리 쓰레기(행성 히트박스 감지, 트랙 색상 애니메이션, 필터 호출)를 제거하여 끊김을 줄입니다. 화면이나 게임플레이 변화는 없습니다.",
-
   "RemoveNewsInfo": "메인 메뉴의 뉴스 패널을 숨깁니다.",
   "HideBetaWatermarkInfo": "베타 버전 워터마크를 숨깁니다.",
   "ForceDifficultyUIInfo": "원본이 일부 CLS 레벨에서 숨기는 난이도 선택 UI를 강제로 표시합니다.",
@@ -317,7 +312,6 @@
   "CustomAutoplayHintInfo": "내장 텍스트 대신 템플릿으로 오토플레이 힌트 내용을 직접 지정합니다.",
   "MoveAutoplayTextInfo": "오토플레이 상태 텍스트 위치 잠금을 해제하여 아래 X/Y 슬라이더로 자유롭게 이동할 수 있습니다.",
   "EnableJudgeTextCustomizationInfo": "판정 텍스트(Perfect, TooEarly...)를 커스터마이징하고 {offset} 으로 정확한 타이밍 표시가 가능합니다.",
-
   "EnableLegacyPauseFixInfo": "(더 이상 필요하지 않지만 유지됨) v2.9.3의 일시정지 로직을 복원하여 구형 채보 및 모드와 호환합니다.",
   "EnableNoFailTooEarlyInfo": "No Fail 사용 중 치명적인 장식물에 부딪히면 죽는 대신 보라색 'TooEarly' 판정으로 전환됩니다.",
   "ScaleFilterSpeedWithPitchInfo": "이펙트 애니메이션 속도가 피치(재생 배속)를 따라가므로, 배속을 바꿔도 시각 효과가 동기화됩니다.",
@@ -330,14 +324,12 @@
   "ForceAngleDataInfo": "레거시 채보의 각도 데이터를 자동 보정하지 않고 그대로 읽습니다.",
   "UseILPatchInfo": "IL Transpiler 모드: 직접 IL 주입, 최고 성능. 끄면 Prefix/Postfix 모드: 표준 Harmony 패치, 최고 호환성.",
   "IgnoreRequiredModsInfo": "필수 모드 검사를 건너뛰어 목록의 모든 모드를 설치하지 않고도 로비에 참여할 수 있습니다. 기능 누락이나 크래시가 발생할 수 있습니다.",
-
   "EnableHitSoundPitchInfo": "타격음이 고정 피치 대신 음악 피치/속도 설정을 따라갑니다.",
   "EnableAsyncInputInfo": "고정밀 시스템 타이머로 오디오 타이밍 정확도를 높이고 입력 지연을 줄입니다. 고 BPM / 고밀도 채보에 권장됩니다.",
   "EnableLobbyMusicPatchInfo": "아래 로비 음악 커스터마이징을 활성화합니다. 일부 변경은 로비에 다시 들어가야 완전히 적용됩니다.",
   "EnableCustomBpmInfo": "로비 음악 동기화에 사용되는 BPM을 덮어씁니다.",
   "LobbyFastMusicInfo": "게임 배속이 1x를 초과하면 로비에서 별도의 빠른 음악을 사용합니다.",
   "LobbyCustomMusicInfo": "로비 음악을 아래에서 설정한 자체 오디오 파일로 교체합니다.",
-
   "EnableEditorShortcutsInfo": "장식물 선택 및 내비게이션용 에디터 단축키를 추가합니다 (아래 목록).",
   "CameraFollowOnFloorSelectInfo": "Go To Floor / Select All Floors 사용 시 선택한 블록으로 에디터 카메라가 이동합니다.",
   "EditorPauseAllowedInfo": "에디터 오토플레이 중 일시정지/재개를 허용합니다.",
@@ -346,5 +338,7 @@
   "IncrementalFloorInsertInfo": "블록 삽입/삭제 시 레벨 전체를 다시 만들지 않고 주변 블록만 처리합니다.",
   "RangeBasedRedrawInfo": "편집 후 전체가 아니라 영향 받은 범위의 홀드/행성/숫자만 다시 그립니다.",
   "SkipRedundantRemakePathInfo": "시각적으로 바뀐 것이 없으면 트랙 경로 다시 만들기를 건너뜁니다.",
-  "OptimizeOffsetFloorEventsInfo": "전체 이벤트 목록을 반복해서 훑는 것을 피합니다."
+  "OptimizeOffsetFloorEventsInfo": "전체 이벤트 목록을 반복해서 훑는 것을 피합니다.",
+  "OptimizeDecorationShaderCache": "장식물 렌더링 캐시",
+  "OptimizeDecorationShaderCacheInfo": "색상/투명도/타일/가시성이 변하지 않은 장식물의 매 프레임 머티리얼 쓰기를 건너뜁니다. 정적 장식물이 수백 개인 차트에서 효과가 큽니다. 필터나 마스크가 있는 장식물은 제외됩니다."
 }

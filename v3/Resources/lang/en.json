@@ -103,12 +103,10 @@
   "JudgeText_FailMiss": "Fail (Miss)",
   "JudgeText_FailOverload": "Fail (Overload)",
   "SceneOptimizations": "Scene Optimizations",
-  "CacheGameObjectReferences": "Cache GameObject References",
   "OptimizeEventProcessing": "Optimize Event Processing (Pre-classify events)",
   "OptimizeEditorMouseDetection": "Optimize Editor Mouse Detection",
   "OptimizeEditorEventIndicators": "Optimize Editor Event Indicators",
   "LoadingOptimizations": "Loading Optimizations (Experimental)",
-  "CacheFloorEvents": "Cache Floor Events (Faster Event Processing)",
   "OptimizeMoveTrackTweens": "Optimize MoveTrack Tweens (Reduce GC)",
   "BatchMoveDecorations": "Batch MoveDecorations (Better Performance)",
   "CorePerformanceOptimizations": "Core Performance Optimizations (Experimental)",
@@ -238,6 +236,7 @@
   "MissingModsNoticeSingle": "Missing mod: {0}",
   "CustomEventReadOnlyNotice": "These events only work when the third-party mod is installed. You can only disable or remove them.",
   "GeneralSettings": "General",
+  "TutorialHint": "Guided tutorial and feature docs:",
   "EditorSettings": "Editor",
   "AudioSettings": "Audio",
   "UIBehavior": "UI Behavior",
@@ -252,7 +251,6 @@
   "EnableVirtualMemoryOptimization": "Enable Virtual Memory Optimization",
   "VmTrimOnLevelLoad": "Optimize When Loading a Level",
   "VmTrimOnEditorEnter": "Optimize When Entering the Editor",
-
   "EnableOptimizerInfo": "Master switch for Iridium's optimizations. When disabled, every option below is ignored and the game runs exactly as vanilla.",
   "CompressImageInfo": "Compresses custom level textures (backgrounds, decorations) while loading to reduce graphics memory usage. Turn off if the picture visibly degrades.",
   "ShowSavedMemoryInfo": "Shows how much graphics memory texture compression saved when a level loads.",
@@ -279,11 +277,9 @@
   "OptimizeParticleInactiveInfo": "Skips simulating inactive particle systems and keeps them for reuse instead of destroying and recreating them.",
   "OptimizeParticleCullingInfo": "Pauses particle simulation while its emitter is outside the visible area.",
   "OptimizeParticleLodInfo": "Automatically reduces particle counts when many particle systems are emitting at once.",
-  "CacheGameObjectReferencesInfo": "Looks up frequently used components once and remembers them instead of searching again every frame.",
   "OptimizeEventProcessingInfo": "Sorts chart events into groups at load time so the game can quickly skip ones it doesn't need during play.",
   "OptimizeEditorMouseDetectionInfo": "Lets the editor find what's under your mouse without checking every tile and decoration one at a time.",
   "OptimizeEditorEventIndicatorsInfo": "Only redraws editor event indicator UI when the selection actually changes.",
-  "CacheFloorEventsInfo": "Builds a per-tile event list once at load time so each tile no longer has to search through the entire event list.",
   "OptimizeMoveTrackTweensInfo": "Creates MoveTrack tweens only when needed and in batches, so loading doesn't stall on levels containing thousands of them.",
   "BatchMoveDecorationsInfo": "Moves decorations in batched updates instead of handling them one at a time.",
   "CustomLevelReadOptimizationInfo": "Reads .adofai level files faster by cutting unnecessary intermediate work while parsing.",
@@ -304,7 +300,6 @@
   "OptimizePlayerInputAllocationsInfo": "Removes repeated memory allocations in player input handling, preventing stutters caused by constant input polling.",
   "OptimizeRDInputAllocationsInfo": "Removes repeated memory allocations from rebuilding the input key list.",
   "OptimizeGameplayAllocationsInfo": "Eliminates the memory garbage the game creates every frame (planet hitbox checks, track color animation, filter calls) to reduce hitches. No visual or gameplay changes.",
-
   "RemoveNewsInfo": "Hides the news panel on the main menu.",
   "HideBetaWatermarkInfo": "Hides the beta version watermark.",
   "ForceDifficultyUIInfo": "Forces the difficulty selector UI to show in CLS levels, where vanilla may hide it in some levels.",
@@ -317,7 +312,6 @@
   "CustomAutoplayHintInfo": "Replaces the built-in autoplay hint text with your own template.",
   "MoveAutoplayTextInfo": "Unlocks the position of the autoplay status text so you can move it anywhere with the X/Y sliders below.",
   "EnableJudgeTextCustomizationInfo": "Customize judgement texts (Perfect, TooEarly...) including showing exact timing via {offset}.",
-
   "EnableLegacyPauseFixInfo": "(No longer applicable, but kept anyway) Restores the v2.9.3 pause logic for compatibility with older charts and mods.",
   "EnableNoFailTooEarlyInfo": "Under No Fail, hitting a deadly decoration becomes a purple 'TooEarly' judgement instead of instant death.",
   "ScaleFilterSpeedWithPitchInfo": "Effect animation speed follows the pitch (playback rate), so visuals stay in sync when speed changes.",
@@ -330,14 +324,12 @@
   "ForceAngleDataInfo": "Legacy charts have their angle data read as-is instead of being auto-corrected.",
   "UseILPatchInfo": "IL Transpiler mode: direct IL injection, best performance. Turn off for Prefix/Postfix mode: standard Harmony patches, best compatibility.",
   "IgnoreRequiredModsInfo": "Skips the required-mods check so you can join lobbies without installing every listed mod. May cause missing features or crashes.",
-
   "EnableHitSoundPitchInfo": "Hit sounds follow the music pitch/speed setting instead of playing at fixed pitch.",
   "EnableAsyncInputInfo": "Improves audio timing accuracy and reduces input latency using high-precision system timers. Recommended for high BPM / dense charts.",
   "EnableLobbyMusicPatchInfo": "Enables lobby music customization below. Some changes may require re-entering the lobby to fully apply.",
   "EnableCustomBpmInfo": "Overrides the BPM used for lobby music sync.",
   "LobbyFastMusicInfo": "Uses a separate faster music track in the lobby when game speed is above 1x.",
   "LobbyCustomMusicInfo": "Replaces lobby music with your own audio files configured below.",
-
   "EnableEditorShortcutsInfo": "Adds editor keyboard shortcuts for decoration selection and navigation (listed below).",
   "CameraFollowOnFloorSelectInfo": "Moves the editor camera to the selected floor when using Go To Floor / Select All Floors.",
   "EditorPauseAllowedInfo": "Allows pausing/resuming while auto-playing inside the editor.",
@@ -346,5 +338,7 @@
   "IncrementalFloorInsertInfo": "Inserting/deleting floors only touches nearby floors instead of rebuilding the whole level.",
   "RangeBasedRedrawInfo": "After edits, only redraws holds/planets/numbers within the affected range instead of everything.",
   "SkipRedundantRemakePathInfo": "Skips track path rebuilds when nothing visually changed.",
-  "OptimizeOffsetFloorEventsInfo": "Avoids repeatedly scanning the entire event list."
+  "OptimizeOffsetFloorEventsInfo": "Avoids repeatedly scanning the entire event list.",
+  "OptimizeDecorationShaderCache": "Decoration Shader Cache",
+  "OptimizeDecorationShaderCacheInfo": "Skips the per-frame material writes for decorations whose color/opacity/tile/visibility have not changed. Big win on charts with hundreds of static decorations. Decorations with filters or masks are excluded."
 }

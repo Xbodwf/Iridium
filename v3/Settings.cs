@@ -34,8 +34,6 @@ namespace Iridium
         public EditorShortcutSettings editorShortcuts = new();
         public AsyncInputSettings asyncInput = new();
 
-        public string panelToggleHotkey = "Ctrl+F9";
-
         private string? _defaultLobbyMusicPathCache;
         private string? _fastLobbyMusicPathCache;
 
@@ -329,6 +327,15 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 optimizer.optimizeFfxDecorations = value;
+                AsyncPatchManager.UpdateOptimizerPatchesAsync();
+                Save();
+            });
+
+            _renderer.RegisterHandler("OnDecorationShaderCacheToggled", (obj) =>
+            {
+                bool value = obj is bool b ? b : false;
+                optimizer.optimizeDecorationShaderCache = value;
+                AsyncPatchManager.UpdateOptimizerPatchesAsync();
                 Save();
             });
 
@@ -390,13 +397,6 @@ namespace Iridium
                 Save();
             });
 
-            _renderer.RegisterHandler("OnCacheGameObjectReferencesToggled", (obj) =>
-            {
-                bool value = obj is bool b ? b : false;
-                optimizer.cacheGameObjectReferences = value;
-                Save();
-            });
-
             _renderer.RegisterHandler("OnOptimizeEventProcessingToggled", (obj) =>
             {
                 bool value = obj is bool b ? b : false;
@@ -415,13 +415,6 @@ namespace Iridium
             {
                 bool value = obj is bool b ? b : false;
                 optimizer.optimizeEditorEventIndicators = value;
-                Save();
-            });
-
-            _renderer.RegisterHandler("OnCacheFloorEventsToggled", (obj) =>
-            {
-                bool value = obj is bool b ? b : false;
-                optimizer.cacheFloorEvents = value;
                 Save();
             });
 
@@ -1281,5 +1274,11 @@ namespace Iridium
 
         public bool Icon(Iris.Iml.IrrIconStyle style)
             => IridiumLayout.Engine.Icon((IconStyle)(int)style);
+
+        public void Link(string text, string url)
+        {
+            if (IridiumLayout.Engine.Link(text))
+                Application.OpenURL(url);
+        }
     }
 }
